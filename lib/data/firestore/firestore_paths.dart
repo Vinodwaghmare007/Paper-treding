@@ -7,6 +7,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 /// users/{userId}
 /// users/{userId}/portfolio/{coinSymbol}
 /// users/{userId}/orders/{orderId}
+/// chat_rooms/{roomId}
+/// chat_rooms/{roomId}/messages/{messageId}
+/// chat_rate_limits/{userId}
+/// reports/{reportId}
 /// ```
 class FirestorePaths {
   FirestorePaths(this._firestore);
@@ -30,4 +34,27 @@ class FirestorePaths {
 
   DocumentReference<Map<String, dynamic>> newOrderRef(String uid) =>
       orders(uid).doc();
+
+  CollectionReference<Map<String, dynamic>> chatRooms() =>
+      _firestore.collection('chat_rooms');
+
+  DocumentReference<Map<String, dynamic>> chatRoom(String roomId) =>
+      chatRooms().doc(roomId);
+
+  CollectionReference<Map<String, dynamic>> chatMessages(String roomId) =>
+      chatRoom(roomId).collection('messages');
+
+  DocumentReference<Map<String, dynamic>> chatRateLimit(String uid) =>
+      _firestore.collection('chat_rate_limits').doc(uid);
+
+  CollectionReference<Map<String, dynamic>> reports() =>
+      _firestore.collection('reports');
+
+  DocumentReference<Map<String, dynamic>> newReportRef() => reports().doc();
+
+  // See the path-naming note in functions/src/sentiment/aggregateSentiment.ts
+  // for why this is a flat top-level collection rather than nested under a
+  // shared "public" document.
+  DocumentReference<Map<String, dynamic>> publicSentiment(String symbol) =>
+      _firestore.collection('public_sentiment').doc(symbol);
 }

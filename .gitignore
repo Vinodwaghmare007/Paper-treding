@@ -3,6 +3,13 @@
 *.log
 *.pyc
 *.swp
+
+# Root-level Node tooling (e.g. firebase-tools, used only to validate
+# firestore.rules against the emulator — functions/ has its own separate
+# node_modules for the deployed Cloud Functions code).
+/node_modules/
+/package.json
+/package-lock.json
 .DS_Store
 .atom/
 .build/

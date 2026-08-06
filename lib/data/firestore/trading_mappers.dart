@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart' hide Order;
 
 import '../../domain/entities/order.dart';
 import '../../domain/entities/portfolio_position.dart';
+import '../../domain/entities/skill_level.dart';
 import '../../domain/entities/user_account.dart';
 
 /// Converts between the pure domain entities and their Firestore document
@@ -15,12 +16,19 @@ extension UserAccountFirestoreMapping on UserAccount {
       throw StateError('users/${doc.id} does not exist');
     }
     final lockedTs = data['buy_locked_until'];
+    final createdAtTs = data['created_at'];
     return UserAccount(
       uid: doc.id,
       virtualBalance: (data['virtual_balance'] as num).toDouble(),
       consecutiveLosses: (data['consecutive_losses'] as num).toInt(),
       buyLockedUntil:
           lockedTs is Timestamp ? lockedTs.toDate().toUtc() : null,
+      startingBalance:
+          (data['starting_balance'] as num?)?.toDouble() ?? UserAccount.defaultStartingBalance,
+      createdAt: createdAtTs is Timestamp ? createdAtTs.toDate().toUtc() : null,
+      skillLevel: SkillLevelCode.fromCode(
+        data['skill_level'] as String? ?? 'beginner',
+      ),
     );
   }
 
@@ -32,9 +40,11 @@ extension UserAccountFirestoreMapping on UserAccount {
       };
 
   static Map<String, dynamic> initialDoc() => {
-        'virtual_balance': UserAccount.startingBalance,
+        'virtual_balance': UserAccount.defaultStartingBalance,
+        'starting_balance': UserAccount.defaultStartingBalance,
         'consecutive_losses': 0,
         'buy_locked_until': null,
+        'created_at': FieldValue.serverTimestamp(),
       };
 }
 

@@ -51,6 +51,7 @@ class TickerScreen extends ConsumerWidget {
         children: [
           const HighFrequencyBanner(),
           _PriceHeader(tickAsync: tickAsync),
+          const _SentimentBadge(),
           Expanded(
             child: Stack(
               children: [
@@ -139,6 +140,59 @@ class _PriceHeader extends StatelessWidget {
           'Waiting for first tick…',
           style: TextStyle(color: Colors.white54),
         ),
+      ),
+    );
+  }
+}
+
+/// "X% of the community is bullish on BTC this hour" — anonymized,
+/// aggregate-only sentiment from functions/src/sentiment/aggregateSentiment
+/// .ts. Renders nothing while there isn't yet a meaningful aggregate to
+/// show (no doc written yet, or zero orders in the trailing hour) rather
+/// than a misleading "50/50" placeholder.
+class _SentimentBadge extends ConsumerWidget {
+  const _SentimentBadge();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final sentiment = ref.watch(communitySentimentProvider).valueOrNull;
+    if (sentiment == null || !sentiment.hasEnoughData) {
+      return const SizedBox.shrink();
+    }
+
+    final bullish = sentiment.bullishPct!;
+    final isBullish = bullish >= 50;
+    final color = isBullish ? const Color(0xFF26A69A) : const Color(0xFFEF5350);
+    final pct = (isBullish ? bullish : sentiment.bearishPct!).toStringAsFixed(0);
+
+    return Container(
+      width: double.infinity,
+      color: const Color(0xFF1E222D),
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              Icon(
+                isBullish ? Icons.trending_up : Icons.trending_down,
+                color: color,
+                size: 14,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                '$pct% of the community is ${isBullish ? 'bullish' : 'bearish'} '
+                'on ${sentiment.symbol} this hour',
+                style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w600),
+              ),
+            ],
+          ),
+          const Text(
+            'Reflects paper-trading orders on this app, not professional market sentiment.',
+            style: TextStyle(color: Colors.white38, fontSize: 10),
+          ),
+        ],
       ),
     );
   }

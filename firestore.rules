@@ -1,28 +1,50 @@
 rules_version = '2';
 
-// Per-user isolation matching lib/data/firestore/firestore_paths.dart:
-//   users/{userId}
-//   users/{userId}/portfolio/{coinSymbol}
-//   users/{userId}/orders/{orderId}
-//
-// Every read/write is scoped to the signed-in user's own uid. All writes to
-// these collections happen through the atomic transaction in
-// lib/domain/usecases/execute_trade.dart, so client-side field validation
-// here only needs to guard shape/type, not business rules (balance checks,
-// weighted-average math, lock timers) — those are enforced by the
-// transaction reading its own prior state before writing.
+// ============================================================================
+// Trading (Phase 2): users/{userId}, .../portfolio/{coinSymbol}, .../orders/{orderId}
+// Community + engagement (Phase 5): chat_rooms, chat_rate_limits, reports,
+//   daily_puzzle, public_sentiment, public_market_weather, public_cohort_medians
+// ============================================================================
 service cloud.firestore {
   match /databases/{database}/documents {
     function isOwner(userId) {
       return request.auth != null && request.auth.uid == userId;
     }
 
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Cached by functions/src/chat/updateSkillLevelOnOrder.ts, never
+    // client-writable (see isValidAccountUpdate below) — this is what lets
+    // rules gate chat reads by skill level with a plain get(), since rules
+    // can't run the count() query that actually computes skill level.
+    function callerSkillLevel() {
+      let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid));
+      return userDoc.data.get('skill_level', 'beginner');
+    }
+
+    // ------------------------------------------------------------------
+    // Trading (unchanged from Phase 2, plus Phase 5 field additions)
+    // ------------------------------------------------------------------
+
     function isValidAccountUpdate() {
       let data = request.resource.data;
       return data.virtual_balance is number
         && data.consecutive_losses is int
         && data.consecutive_losses >= 0
-        && (data.buy_locked_until == null || data.buy_locked_until is timestamp);
+        && (data.buy_locked_until == null || data.buy_locked_until is timestamp)
+        // skill_level is written only by updateSkillLevelOnOrder.ts and
+        // puzzle_streak/puzzle_last_played_date/puzzle_last_played_at only
+        // by submitPuzzleAnswer.ts — both Admin SDK, both bypass rules
+        // entirely. This just stops a *client* write from forging any of
+        // them; comparing against the pre-write value (rather than banning
+        // the field outright) lets an update that doesn't touch a field
+        // pass through without clobbering what a Cloud Function set.
+        && request.resource.data.get('skill_level', null) == resource.data.get('skill_level', null)
+        && request.resource.data.get('puzzle_streak', null) == resource.data.get('puzzle_streak', null)
+        && request.resource.data.get('puzzle_last_played_date', null) == resource.data.get('puzzle_last_played_date', null)
+        && request.resource.data.get('puzzle_last_played_at', null) == resource.data.get('puzzle_last_played_at', null);
     }
 
     function isValidPosition() {
@@ -44,11 +66,14 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if isOwner(userId);
       // Initial doc is created by AuthRepository at sign-up/first sign-in;
-      // every later write comes from execute_trade's transaction.
+      // every later write comes from execute_trade's transaction (or a
+      // Cloud Function, which bypasses rules).
       allow create: if isOwner(userId)
         && request.resource.data.virtual_balance == 100000
+        && request.resource.data.starting_balance == 100000
         && request.resource.data.consecutive_losses == 0
-        && request.resource.data.buy_locked_until == null;
+        && request.resource.data.buy_locked_until == null
+        && request.resource.data.created_at == request.time;
       allow update: if isOwner(userId) && isValidAccountUpdate();
       allow delete: if false;
 
@@ -64,6 +89,102 @@ service cloud.firestore {
         // Order history is an append-only ledger.
         allow update, delete: if false;
       }
+    }
+
+    // ------------------------------------------------------------------
+    // Community chat (Part A)
+    // ------------------------------------------------------------------
+
+    match /chat_rooms/{roomId} {
+      // Room metadata (name, skill_level, member_count) isn't sensitive —
+      // any signed-in user can see which rooms exist.
+      allow read: if isSignedIn();
+      // Rooms are provisioned once via functions/src/scripts/seedChatRooms.ts
+      // (run by a developer with the Admin SDK), never by end users or the
+      // app itself.
+      allow write: if false;
+
+      match /messages/{messageId} {
+        // Only messages in the room matching the reader's own (server-
+        // cached, unforgeable) skill level are readable — this is the
+        // literal "users can only read rooms matching their skill_level"
+        // requirement, enforced here rather than on the room doc itself
+        // since the room doc's own fields (name, skill_level) are safe to
+        // browse but its *contents* are the skill-appropriate part.
+        allow read: if isSignedIn()
+          && callerSkillLevel() == get(/databases/$(database)/documents/chat_rooms/$(roomId)).data.skill_level;
+        // All writes go through the sendChatMessage callable (Admin SDK),
+        // which does the rate limiting, profanity filtering, and
+        // skill-level check that can't be done safely/atomically in rules
+        // alone — see the long comment in sendChatMessage.ts for why.
+        allow write: if false;
+      }
+    }
+
+    // Per-user rate-limit/moderation state. Clients can read their own (so
+    // the app can show "you're temporarily restricted"), but never write —
+    // last_message_at and flagged are both only ever set by Cloud
+    // Functions (sendChatMessage.ts's transaction and
+    // rateLimitTrigger.ts respectively).
+    match /chat_rate_limits/{userId} {
+      allow read: if isOwner(userId);
+      allow write: if false;
+    }
+
+    // User-submitted reports for manual moderator review — no automated
+    // action taken on these beyond storing them (see community_chat_screen
+    // .dart's report button). Write-only from the client's perspective:
+    // nobody should be able to read the reports queue except via the
+    // Firebase console / a future admin tool with its own auth model.
+    match /reports/{reportId} {
+      allow create: if isSignedIn()
+        && request.resource.data.reported_by == request.auth.uid
+        && request.resource.data.room_id is string
+        && request.resource.data.message_id is string
+        && request.resource.data.reason is string
+        && request.resource.data.timestamp == request.time;
+      allow read, update, delete: if false;
+    }
+
+    // ------------------------------------------------------------------
+    // Daily puzzle (Part C)
+    // ------------------------------------------------------------------
+
+    match /daily_puzzle/{date} {
+      // No login required to play — the puzzle itself (shown candles,
+      // running aggregate stats) is fully public.
+      allow read: if true;
+      allow write: if false; // generateDailyPuzzle.ts / submitPuzzleAnswer.ts only
+
+      match /secret/{document=**} {
+        // The actual answer. Never client-readable at all — see the
+        // comment in generateDailyPuzzle.ts for why this is split out of
+        // the public doc instead of a single flatter document.
+        allow read, write: if false;
+      }
+    }
+
+    // ------------------------------------------------------------------
+    // Public aggregate docs (Parts A, D, E) — anonymous counts/medians
+    // only, Cloud-Function-written, never per-user data. See the path-
+    // naming note in functions/src/sentiment/aggregateSentiment.ts for why
+    // these are flat top-level collections rather than nested under a
+    // shared "public" document.
+    // ------------------------------------------------------------------
+
+    match /public_sentiment/{symbol} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /public_market_weather/{document} {
+      allow read: if true; // polled by the home-screen widget without auth
+      allow write: if false;
+    }
+
+    match /public_cohort_medians/{cohortKey} {
+      allow read: if isSignedIn(); // only meaningful to a signed-in trader
+      allow write: if false;
     }
   }
 }

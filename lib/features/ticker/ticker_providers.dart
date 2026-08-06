@@ -1,8 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/models/kline_tick.dart';
+import '../../data/repositories/sentiment_repository.dart';
 import '../../data/sources/binance_rest_service.dart';
 import '../../data/sources/binance_websocket_service.dart';
+import '../../domain/entities/community_sentiment.dart';
+import '../auth/auth_providers.dart';
 
 /// Owns the WebSocket service lifecycle: created lazily, started on first
 /// read, disposed with the container.
@@ -29,4 +32,14 @@ final klineTickProvider = StreamProvider<KlineTick>((ref) {
 final connectionStateProvider = StreamProvider<BinanceConnectionState>((ref) {
   final service = ref.watch(binanceWebSocketServiceProvider);
   return service.connectionState;
+});
+
+final sentimentRepositoryProvider = Provider<SentimentRepository>((ref) {
+  return SentimentRepository(ref.watch(firebaseFirestoreProvider));
+});
+
+/// Anonymized community sentiment for BTCUSDT, refreshed hourly by
+/// functions/src/sentiment/aggregateSentiment.ts.
+final communitySentimentProvider = StreamProvider<CommunitySentiment?>((ref) {
+  return ref.watch(sentimentRepositoryProvider).watchSentiment('BTCUSDT');
 });

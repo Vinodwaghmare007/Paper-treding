@@ -1,0 +1,30 @@
+{
+  "name": "crypto-paper-trader-functions",
+  "description": "Cloud Functions for Crypto Paper Trader: chat moderation, community sentiment, daily puzzle, market weather, cohort medians.",
+  "engines": {
+    "node": "20"
+  },
+  "main": "lib/index.js",
+  "scripts": {
+    "build": "tsc",
+    "build:watch": "tsc --watch",
+    "serve": "npm run build && firebase emulators:start --only functions",
+    "shell": "npm run build && firebase functions:shell",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log",
+    "seed:chat-rooms": "ts-node src/scripts/seedChatRooms.ts",
+    "test": "npm run build && node --test lib/**/*.test.js",
+    "test:rules": "firebase emulators:exec --only firestore --project demo-test \"ts-node test/firestoreRules.test.ts\""
+  },
+  "dependencies": {
+    "firebase-admin": "^12.7.0",
+    "firebase-functions": "^6.1.0"
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "^5.0.1",
+    "@types/node": "^20.17.9",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.2"
+  },
+  "private": true
+}
