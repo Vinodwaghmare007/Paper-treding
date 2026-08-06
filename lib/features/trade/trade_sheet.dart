@@ -1,13 +1,13 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/entities/order.dart';
 import '../../domain/entities/portfolio_position.dart';
 import '../../domain/usecases/execute_trade.dart';
+import '../chart/price_source.dart';
 import '../portfolio/portfolio_providers.dart';
-import '../ticker/ticker_providers.dart';
+import 'revenge_blocker_sheet.dart';
+import 'trade_lock_provider.dart';
 
 enum _Side { buy, sell }
 
@@ -48,21 +48,9 @@ class _TradeSheetState extends ConsumerState<TradeSheet> {
   _Side _side = _Side.buy;
   bool _submitting = false;
   String? _errorText;
-  Timer? _tickerTimer;
-
-  @override
-  void initState() {
-    super.initState();
-    // Repaints the lock countdown every second without depending on a new
-    // tick arriving.
-    _tickerTimer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (mounted) setState(() {});
-    });
-  }
 
   @override
   void dispose() {
-    _tickerTimer?.cancel();
     _quantityController.dispose();
     super.dispose();
   }
@@ -111,9 +99,9 @@ class _TradeSheetState extends ConsumerState<TradeSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final liveTick = ref.watch(klineTickProvider).valueOrNull;
-    final price = (liveTick != null && liveTick.symbol == widget.coinSymbol)
-        ? liveTick.candle.close
+    final latestTick = ref.watch(activeTickProvider).valueOrNull;
+    final price = (latestTick != null && latestTick.symbol == widget.coinSymbol)
+        ? latestTick.candle.close
         : widget.seedPrice;
 
     final account = ref.watch(accountStreamProvider).valueOrNull;
@@ -122,11 +110,9 @@ class _TradeSheetState extends ConsumerState<TradeSheet> {
         .cast<PortfolioPosition?>()
         .firstWhere((p) => p?.coinSymbol == widget.coinSymbol, orElse: () => null);
 
-    final now = DateTime.now().toUtc();
-    final lockedUntil = account?.buyLockedUntil;
-    final isLocked = _side == _Side.buy &&
-        lockedUntil != null &&
-        lockedUntil.isAfter(now);
+    final lockState = ref.watch(tradeLockProvider);
+    final isLocked = _side == _Side.buy && lockState.isLocked;
+
     final total = price * _quantity;
     final canAffordBuy = account != null && total <= account.virtualBalance;
     final canAffordSell = holding != null && _quantity <= holding.totalQuantity;
@@ -221,7 +207,7 @@ class _TradeSheetState extends ConsumerState<TradeSheet> {
           ],
           if (isLocked) ...[
             const SizedBox(height: 12),
-            _LockNotice(lockedUntil: lockedUntil),
+            _LockNotice(lockState: lockState),
           ],
           if (_errorText != null) ...[
             const SizedBox(height: 12),
@@ -230,12 +216,19 @@ class _TradeSheetState extends ConsumerState<TradeSheet> {
           const SizedBox(height: 20),
           FilledButton(
             style: FilledButton.styleFrom(
-              backgroundColor: _side == _Side.buy
-                  ? const Color(0xFF26A69A)
-                  : const Color(0xFFEF5350),
+              backgroundColor: isLocked
+                  ? Colors.white12
+                  : (_side == _Side.buy
+                      ? const Color(0xFF26A69A)
+                      : const Color(0xFFEF5350)),
               minimumSize: const Size.fromHeight(48),
             ),
-            onPressed: canSubmit ? () => _submit(price, holding) : null,
+            // While locked, the button stays tappable — tapping it opens the
+            // hard-lock sheet — but never actually submits a trade. A truly
+            // disabled (onPressed: null) button couldn't do that.
+            onPressed: isLocked
+                ? () => showRevengeBlockerSheet(context)
+                : (canSubmit ? () => _submit(price, holding) : null),
             child: _submitting
                 ? const SizedBox(
                     width: 20,
@@ -243,7 +236,12 @@ class _TradeSheetState extends ConsumerState<TradeSheet> {
                     child: CircularProgressIndicator(
                         strokeWidth: 2, color: Colors.white),
                   )
-                : Text(_side == _Side.buy ? 'Confirm Buy' : 'Confirm Sell'),
+                : Text(
+                    isLocked
+                        ? 'Locked — ${_formatCountdown(lockState.remainingSeconds)} remaining'
+                        : (_side == _Side.buy ? 'Confirm Buy' : 'Confirm Sell'),
+                    style: TextStyle(color: isLocked ? Colors.white38 : null),
+                  ),
           ),
         ],
       ),
@@ -251,16 +249,19 @@ class _TradeSheetState extends ConsumerState<TradeSheet> {
   }
 }
 
-class _LockNotice extends StatelessWidget {
-  const _LockNotice({required this.lockedUntil});
+String _formatCountdown(int totalSeconds) {
+  final minutes = (totalSeconds ~/ 60).toString().padLeft(2, '0');
+  final seconds = (totalSeconds % 60).toString().padLeft(2, '0');
+  return '$minutes:$seconds';
+}
 
-  final DateTime lockedUntil;
+class _LockNotice extends StatelessWidget {
+  const _LockNotice({required this.lockState});
+
+  final TradeLockState lockState;
 
   @override
   Widget build(BuildContext context) {
-    final remaining = lockedUntil.difference(DateTime.now().toUtc());
-    final minutes = remaining.inMinutes.clamp(0, 999);
-    final seconds = (remaining.inSeconds % 60).clamp(0, 59);
     return Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
@@ -275,7 +276,7 @@ class _LockNotice extends StatelessWidget {
           Expanded(
             child: Text(
               'Buying locked after 3 losing trades in a row. '
-              'Try again in ${minutes}m ${seconds}s.',
+              'Try again in ${_formatCountdown(lockState.remainingSeconds)}.',
               style: const TextStyle(color: Color(0xFFEF5350), fontSize: 12),
             ),
           ),

@@ -6,7 +6,6 @@ import 'package:webview_flutter/webview_flutter.dart';
 
 import '../../data/models/forecast.dart';
 import '../../data/models/kline_tick.dart';
-import '../../data/sources/binance_rest_service.dart';
 
 /// Hosts the TradingView Lightweight Charts instance in a WebView and keeps
 /// it fed with data:
@@ -14,26 +13,28 @@ import '../../data/sources/binance_rest_service.dart';
 /// 1. Loads `assets/charts/tradingview.html`.
 /// 2. Waits for the page's `ready` signal on the `ChartBridge`
 ///    JavascriptChannel (JS -> Dart).
-/// 3. Seeds the chart with the last 500 candles from the REST API
-///    (Dart -> JS via `window.seedCandles`).
-/// 4. Forwards live WebSocket ticks into `window.updateCandle`, so the
-///    forming candle animates and closed candles are committed.
+/// 3. Seeds the chart via [fetchSeedCandles] (Dart -> JS via
+///    `window.seedCandles`).
+/// 4. Forwards [ticks] into `window.updateCandle`, so the forming candle
+///    animates and closed candles are committed.
+///
+/// Deliberately source-agnostic: [fetchSeedCandles] and [ticks] are
+/// supplied by the caller rather than this widget owning a REST client
+/// itself, so the *same* widget serves both the live ticker screen
+/// (backed by [BinanceRestService]/the live WebSocket) and Market Replay
+/// (backed by [HistoricalDataCache]/[MarketReplayEngine]) with zero forking.
 class TradingChartView extends StatefulWidget {
   const TradingChartView({
     super.key,
-    required this.restService,
+    required this.fetchSeedCandles,
     required this.ticks,
-    this.symbol = 'BTCUSDT',
     this.interval = '1m',
-    this.seedLimit = 500,
     this.forecast,
   });
 
-  final BinanceRestService restService;
+  final Future<List<Candle>> Function() fetchSeedCandles;
   final Stream<KlineTick> ticks;
-  final String symbol;
   final String interval;
-  final int seedLimit;
 
   /// The active AI forecast overlay, or null to show none (the "Show AI
   /// Forecast" toggle's off state). Declarative: the widget diffs this
@@ -102,11 +103,7 @@ class _TradingChartViewState extends State<TradingChartView> {
 
   Future<void> _seedChart() async {
     try {
-      final candles = await widget.restService.fetchKlines(
-        symbol: widget.symbol,
-        interval: widget.interval,
-        limit: widget.seedLimit,
-      );
+      final candles = await widget.fetchSeedCandles();
       if (!mounted) return;
       final json = jsonEncode(
         [for (final c in candles) c.toChartPoint()],
@@ -115,8 +112,6 @@ class _TradingChartViewState extends State<TradingChartView> {
       _subscribeToTicks();
       if (mounted) setState(() => _status = _ChartStatus.ready);
       await _applyForecast(widget.forecast);
-    } on BinanceRestException catch (e) {
-      _fail('Could not load history: ${e.message}');
     } catch (e) {
       _fail('Could not load history: $e');
     }

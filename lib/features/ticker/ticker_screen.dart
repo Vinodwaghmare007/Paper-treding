@@ -8,6 +8,7 @@ import '../../data/sources/forecast_api_source.dart';
 import '../auth/sign_out_button.dart';
 import '../chart/forecast_providers.dart';
 import '../chart/trading_chart_view.dart';
+import '../trade/high_frequency_banner.dart';
 import '../trade/trade_sheet.dart';
 import 'ticker_providers.dart';
 
@@ -48,12 +49,17 @@ class TickerScreen extends ConsumerWidget {
       ),
       body: Column(
         children: [
+          const HighFrequencyBanner(),
           _PriceHeader(tickAsync: tickAsync),
           Expanded(
             child: Stack(
               children: [
                 TradingChartView(
-                  restService: restService,
+                  fetchSeedCandles: () => restService.fetchKlines(
+                    symbol: 'BTCUSDT',
+                    interval: '1m',
+                    limit: 500,
+                  ),
                   ticks: wsService.ticks,
                   forecast: forecastAsync.valueOrNull,
                 ),

@@ -30,7 +30,10 @@ class TradingRepository {
         );
   }
 
-  /// Most recent orders first.
+  /// Most recent orders first, capped at [limit] — generous enough that
+  /// client-side windowing (e.g. "trades in the trailing 60 minutes" for
+  /// the anti-gamification monitor) stays accurate without a dedicated
+  /// Firestore range query per window size.
   Stream<List<Order>> watchOrders(String uid, {int limit = 200}) {
     return _paths
         .orders(uid)

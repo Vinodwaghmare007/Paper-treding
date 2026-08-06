@@ -3,61 +3,20 @@ import 'package:cloud_firestore/cloud_firestore.dart' hide Order;
 import '../../data/firestore/firestore_paths.dart';
 import '../../data/firestore/trading_mappers.dart';
 import '../entities/order.dart';
-import '../entities/portfolio_position.dart';
-import '../entities/user_account.dart';
+import 'trade_exceptions.dart';
+import 'trade_math.dart';
 
-/// A trade was rejected because it violates the paper-trading engine's
-/// rules. Never thrown for infrastructure failures (network, permissions) —
-/// those surface as the underlying [FirebaseException].
-sealed class TradeRejected implements Exception {
-  const TradeRejected(this.message);
-  final String message;
-
-  @override
-  String toString() => message;
-}
-
-class InsufficientBalanceException extends TradeRejected {
-  const InsufficientBalanceException({
-    required this.required,
-    required this.available,
-  }) : super(
-          'Insufficient balance: need $required, have $available',
-        );
-
-  final double required;
-  final double available;
-}
-
-class InsufficientHoldingsException extends TradeRejected {
-  const InsufficientHoldingsException({
-    required this.requested,
-    required this.held,
-  }) : super('Insufficient holdings: requested $requested, hold $held');
-
-  final double requested;
-  final double held;
-}
-
-class TradingLockedException extends TradeRejected {
-  const TradingLockedException(this.lockedUntil)
-      : super('Buying is locked until $lockedUntil (revenge-trade cooldown)');
-
-  final DateTime lockedUntil;
-}
-
-class InvalidTradeException extends TradeRejected {
-  const InvalidTradeException(super.message);
-}
+export 'trade_exceptions.dart';
 
 /// The paper-trading engine: BUY and SELL, each executed as a single atomic
 /// Firestore transaction across the user's account, portfolio position, and
 /// a new order record.
 ///
-/// Also owns the "revenge-blocker" bookkeeping: a losing SELL increments
-/// `consecutive_losses`; a break-even-or-better SELL resets it to zero;
-/// reaching [UserAccount.lossStreakLimit] arms a
-/// [UserAccount.lockDuration] cooldown on new BUYs.
+/// The actual arithmetic — weighted-average buy price, realized P&L, and
+/// the revenge-blocker loss-streak/cooldown bookkeeping — lives in
+/// [TradeMath], shared with the isolate-run backtester. This class only
+/// owns reading prior state from Firestore and writing the result back
+/// inside a transaction.
 class ExecuteTradeUseCase {
   ExecuteTradeUseCase(
     FirebaseFirestore firestore, {
@@ -81,7 +40,10 @@ class ExecuteTradeUseCase {
     required double price,
     required double quantity,
   }) {
-    _validatePositive(price: price, quantity: quantity);
+    // Fail fast on garbage input without ever opening a transaction, and
+    // short-circuit a locked account before touching the position doc at
+    // all — same two properties the pre-refactor implementation had.
+    TradeMath.validatePositive(price: price, quantity: quantity);
     final symbol = coinSymbol.toUpperCase();
 
     return _firestore.runTransaction<Order>((transaction) async {
@@ -94,50 +56,29 @@ class ExecuteTradeUseCase {
         throw TradingLockedException(account.buyLockedUntil!);
       }
 
-      final cost = price * quantity;
-      if (cost > account.virtualBalance) {
-        throw InsufficientBalanceException(
-          required: cost,
-          available: account.virtualBalance,
-        );
-      }
-
       final positionRef = _paths.portfolioPosition(_uid, symbol);
       final positionSnap = await transaction.get(positionRef);
       final existing = positionSnap.exists
           ? PortfolioPositionFirestoreMapping.fromDoc(positionSnap)
-          : PortfolioPosition(
-              coinSymbol: symbol, totalQuantity: 0, avgBuyPrice: 0);
-
-      final newQuantity = existing.totalQuantity + quantity;
-      final newAvgPrice =
-          (existing.totalQuantity * existing.avgBuyPrice + cost) /
-              newQuantity;
-      final updatedPosition = PortfolioPosition(
-        coinSymbol: symbol,
-        totalQuantity: newQuantity,
-        avgBuyPrice: newAvgPrice,
-      );
-
-      final updatedAccount =
-          account.copyWith(virtualBalance: account.virtualBalance - cost);
+          : null;
 
       final orderRef = _paths.newOrderRef(_uid);
-      final order = Order(
-        id: orderRef.id,
+      final outcome = TradeMath.applyBuy(
+        account: account,
+        existingPosition: existing,
         coinSymbol: symbol,
-        orderType: OrderType.buy,
         price: price,
         quantity: quantity,
-        timestamp: now,
+        now: now,
+        orderId: orderRef.id,
       );
 
       transaction
-        ..set(positionRef, updatedPosition.toMap())
-        ..update(userRef, updatedAccount.toUpdateMap())
-        ..set(orderRef, order.toMap());
+        ..set(positionRef, outcome.updatedPosition.toMap())
+        ..update(userRef, outcome.updatedAccount.toUpdateMap())
+        ..set(orderRef, outcome.order.toMap());
 
-      return order;
+      return outcome.order;
     });
   }
 
@@ -151,7 +92,7 @@ class ExecuteTradeUseCase {
     required double price,
     required double quantity,
   }) {
-    _validatePositive(price: price, quantity: quantity);
+    TradeMath.validatePositive(price: price, quantity: quantity);
     final symbol = coinSymbol.toUpperCase();
 
     return _firestore.runTransaction<Order>((transaction) async {
@@ -164,76 +105,29 @@ class ExecuteTradeUseCase {
       final positionSnap = await transaction.get(positionRef);
       final existing = positionSnap.exists
           ? PortfolioPositionFirestoreMapping.fromDoc(positionSnap)
-          : PortfolioPosition(
-              coinSymbol: symbol, totalQuantity: 0, avgBuyPrice: 0);
-
-      if (quantity > existing.totalQuantity) {
-        throw InsufficientHoldingsException(
-          requested: quantity,
-          held: existing.totalQuantity,
-        );
-      }
-
-      final realizedPnl = (price - existing.avgBuyPrice) * quantity;
-      final remainingQuantity = existing.totalQuantity - quantity;
-      // Guards against float dust leaving a near-zero residual position.
-      final isFullyClosed = remainingQuantity <= 1e-12;
-
-      final proceeds = price * quantity;
-      var consecutiveLosses = account.consecutiveLosses;
-      DateTime? buyLockedUntil = account.buyLockedUntil;
-      if (realizedPnl < 0) {
-        consecutiveLosses += 1;
-        if (consecutiveLosses >= UserAccount.lossStreakLimit) {
-          buyLockedUntil = now.add(UserAccount.lockDuration);
-        }
-      } else {
-        consecutiveLosses = 0;
-      }
-
-      final updatedAccount = account.copyWith(
-        virtualBalance: account.virtualBalance + proceeds,
-        consecutiveLosses: consecutiveLosses,
-        buyLockedUntil: buyLockedUntil,
-        clearBuyLock: buyLockedUntil == null,
-      );
+          : null;
 
       final orderRef = _paths.newOrderRef(_uid);
-      final order = Order(
-        id: orderRef.id,
+      final outcome = TradeMath.applySell(
+        account: account,
+        existingPosition: existing,
         coinSymbol: symbol,
-        orderType: OrderType.sell,
         price: price,
         quantity: quantity,
-        realizedPnl: realizedPnl,
-        timestamp: now,
+        now: now,
+        orderId: orderRef.id,
       );
 
-      if (isFullyClosed) {
+      if (outcome.updatedPosition == null) {
         transaction.delete(positionRef);
       } else {
-        final updatedPosition = PortfolioPosition(
-          coinSymbol: symbol,
-          totalQuantity: remainingQuantity,
-          avgBuyPrice: existing.avgBuyPrice,
-        );
-        transaction.set(positionRef, updatedPosition.toMap());
+        transaction.set(positionRef, outcome.updatedPosition!.toMap());
       }
       transaction
-        ..update(userRef, updatedAccount.toUpdateMap())
-        ..set(orderRef, order.toMap());
+        ..update(userRef, outcome.updatedAccount.toUpdateMap())
+        ..set(orderRef, outcome.order.toMap());
 
-      return order;
+      return outcome.order;
     });
   }
-
-  void _validatePositive({required double price, required double quantity}) {
-    if (price <= 0) {
-      throw const InvalidTradeException('Price must be positive');
-    }
-    if (quantity <= 0) {
-      throw const InvalidTradeException('Quantity must be positive');
-    }
-  }
-
 }
