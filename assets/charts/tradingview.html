@@ -43,6 +43,74 @@
     var chart = null;
     var candleSeries = null;
     var lastBarTime = 0; // Guards series.update() against out-of-order bars.
+    var forecastLineSeries = null;
+    var confidenceBandPrimitive = null;
+
+    // Draws the shaded region between confidence_upper and confidence_lower
+    // as a filled polygon. Lightweight Charts' bundled (non-plugin) series
+    // types only fill down to a fixed baseline, not between two arbitrary
+    // lines, so a proper band needs a custom Series Primitive — supported
+    // since v4.1 via attachPrimitive/paneViews, which the bundled v4.2.3
+    // build includes.
+    function ConfidenceBandPrimitive() {
+      this._chart = null;
+      this._series = null;
+      this._upperPoints = [];
+      this._lowerPoints = [];
+      this._upperScreen = [];
+      this._lowerScreen = [];
+    }
+    ConfidenceBandPrimitive.prototype.attached = function (params) {
+      this._chart = params.chart;
+      this._series = params.series;
+    };
+    ConfidenceBandPrimitive.prototype.detached = function () {
+      this._chart = null;
+      this._series = null;
+    };
+    ConfidenceBandPrimitive.prototype.setData = function (upperPoints, lowerPoints) {
+      this._upperPoints = upperPoints;
+      this._lowerPoints = lowerPoints;
+    };
+    ConfidenceBandPrimitive.prototype.updateAllViews = function () {
+      var self = this;
+      if (!self._chart || !self._series) return;
+      var timeScale = self._chart.timeScale();
+      var toScreen = function (point) {
+        var x = timeScale.timeToCoordinate(point.time);
+        var y = self._series.priceToCoordinate(point.value);
+        return (x === null || y === null) ? null : { x: x, y: y };
+      };
+      self._upperScreen = self._upperPoints.map(toScreen).filter(function (p) { return p !== null; });
+      self._lowerScreen = self._lowerPoints.map(toScreen).filter(function (p) { return p !== null; });
+    };
+    ConfidenceBandPrimitive.prototype.paneViews = function () {
+      var self = this;
+      return [{
+        renderer: function () {
+          return {
+            draw: function (target) {
+              target.useBitmapCoordinateSpace(function (scope) {
+                var ctx = scope.context;
+                var upper = self._upperScreen;
+                var lower = self._lowerScreen;
+                if (upper.length < 2 || lower.length < 2) return;
+                ctx.save();
+                ctx.scale(scope.horizontalPixelRatio, scope.verticalPixelRatio);
+                ctx.beginPath();
+                ctx.moveTo(upper[0].x, upper[0].y);
+                for (var i = 1; i < upper.length; i++) ctx.lineTo(upper[i].x, upper[i].y);
+                for (var j = lower.length - 1; j >= 0; j--) ctx.lineTo(lower[j].x, lower[j].y);
+                ctx.closePath();
+                ctx.fillStyle = 'rgba(255, 193, 7, 0.15)';
+                ctx.fill();
+                ctx.restore();
+              });
+            },
+          };
+        },
+      }];
+    };
 
     function initChart() {
       if (!window.LightweightCharts) {
@@ -121,6 +189,67 @@
         candleSeries.update(bar);
       } catch (e) {
         postToDart('error', 'updateCandle: ' + e.message);
+      }
+    };
+
+    function isValidLinePoint(point) {
+      return point && typeof point === 'object' &&
+        Number.isFinite(point.time) && Number.isFinite(point.value);
+    }
+
+    // Overlays an AI forecast: `predictedPoints` as a dotted line,
+    // `upperPoints`/`lowerPoints` as a shaded confidence band. All three
+    // are arrays of {time, value}, oldest (closest to "now") first.
+    // Called from Dart when the "Show AI Forecast" toggle is switched on,
+    // or a fresh forecast arrives while it's already on.
+    window.setForecast = function (predictedPoints, upperPoints, lowerPoints) {
+      try {
+        if (!candleSeries) { postToDart('error', 'setForecast before init'); return; }
+        if (![predictedPoints, upperPoints, lowerPoints].every(Array.isArray)) {
+          postToDart('error', 'setForecast: expected three arrays');
+          return;
+        }
+        var predicted = predictedPoints.filter(isValidLinePoint);
+        var upper = upperPoints.filter(isValidLinePoint);
+        var lower = lowerPoints.filter(isValidLinePoint);
+
+        if (!forecastLineSeries) {
+          forecastLineSeries = chart.addLineSeries({
+            color: '#ffc107',
+            lineWidth: 2,
+            lineStyle: LightweightCharts.LineStyle.Dotted,
+            priceLineVisible: false,
+            lastValueVisible: false,
+            crosshairMarkerVisible: false,
+          });
+        }
+        if (!confidenceBandPrimitive) {
+          confidenceBandPrimitive = new ConfidenceBandPrimitive();
+          forecastLineSeries.attachPrimitive(confidenceBandPrimitive);
+        }
+
+        forecastLineSeries.setData(predicted);
+        confidenceBandPrimitive.setData(upper, lower);
+        postToDart('forecastSet', predicted.length);
+      } catch (e) {
+        postToDart('error', 'setForecast: ' + e.message);
+      }
+    };
+
+    // Removes the forecast overlay entirely. Called from Dart when the
+    // "Show AI Forecast" toggle is switched off.
+    window.clearForecast = function () {
+      try {
+        if (confidenceBandPrimitive && forecastLineSeries) {
+          forecastLineSeries.detachPrimitive(confidenceBandPrimitive);
+          confidenceBandPrimitive = null;
+        }
+        if (forecastLineSeries) {
+          chart.removeSeries(forecastLineSeries);
+          forecastLineSeries = null;
+        }
+      } catch (e) {
+        postToDart('error', 'clearForecast: ' + e.message);
       }
     };
 

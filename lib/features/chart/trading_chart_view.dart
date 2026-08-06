@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
+import '../../data/models/forecast.dart';
 import '../../data/models/kline_tick.dart';
 import '../../data/sources/binance_rest_service.dart';
 
@@ -25,6 +26,7 @@ class TradingChartView extends StatefulWidget {
     this.symbol = 'BTCUSDT',
     this.interval = '1m',
     this.seedLimit = 500,
+    this.forecast,
   });
 
   final BinanceRestService restService;
@@ -32,6 +34,11 @@ class TradingChartView extends StatefulWidget {
   final String symbol;
   final String interval;
   final int seedLimit;
+
+  /// The active AI forecast overlay, or null to show none (the "Show AI
+  /// Forecast" toggle's off state). Declarative: the widget diffs this
+  /// against the previous value and pushes/clears the JS overlay to match.
+  final PriceForecast? forecast;
 
   @override
   State<TradingChartView> createState() => _TradingChartViewState();
@@ -107,6 +114,7 @@ class _TradingChartViewState extends State<TradingChartView> {
       await _controller.runJavaScript('window.seedCandles($json);');
       _subscribeToTicks();
       if (mounted) setState(() => _status = _ChartStatus.ready);
+      await _applyForecast(widget.forecast);
     } on BinanceRestException catch (e) {
       _fail('Could not load history: ${e.message}');
     } catch (e) {
@@ -125,6 +133,53 @@ class _TradingChartViewState extends State<TradingChartView> {
         debugPrint('[Chart] updateCandle failed: $e');
       });
     });
+  }
+
+  @override
+  void didUpdateWidget(covariant TradingChartView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (_status == _ChartStatus.ready && widget.forecast != oldWidget.forecast) {
+      _applyForecast(widget.forecast);
+    }
+  }
+
+  static const _intervalSeconds = {
+    '1m': 60, '3m': 180, '5m': 300, '15m': 900, '30m': 1800,
+    '1h': 3600, '2h': 7200, '4h': 14400, '6h': 21600, '8h': 28800, '12h': 43200,
+    '1d': 86400,
+  };
+
+  Future<void> _applyForecast(PriceForecast? forecast) async {
+    if (forecast == null) {
+      await _controller.runJavaScript('window.clearForecast();').catchError(
+            (Object e) => debugPrint('[Chart] clearForecast failed: $e'),
+          );
+      return;
+    }
+
+    final stepSeconds = _intervalSeconds[widget.interval] ?? 60;
+    // Anchors the projection to the interval boundary at (or just before)
+    // the moment the backend generated it — the forecast is a rough
+    // statistical projection, not something that needs bar-exact alignment.
+    final anchorEpoch = (forecast.generatedAt.millisecondsSinceEpoch ~/ 1000 ~/
+            stepSeconds) *
+        stepSeconds;
+
+    List<Map<String, num>> toPoints(List<double> values) => [
+          for (var i = 0; i < values.length; i++)
+            {
+              'time': anchorEpoch + (i + 1) * stepSeconds,
+              'value': values[i],
+            },
+        ];
+
+    final predicted = jsonEncode(toPoints(forecast.predictedPath));
+    final upper = jsonEncode(toPoints(forecast.confidenceUpper));
+    final lower = jsonEncode(toPoints(forecast.confidenceLower));
+
+    await _controller
+        .runJavaScript('window.setForecast($predicted, $upper, $lower);')
+        .catchError((Object e) => debugPrint('[Chart] setForecast failed: $e'));
   }
 
   void _fail(String message) {
