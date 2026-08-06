@@ -1,0 +1,69 @@
+rules_version = '2';
+
+// Per-user isolation matching lib/data/firestore/firestore_paths.dart:
+//   users/{userId}
+//   users/{userId}/portfolio/{coinSymbol}
+//   users/{userId}/orders/{orderId}
+//
+// Every read/write is scoped to the signed-in user's own uid. All writes to
+// these collections happen through the atomic transaction in
+// lib/domain/usecases/execute_trade.dart, so client-side field validation
+// here only needs to guard shape/type, not business rules (balance checks,
+// weighted-average math, lock timers) — those are enforced by the
+// transaction reading its own prior state before writing.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    function isValidAccountUpdate() {
+      let data = request.resource.data;
+      return data.virtual_balance is number
+        && data.consecutive_losses is int
+        && data.consecutive_losses >= 0
+        && (data.buy_locked_until == null || data.buy_locked_until is timestamp);
+    }
+
+    function isValidPosition() {
+      let data = request.resource.data;
+      return data.total_quantity is number && data.total_quantity > 0
+        && data.avg_buy_price is number && data.avg_buy_price >= 0;
+    }
+
+    function isValidOrder() {
+      let data = request.resource.data;
+      return data.coin_symbol is string
+        && (data.order_type == 'BUY' || data.order_type == 'SELL')
+        && data.price is number && data.price > 0
+        && data.quantity is number && data.quantity > 0
+        && data.timestamp is timestamp
+        && (data.realized_pnl == null || data.realized_pnl is number);
+    }
+
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+      // Initial doc is created by AuthRepository at sign-up/first sign-in;
+      // every later write comes from execute_trade's transaction.
+      allow create: if isOwner(userId)
+        && request.resource.data.virtual_balance == 100000
+        && request.resource.data.consecutive_losses == 0
+        && request.resource.data.buy_locked_until == null;
+      allow update: if isOwner(userId) && isValidAccountUpdate();
+      allow delete: if false;
+
+      match /portfolio/{coinSymbol} {
+        allow read: if isOwner(userId);
+        allow create, update: if isOwner(userId) && isValidPosition();
+        allow delete: if isOwner(userId);
+      }
+
+      match /orders/{orderId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidOrder();
+        // Order history is an append-only ledger.
+        allow update, delete: if false;
+      }
+    }
+  }
+}

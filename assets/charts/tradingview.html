@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>Crypto Paper Trader Chart</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background: #131722;
+      overflow: hidden;
+    }
+    #chart {
+      position: absolute;
+      inset: 0;
+    }
+  </style>
+  <!-- Bundled locally so the chart works without a CDN. -->
+  <script src="./lightweight-charts.standalone.production.js"></script>
+</head>
+<body>
+  <div id="chart"></div>
+  <script>
+    'use strict';
+
+    // ChartBridge is the webview_flutter JavascriptChannel (JS -> Dart).
+    // Dart -> JS goes through the window.seedCandles / window.updateCandle
+    // functions defined below, invoked via runJavaScript.
+    function postToDart(type, payload) {
+      if (window.ChartBridge && typeof window.ChartBridge.postMessage === 'function') {
+        window.ChartBridge.postMessage(JSON.stringify({ type: type, payload: payload }));
+      }
+    }
+
+    window.onerror = function (message, source, lineno, colno) {
+      postToDart('error', message + ' (' + source + ':' + lineno + ':' + colno + ')');
+      return false;
+    };
+
+    var chart = null;
+    var candleSeries = null;
+    var lastBarTime = 0; // Guards series.update() against out-of-order bars.
+
+    function initChart() {
+      if (!window.LightweightCharts) {
+        postToDart('error', 'lightweight-charts library failed to load');
+        return;
+      }
+      var container = document.getElementById('chart');
+      chart = LightweightCharts.createChart(container, {
+        layout: {
+          background: { type: 'solid', color: '#131722' },
+          textColor: '#d1d4dc',
+        },
+        grid: {
+          vertLines: { color: 'rgba(42, 46, 57, 0.6)' },
+          horzLines: { color: 'rgba(42, 46, 57, 0.6)' },
+        },
+        timeScale: {
+          timeVisible: true,
+          secondsVisible: false,
+          borderColor: '#2a2e39',
+        },
+        rightPriceScale: { borderColor: '#2a2e39' },
+        crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
+        // Pinned explicitly: some WebViews report malformed/POSIX locales,
+        // which throws inside Intl formatters the library uses internally.
+        localization: { locale: 'en-US' },
+        autoSize: true,
+      });
+
+      candleSeries = chart.addCandlestickSeries({
+        upColor: '#26a69a',
+        downColor: '#ef5350',
+        borderUpColor: '#26a69a',
+        borderDownColor: '#ef5350',
+        wickUpColor: '#26a69a',
+        wickDownColor: '#ef5350',
+      });
+
+      postToDart('ready', null);
+    }
+
+    function isValidBar(bar) {
+      return bar && typeof bar === 'object' &&
+        Number.isFinite(bar.time) &&
+        Number.isFinite(bar.open) &&
+        Number.isFinite(bar.high) &&
+        Number.isFinite(bar.low) &&
+        Number.isFinite(bar.close);
+    }
+
+    // Replaces the whole series. `bars` must be oldest-first with unique times.
+    // Called from Dart with the 500-candle REST seed.
+    window.seedCandles = function (bars) {
+      try {
+        if (!candleSeries) { postToDart('error', 'seedCandles before init'); return; }
+        if (!Array.isArray(bars)) { postToDart('error', 'seedCandles: not an array'); return; }
+        var clean = bars.filter(isValidBar);
+        clean.sort(function (a, b) { return a.time - b.time; });
+        candleSeries.setData(clean);
+        lastBarTime = clean.length ? clean[clean.length - 1].time : 0;
+        chart.timeScale().scrollToRealTime();
+        postToDart('seeded', clean.length);
+      } catch (e) {
+        postToDart('error', 'seedCandles: ' + e.message);
+      }
+    };
+
+    // Creates or updates the bar whose time matches `bar.time`.
+    // Called from Dart on every live kline tick.
+    window.updateCandle = function (bar) {
+      try {
+        if (!candleSeries) { postToDart('error', 'updateCandle before init'); return; }
+        if (!isValidBar(bar)) { postToDart('error', 'updateCandle: invalid bar'); return; }
+        if (bar.time < lastBarTime) return; // stale tick from before the seed
+        lastBarTime = bar.time;
+        candleSeries.update(bar);
+      } catch (e) {
+        postToDart('error', 'updateCandle: ' + e.message);
+      }
+    };
+
+    initChart();
+  </script>
+</body>
+</html>

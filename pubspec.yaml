@@ -1,0 +1,37 @@
+name: crypto_paper_trader
+description: "Educational crypto paper-trading app. Live Binance market data, no real money."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.8.1
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+  flutter_riverpod: ^2.6.1
+  http: ^1.2.0
+  web_socket_channel: ^3.0.0
+  webview_flutter: ^4.10.0
+
+  firebase_core: ^3.8.0
+  firebase_auth: ^5.3.3
+  cloud_firestore: ^5.5.0
+  google_sign_in: ^6.2.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^5.0.0
+  mocktail: ^1.0.4
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/charts/tradingview.html
+    - assets/charts/lightweight-charts.standalone.production.js
