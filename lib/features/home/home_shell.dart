@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../backtester/backtester_screen.dart';
 import '../chat/community_chat_screen.dart';
@@ -8,20 +9,21 @@ import '../portfolio/portfolio_screen.dart';
 import '../puzzle/daily_puzzle_screen.dart';
 import '../replay/market_replay_screen.dart';
 import '../ticker/ticker_screen.dart';
+import 'home_deep_link.dart';
 
 /// Signed-in app shell: bottom-nav between the live chart, portfolio, order
 /// history, strategy backtester, Market Replay, Community chat, News, and
 /// the Daily Puzzle. Each tab owns its own app bar (with a sign-out
 /// action).
-class HomeShell extends StatefulWidget {
+class HomeShell extends ConsumerStatefulWidget {
   const HomeShell({super.key});
 
   @override
-  State<HomeShell> createState() => _HomeShellState();
+  ConsumerState<HomeShell> createState() => _HomeShellState();
 }
 
-class _HomeShellState extends State<HomeShell> {
-  int _index = 0;
+class _HomeShellState extends ConsumerState<HomeShell> {
+  int _index = chartTabIndex;
 
   static const _tabs = [
     TickerScreen(),
@@ -36,6 +38,12 @@ class _HomeShellState extends State<HomeShell> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<int?>(pendingDeepLinkTabProvider, (_, tab) {
+      if (tab == null) return;
+      setState(() => _index = tab);
+      ref.read(pendingDeepLinkTabProvider.notifier).state = null;
+    });
+
     return Scaffold(
       body: IndexedStack(index: _index, children: _tabs),
       bottomNavigationBar: NavigationBar(

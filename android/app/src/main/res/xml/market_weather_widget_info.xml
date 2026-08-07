@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- updatePeriodMillis is deliberately 0 (disabled): Android's own AppWidget
+     auto-update alarm would be a second, uncoordinated update trigger on
+     top of the WorkManager periodic task that actually drives refreshes
+     (see market_weather_sync_task.dart) — one 4-hour-aligned source of
+     truth is the point, not two overlapping ones. -->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:minWidth="110dp"
+    android:minHeight="40dp"
+    android:targetCellWidth="3"
+    android:targetCellHeight="1"
+    android:updatePeriodMillis="0"
+    android:initialLayout="@layout/market_weather_widget"
+    android:resizeMode="horizontal|vertical"
+    android:widgetCategory="home_screen">
+</appwidget-provider>
