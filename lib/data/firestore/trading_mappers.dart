@@ -29,6 +29,8 @@ extension UserAccountFirestoreMapping on UserAccount {
       skillLevel: SkillLevelCode.fromCode(
         data['skill_level'] as String? ?? 'beginner',
       ),
+      puzzleStreak: (data['puzzle_streak'] as num?)?.toInt() ?? 0,
+      puzzleLastPlayedDate: data['puzzle_last_played_date'] as String?,
     );
   }
 

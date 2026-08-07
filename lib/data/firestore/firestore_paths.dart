@@ -57,4 +57,7 @@ class FirestorePaths {
   // shared "public" document.
   DocumentReference<Map<String, dynamic>> publicSentiment(String symbol) =>
       _firestore.collection('public_sentiment').doc(symbol);
+
+  DocumentReference<Map<String, dynamic>> dailyPuzzle(String date) =>
+      _firestore.collection('daily_puzzle').doc(date);
 }

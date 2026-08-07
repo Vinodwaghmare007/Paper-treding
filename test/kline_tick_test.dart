@@ -75,6 +75,34 @@ void main() {
     });
   });
 
+  group('Candle.fromMap', () {
+    test('parses the shape written by generateDailyPuzzle.ts', () {
+      final candle = Candle.fromMap({
+        'openTimeMs': 1723000000000,
+        'closeTimeMs': 1723000059999,
+        'open': 60000.10,
+        'high': 60100.00,
+        'low': 59990.00,
+        'close': 60050.55,
+        'volume': 12.345,
+      });
+      expect(candle.openTimeMs, 1723000000000);
+      expect(candle.closeTimeMs, 1723000059999);
+      expect(candle.open, 60000.10);
+      expect(candle.high, 60100.00);
+      expect(candle.low, 59990.00);
+      expect(candle.close, 60050.55);
+      expect(candle.volume, 12.345);
+    });
+
+    test('throws on a missing field', () {
+      expect(
+        () => Candle.fromMap({'openTimeMs': 1}),
+        throwsFormatException,
+      );
+    });
+  });
+
   group('Candle.toChartPoint', () {
     test('converts ms to whole seconds for Lightweight Charts', () {
       const candle = Candle(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/repositories/auth_repository.dart';
+import '../puzzle/daily_puzzle_screen.dart';
 import 'auth_providers.dart';
 
 enum _Mode { signIn, signUp }
@@ -175,6 +176,16 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                     onPressed: _submitting ? null : _submitGoogle,
                     icon: const Icon(Icons.g_mobiledata, size: 28),
                     label: const Text('Continue with Google'),
+                  ),
+                  const SizedBox(height: 20),
+                  TextButton.icon(
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => const DailyPuzzleScreen(),
+                      ),
+                    ),
+                    icon: const Icon(Icons.extension, size: 18),
+                    label: const Text("Just want to try today's puzzle?"),
                   ),
                 ],
               ),

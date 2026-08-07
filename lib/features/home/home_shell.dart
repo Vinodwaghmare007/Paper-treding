@@ -5,12 +5,14 @@ import '../chat/community_chat_screen.dart';
 import '../news/news_feed_screen.dart';
 import '../orders/order_history_screen.dart';
 import '../portfolio/portfolio_screen.dart';
+import '../puzzle/daily_puzzle_screen.dart';
 import '../replay/market_replay_screen.dart';
 import '../ticker/ticker_screen.dart';
 
 /// Signed-in app shell: bottom-nav between the live chart, portfolio, order
-/// history, strategy backtester, Market Replay, Community chat, and News.
-/// Each tab owns its own app bar (with a sign-out action).
+/// history, strategy backtester, Market Replay, Community chat, News, and
+/// the Daily Puzzle. Each tab owns its own app bar (with a sign-out
+/// action).
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key});
 
@@ -29,6 +31,7 @@ class _HomeShellState extends State<HomeShell> {
     MarketReplayScreen(),
     CommunityChatScreen(),
     NewsFeedScreen(),
+    DailyPuzzleScreen(),
   ];
 
   @override
@@ -50,6 +53,7 @@ class _HomeShellState extends State<HomeShell> {
           NavigationDestination(icon: Icon(Icons.history), label: 'Replay'),
           NavigationDestination(icon: Icon(Icons.forum), label: 'Chat'),
           NavigationDestination(icon: Icon(Icons.article), label: 'News'),
+          NavigationDestination(icon: Icon(Icons.extension), label: 'Puzzle'),
         ],
       ),
     );

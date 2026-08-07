@@ -59,6 +59,13 @@ export const submitPuzzleAnswer = onCall(async (request) => {
     const answerData = answerSnap.data()!;
     const correctAnswer = answerData.correct_answer as Guess;
     const actualMovePct = answerData.actual_move_pct as number;
+    // Only released once this transaction has recorded a guess for this
+    // player+date (the already-answered check above), so a client can
+    // never read the reveal candles without first committing to an
+    // answer — but a player who *has* answered is entitled to see the
+    // history that already happened, which is what lets the chart
+    // actually animate the reveal instead of just printing a percentage.
+    const revealCandles = answerData.reveal_candles;
     const correct = guess === correctAnswer;
 
     tx.update(puzzleRef, {
@@ -89,6 +96,7 @@ export const submitPuzzleAnswer = onCall(async (request) => {
       correct,
       correctAnswer,
       actualMovePct,
+      revealCandles,
       aggregateCorrectPct: Math.round((correctAfter / totalAfter) * 1000) / 10,
       totalAnswers: totalAfter,
     };

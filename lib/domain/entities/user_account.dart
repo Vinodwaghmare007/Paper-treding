@@ -12,6 +12,8 @@ class UserAccount {
     this.createdAt,
     this.buyLockedUntil,
     this.skillLevel = SkillLevel.beginner,
+    this.puzzleStreak = 0,
+    this.puzzleLastPlayedDate,
   });
 
   /// Starting balance given to every new account today, per the product
@@ -53,6 +55,17 @@ class UserAccount {
   /// trades yet.
   final SkillLevel skillLevel;
 
+  /// Server-computed by functions/src/puzzle/submitPuzzleAnswer.ts; never
+  /// written by the client (see isValidAccountUpdate in firestore.rules).
+  /// Consecutive days played, reset to 1 rather than 0 on a broken streak
+  /// (the Cloud Function only ever writes this alongside a played date).
+  final int puzzleStreak;
+
+  /// ISO date string (YYYY-MM-DD, UTC) of the last daily puzzle this user
+  /// answered — also server-computed, and what the streak calculation
+  /// compares "yesterday" against.
+  final String? puzzleLastPlayedDate;
+
   bool isBuyLockedAt(DateTime now) =>
       buyLockedUntil != null && buyLockedUntil!.isAfter(now);
 
@@ -71,6 +84,8 @@ class UserAccount {
       buyLockedUntil:
           clearBuyLock ? null : (buyLockedUntil ?? this.buyLockedUntil),
       skillLevel: skillLevel,
+      puzzleStreak: puzzleStreak,
+      puzzleLastPlayedDate: puzzleLastPlayedDate,
     );
   }
 
@@ -78,7 +93,8 @@ class UserAccount {
   String toString() =>
       'UserAccount($uid balance=$virtualBalance losses=$consecutiveLosses '
       'lockedUntil=$buyLockedUntil startingBalance=$startingBalance '
-      'createdAt=$createdAt skillLevel=$skillLevel)';
+      'createdAt=$createdAt skillLevel=$skillLevel puzzleStreak=$puzzleStreak '
+      'puzzleLastPlayedDate=$puzzleLastPlayedDate)';
 
   @override
   bool operator ==(Object other) =>
@@ -90,7 +106,9 @@ class UserAccount {
           buyLockedUntil == other.buyLockedUntil &&
           startingBalance == other.startingBalance &&
           createdAt == other.createdAt &&
-          skillLevel == other.skillLevel;
+          skillLevel == other.skillLevel &&
+          puzzleStreak == other.puzzleStreak &&
+          puzzleLastPlayedDate == other.puzzleLastPlayedDate;
 
   @override
   int get hashCode => Object.hash(
@@ -101,5 +119,7 @@ class UserAccount {
         startingBalance,
         createdAt,
         skillLevel,
+        puzzleStreak,
+        puzzleLastPlayedDate,
       );
 }

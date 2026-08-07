@@ -50,6 +50,23 @@ class Candle {
     );
   }
 
+  /// Parses one candle as written by generateDailyPuzzle.ts's
+  /// `shown_candles`/`reveal_candles` arrays — the Cloud Function writes
+  /// the same field names as this class (`openTimeMs`, `closeTimeMs`,
+  /// `open`, `high`, `low`, `close`, `volume`), so this is a direct
+  /// field-for-field read rather than a REST-shaped positional parse.
+  factory Candle.fromMap(Map<String, dynamic> map) {
+    return Candle(
+      openTimeMs: _asInt(map['openTimeMs'], 'openTimeMs'),
+      closeTimeMs: _asInt(map['closeTimeMs'], 'closeTimeMs'),
+      open: _asDouble(map['open'], 'open'),
+      high: _asDouble(map['high'], 'high'),
+      low: _asDouble(map['low'], 'low'),
+      close: _asDouble(map['close'], 'close'),
+      volume: _asDouble(map['volume'], 'volume'),
+    );
+  }
+
   /// Shape expected by the Lightweight Charts bridge in
   /// `assets/charts/tradingview.html`. Lightweight Charts wants UTC time in
   /// whole seconds.
