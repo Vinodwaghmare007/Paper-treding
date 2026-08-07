@@ -60,4 +60,7 @@ class FirestorePaths {
 
   DocumentReference<Map<String, dynamic>> dailyPuzzle(String date) =>
       _firestore.collection('daily_puzzle').doc(date);
+
+  DocumentReference<Map<String, dynamic>> publicCohortMedian(String cohortKey) =>
+      _firestore.collection('public_cohort_medians').doc(cohortKey);
 }

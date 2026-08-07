@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../auth/sign_out_button.dart';
 import '../trade/trade_sheet.dart';
 import 'portfolio_providers.dart';
+import 'portfolio_twin_card.dart';
 
 class PortfolioScreen extends ConsumerWidget {
   const PortfolioScreen({super.key});
@@ -29,6 +30,8 @@ class PortfolioScreen extends ConsumerWidget {
               virtualBalance: account.virtualBalance,
               consecutiveLosses: account.consecutiveLosses,
             ),
+            const SizedBox(height: 12),
+            const PortfolioTwinCard(),
             const SizedBox(height: 20),
             Text(
               'Holdings',

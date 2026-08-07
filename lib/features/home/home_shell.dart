@@ -9,12 +9,13 @@ import '../portfolio/portfolio_screen.dart';
 import '../puzzle/daily_puzzle_screen.dart';
 import '../replay/market_replay_screen.dart';
 import '../ticker/ticker_screen.dart';
+import '../whatif/whatif_screen.dart';
 import 'home_deep_link.dart';
 
 /// Signed-in app shell: bottom-nav between the live chart, portfolio, order
-/// history, strategy backtester, Market Replay, Community chat, News, and
-/// the Daily Puzzle. Each tab owns its own app bar (with a sign-out
-/// action).
+/// history, strategy backtester, Market Replay, Community chat, News, the
+/// Daily Puzzle, and the What-If Time Machine. Each tab owns its own app
+/// bar (with a sign-out action).
 class HomeShell extends ConsumerStatefulWidget {
   const HomeShell({super.key});
 
@@ -34,6 +35,7 @@ class _HomeShellState extends ConsumerState<HomeShell> {
     CommunityChatScreen(),
     NewsFeedScreen(),
     DailyPuzzleScreen(),
+    WhatIfScreen(),
   ];
 
   @override
@@ -62,6 +64,8 @@ class _HomeShellState extends ConsumerState<HomeShell> {
           NavigationDestination(icon: Icon(Icons.forum), label: 'Chat'),
           NavigationDestination(icon: Icon(Icons.article), label: 'News'),
           NavigationDestination(icon: Icon(Icons.extension), label: 'Puzzle'),
+          NavigationDestination(
+              icon: Icon(Icons.history_toggle_off), label: 'What-If'),
         ],
       ),
     );

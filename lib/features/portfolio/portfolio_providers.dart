@@ -1,15 +1,22 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../domain/entities/cohort_median.dart';
 import '../../domain/entities/order.dart';
 import '../../domain/entities/portfolio_position.dart';
 import '../../domain/entities/user_account.dart';
+import '../../domain/usecases/cohort_key.dart';
 import '../../domain/usecases/execute_trade.dart';
+import '../../data/repositories/cohort_repository.dart';
 import '../../data/repositories/trading_repository.dart';
 import '../auth/auth_providers.dart';
 import '../ticker/ticker_providers.dart';
 
 final tradingRepositoryProvider = Provider<TradingRepository>((ref) {
   return TradingRepository(ref.watch(firebaseFirestoreProvider));
+});
+
+final cohortRepositoryProvider = Provider<CohortRepository>((ref) {
+  return CohortRepository(ref.watch(firebaseFirestoreProvider));
 });
 
 /// Requires a signed-in user — only meant to be watched beneath [AuthGate].
@@ -85,4 +92,22 @@ final totalAccountValueProvider = Provider<double>((ref) {
   final holdingsValue =
       valuations.fold<double>(0, (sum, v) => sum + v.marketValue);
   return (account?.virtualBalance ?? 0) + holdingsValue;
+});
+
+/// Null if the account has no `createdAt` yet (matches [cohortKeyFor] —
+/// pre-cohort-feature accounts and the cohort itself both get skipped the
+/// same way the server does).
+final myCohortKeyProvider = Provider<String?>((ref) {
+  final account = ref.watch(accountStreamProvider).valueOrNull;
+  if (account == null) return null;
+  return cohortKeyFor(
+    createdAt: account.createdAt,
+    startingBalance: account.startingBalance,
+  );
+});
+
+final cohortMedianProvider = StreamProvider<CohortMedian?>((ref) {
+  final cohortKey = ref.watch(myCohortKeyProvider);
+  if (cohortKey == null) return Stream.value(null);
+  return ref.watch(cohortRepositoryProvider).watchCohortMedian(cohortKey);
 });
