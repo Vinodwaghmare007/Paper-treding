@@ -220,5 +220,93 @@ test("firestore.rules", async (t) => {
     );
   });
 
+  // ------------------------------------------------------------------
+  // Trader Profiles (Phase 8)
+  // ------------------------------------------------------------------
+
+  await t.test("a user can write their own profile_settings within the size/type limits", async () => {
+    const db = testEnv.authenticatedContext("kara").firestore();
+    await assertSucceeds(
+      db.doc("users/kara/profile_settings/data").set({ display_name: "Kara", is_public: true }),
+    );
+    await assertFails(
+      db.doc("users/kara/profile_settings/data").set({ display_name: "", is_public: true }),
+    );
+    await assertFails(
+      db.doc("users/kara/profile_settings/data").set({ display_name: "Kara", is_public: "yes" }),
+    );
+  });
+
+  await t.test("a user cannot write someone else's profile_settings", async () => {
+    const db = testEnv.authenticatedContext("liam").firestore();
+    await assertFails(
+      db.doc("users/kara/profile_settings/data").set({ display_name: "Liam", is_public: true }),
+    );
+  });
+
+  await t.test("nobody can write profile_stats directly, even the owner", async () => {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      await context.firestore().doc("users/mona/profile_settings/data").set({
+        display_name: "Mona",
+        is_public: true,
+      });
+    });
+    const db = testEnv.authenticatedContext("mona").firestore();
+    await assertFails(db.doc("users/mona/profile_stats/data").set({ discipline_score: 100 }));
+  });
+
+  await t.test("a public profile's stats are readable by anyone signed in; a private one is not", async () => {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      const admin = context.firestore();
+      await admin.doc("users/nina/profile_settings/data").set({ display_name: "Nina", is_public: true });
+      await admin.doc("users/nina/profile_stats/data").set({ discipline_score: 80, is_public: true });
+      await admin.doc("users/oscar/profile_settings/data").set({ display_name: "Oscar", is_public: false });
+      await admin.doc("users/oscar/profile_stats/data").set({ discipline_score: 40, is_public: false });
+    });
+
+    const db = testEnv.authenticatedContext("visitor").firestore();
+    await assertSucceeds(db.doc("users/nina/profile_stats/data").get());
+    await assertFails(db.doc("users/oscar/profile_stats/data").get());
+  });
+
+  await t.test("a user can follow another user but not themselves, and can unfollow", async () => {
+    const db = testEnv.authenticatedContext("paul").firestore();
+    await assertSucceeds(
+      db.doc("users/paul/following/quinn").set({ created_at: serverTimestamp() }),
+    );
+    await assertFails(
+      db.doc("users/paul/following/paul").set({ created_at: serverTimestamp() }),
+    );
+    await assertSucceeds(db.doc("users/paul/following/quinn").delete());
+  });
+
+  await t.test("a user cannot read another user's following list", async () => {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      await context.firestore().doc("users/paul/following/quinn").set({ created_at: serverTimestamp() });
+    });
+    const db = testEnv.authenticatedContext("rachel").firestore();
+    await assertFails(db.collection("users/paul/following").get());
+  });
+
+  await t.test("nobody can write a Trade Rationale directly — only the addTradeRationale callable can", async () => {
+    const db = testEnv.authenticatedContext("sam").firestore();
+    await assertFails(
+      db.doc("users/sam/orders/order-1/rationale/note").set({
+        text: "I sold because volume dried up.",
+        created_at: serverTimestamp(),
+        flagged_for_review: false,
+      }),
+    );
+  });
+
+  await t.test("a public_leaderboard doc is readable by anyone, including signed-out users", async () => {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      await context.firestore().doc("public_leaderboard/weekly").set({ entries: [] });
+    });
+    const db = testEnv.unauthenticatedContext().firestore();
+    await assertSucceeds(db.doc("public_leaderboard/weekly").get());
+    await assertFails(db.doc("public_leaderboard/weekly").set({ entries: [] }));
+  });
+
   await teardown();
 });

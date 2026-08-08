@@ -16,7 +16,11 @@
     "test": "npm run build && node --test lib/**/*.test.js",
     "test:rules": "firebase emulators:exec --only firestore --project demo-test \"ts-node test/firestoreRules.test.ts\"",
     "test:delete-account": "firebase emulators:exec --only firestore,auth --project demo-test \"ts-node test/deleteAccount.test.ts\"",
-    "test:certifications": "firebase emulators:exec --only firestore --project demo-test \"ts-node test/certifications.test.ts\""
+    "test:certifications": "firebase emulators:exec --only firestore --project demo-test \"ts-node test/certifications.test.ts\"",
+    "test:trader-stats": "ts-node test/traderStats.test.ts",
+    "test:leaderboard": "ts-node test/computeLeaderboard.test.ts",
+    "test:trade-rationale": "firebase emulators:exec --only firestore --project demo-test \"ts-node test/addTradeRationale.test.ts\"",
+    "test:trader-profile": "firebase emulators:exec --only firestore --project demo-test \"ts-node test/traderProfile.test.ts\""
   },
   "dependencies": {
     "firebase-admin": "^12.7.0",

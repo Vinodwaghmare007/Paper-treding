@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/repositories/auth_repository.dart';
+import '../social/profile_settings_screen.dart';
+import '../social/trader_profile_screen.dart';
 import 'auth_providers.dart';
 
 /// Account menu shown in every screen's app bar — sign out, or
@@ -54,6 +56,16 @@ class SignOutButton extends ConsumerWidget {
       tooltip: 'Account',
       onSelected: (action) {
         switch (action) {
+          case _AccountAction.myProfile:
+            final uid = ref.read(currentUidProvider);
+            if (uid == null) return;
+            Navigator.of(context).push(
+              MaterialPageRoute<void>(builder: (_) => TraderProfileScreen(uid: uid)),
+            );
+          case _AccountAction.profileSettings:
+            Navigator.of(context).push(
+              MaterialPageRoute<void>(builder: (_) => const ProfileSettingsScreen()),
+            );
           case _AccountAction.signOut:
             ref.read(authRepositoryProvider).signOut();
           case _AccountAction.deleteAccount:
@@ -61,6 +73,9 @@ class SignOutButton extends ConsumerWidget {
         }
       },
       itemBuilder: (context) => const [
+        PopupMenuItem(value: _AccountAction.myProfile, child: Text('My trader profile')),
+        PopupMenuItem(value: _AccountAction.profileSettings, child: Text('Public profile settings')),
+        PopupMenuDivider(),
         PopupMenuItem(value: _AccountAction.signOut, child: Text('Sign out')),
         PopupMenuItem(
           value: _AccountAction.deleteAccount,
@@ -71,4 +86,4 @@ class SignOutButton extends ConsumerWidget {
   }
 }
 
-enum _AccountAction { signOut, deleteAccount }
+enum _AccountAction { myProfile, profileSettings, signOut, deleteAccount }

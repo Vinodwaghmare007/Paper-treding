@@ -68,4 +68,47 @@ class FirestorePaths {
   // firestore.rules's `certifications` match block.
   CollectionReference<Map<String, dynamic>> certifications(String uid) =>
       user(uid).collection('certifications');
+
+  // ------------------------------------------------------------------
+  // Trader Profiles (Phase 8)
+  // ------------------------------------------------------------------
+
+  // Client-writable (display_name + is_public only) — see
+  // functions/src/traderProfile/syncProfileVisibility.ts for how this
+  // mirrors onto profileStats below.
+  DocumentReference<Map<String, dynamic>> profileSettings(String uid) =>
+      user(uid).collection('profile_settings').doc('data');
+
+  // Entirely Cloud-Function-written — functions/src/traderProfile/
+  // recomputeTraderStats.ts, syncProfileVisibility.ts, onFollowChange.ts.
+  DocumentReference<Map<String, dynamic>> profileStats(String uid) =>
+      user(uid).collection('profile_stats').doc('data');
+
+  CollectionReference<Map<String, dynamic>> following(String uid) =>
+      user(uid).collection('following');
+
+  DocumentReference<Map<String, dynamic>> followingDoc(String uid, String followedUid) =>
+      following(uid).doc(followedUid);
+
+  // Cloud-Function-written factual activity log — see
+  // functions/src/traderProfile/publicActivity.ts.
+  CollectionReference<Map<String, dynamic>> publicActivity(String uid) =>
+      user(uid).collection('public_activity');
+
+  // Singleton per order — one rationale note per closed trade. Written
+  // only via the addTradeRationale callable (see
+  // functions/src/rationale/addTradeRationale.ts and
+  // domain/usecases/add_trade_rationale.dart).
+  DocumentReference<Map<String, dynamic>> tradeRationale(String uid, String orderId) =>
+      orders(uid).doc(orderId).collection('rationale').doc('note');
+
+  // Requires the `user_id` field addTradeRationale.ts writes onto every
+  // rationale doc — see trader_profile_repository.dart's
+  // fetchTraderRationales for why a collection-group query is needed
+  // here instead of listing a trader's orders directly.
+  Query<Map<String, dynamic>> rationaleCollectionGroup() =>
+      _firestore.collectionGroup('rationale');
+
+  DocumentReference<Map<String, dynamic>> publicLeaderboard(String window) =>
+      _firestore.collection('public_leaderboard').doc(window);
 }

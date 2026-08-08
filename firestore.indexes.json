@@ -15,6 +15,28 @@
         { "fieldPath": "coin_symbol", "order": "ASCENDING" },
         { "fieldPath": "timestamp", "order": "ASCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "profile_settings",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "is_public", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "profile_stats",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "is_public", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "rationale",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "user_id", "order": "ASCENDING" },
+        { "fieldPath": "created_at", "order": "DESCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

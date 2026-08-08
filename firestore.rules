@@ -4,6 +4,10 @@ rules_version = '2';
 // Trading (Phase 2): users/{userId}, .../portfolio/{coinSymbol}, .../orders/{orderId}
 // Community + engagement (Phase 5): chat_rooms, chat_rate_limits, reports,
 //   daily_puzzle, public_sentiment, public_market_weather, public_cohort_medians
+// Certifications (Phase 7): .../certifications/{certId}, public_certifications
+// Trader Profiles (Phase 8): .../profile_settings, .../profile_stats,
+//   .../public_activity, .../following, .../orders/{id}/rationale,
+//   public_leaderboard
 // ============================================================================
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -22,6 +26,18 @@ service cloud.firestore {
     function callerSkillLevel() {
       let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid));
       return userDoc.data.get('skill_level', 'beginner');
+    }
+
+    // Phase 8 (Trader Profiles): the single source of truth rules trust
+    // for "does this user's public profile exist and is it visible to
+    // strangers." Reads profile_settings rather than profile_stats
+    // because profile_settings is the doc the owner actually writes —
+    // functions/src/traderProfile/syncProfileVisibility.ts mirrors this
+    // same value onto profile_stats immediately on every write so
+    // Cloud Functions (compute_leaderboard.ts) never need this get().
+    function isProfilePublic(userId) {
+      let settingsDoc = get(/databases/$(database)/documents/users/$(userId)/profile_settings/data);
+      return settingsDoc.data.get('is_public', false) == true;
     }
 
     // ------------------------------------------------------------------
@@ -93,6 +109,21 @@ service cloud.firestore {
         allow create: if isOwner(userId) && isValidOrder();
         // Order history is an append-only ledger.
         allow update, delete: if false;
+
+        // Trade Rationale (Phase 8 Part C) — a retrospective-only note on
+        // one already-closed trade. Deliberately write:false: the
+        // "must be a closed SELL, timestamped after the order closed,
+        // filtered for banned/forward-looking language" checks are all
+        // enforced by the addTradeRationale callable
+        // (functions/src/rationale/addTradeRationale.ts), not rules —
+        // same reasoning as sendChatMessage.ts's callable-only design.
+        // Readable by visitors only through the same public-profile gate
+        // as everything else here, since a rationale is displayed on
+        // trader_profile_screen.dart.
+        match /rationale/{noteId} {
+          allow read: if isOwner(userId) || isProfilePublic(userId);
+          allow write: if false;
+        }
       }
 
       // Micro-certifications (Phase 7 Part B). Only awarded by
@@ -102,6 +133,63 @@ service cloud.firestore {
       match /certifications/{certId} {
         allow read: if isOwner(userId);
         allow write: if false;
+      }
+
+      // ------------------------------------------------------------------
+      // Trader Profiles (Phase 8) — opt-in public performance profiles.
+      // Split into two docs rather than fields on users/{userId} itself:
+      // profile_settings is the small, fully client-writable "what do I
+      // want visible" toggle; profile_stats is entirely
+      // Cloud-Function-written derived data. Keeping them separate means
+      // the write rule for each is a single unconditional allow/deny
+      // rather than a growing list of per-field forgery guards.
+      // ------------------------------------------------------------------
+
+      match /profile_settings/data {
+        allow read: if isOwner(userId) || isProfilePublic(userId);
+        allow create, update: if isOwner(userId)
+          && request.resource.data.display_name is string
+          && request.resource.data.display_name.size() > 0
+          && request.resource.data.display_name.size() <= 30
+          && request.resource.data.is_public is bool;
+        allow delete: if isOwner(userId);
+      }
+
+      // accuracy_pct, win_rate_pct, discipline_score, total_trades,
+      // follower_count, following_count, etc. — all written only by
+      // functions/src/traderProfile/*.ts (recomputeTraderStats.ts,
+      // syncProfileVisibility.ts, onFollowChange.ts). A client could
+      // otherwise simply write a perfect discipline_score directly;
+      // "never trust client-submitted stats" is the whole point of this
+      // feature being auditable.
+      match /profile_stats/data {
+        allow read: if isOwner(userId) || isProfilePublic(userId);
+        allow write: if false;
+      }
+
+      // Small, factual, Cloud-Function-written activity log that powers
+      // following_feed_screen.dart without needing to grant followers
+      // read access into a stranger's actual orders/certifications/
+      // rationale collections — see functions/src/traderProfile/
+      // publicActivity.ts. Never a free-text field: every entry is one of
+      // a fixed set of factual event shapes written server-side.
+      match /public_activity/{activityId} {
+        allow read: if isOwner(userId) || isProfilePublic(userId);
+        allow write: if false;
+      }
+
+      // Follow relationships. A user's own follow list is private (who
+      // you follow isn't inherently public just because your profile
+      // is) — only follower_count/following_count (in profile_stats,
+      // above) are shown publicly. followedUserId != userId stops a
+      // self-follow from inflating counts.
+      match /following/{followedUserId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId)
+          && followedUserId != userId
+          && request.resource.data.created_at == request.time;
+        allow update: if false;
+        allow delete: if isOwner(userId);
       }
     }
 
@@ -207,6 +295,15 @@ service cloud.firestore {
     // (or a B2B academy) confirm a code is genuine without needing any
     // access into the earning user's own data.
     match /public_certifications/{verificationCode} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Top 100 by window, written only by
+    // functions/src/traderProfile/computeLeaderboard.ts. A single small
+    // doc per window rather than a live query over all profile_stats
+    // docs — see that file for the compute-side reasoning.
+    match /public_leaderboard/{window} {
       allow read: if true;
       allow write: if false;
     }

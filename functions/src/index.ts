@@ -14,3 +14,16 @@ export { deleteAccount } from "./account/deleteAccount";
 export { evaluateTradeMilestones } from "./certifications/evaluateTradeMilestones";
 export { evaluateBacktestMilestones } from "./certifications/evaluateBacktestMilestones";
 export { recordBacktestCompletion } from "./backtester/recordBacktestCompletion";
+export { addTradeRationale } from "./rationale/addTradeRationale";
+export {
+  recomputeTraderStatsOnOrder,
+  recomputeTraderStatsDaily,
+} from "./traderProfile/recomputeTraderStats";
+export { syncProfileVisibility } from "./traderProfile/syncProfileVisibility";
+export { onFollowCreated, onFollowDeleted } from "./traderProfile/onFollowChange";
+export { computeLeaderboard } from "./traderProfile/computeLeaderboard";
+export {
+  publicActivityOnTrade,
+  publicActivityOnRationale,
+  publicActivityOnCertification,
+} from "./traderProfile/publicActivity";
