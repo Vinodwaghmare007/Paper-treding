@@ -95,7 +95,29 @@ you:
   production crash-free-users metric. Test the *release* build (per
   step 4 above) if you want to confirm reporting actually works.
 
-## 6. What this sandbox could not verify for you
+## 6. Privacy policy hosting
+
+`docs/privacy-policy.html` is written and ready, but two things need your
+action before it's actually live:
+
+1. **Replace the placeholder contact.** It currently reads
+   `REPLACE_WITH_YOUR_SUPPORT_EMAIL` — a real support address, not that
+   placeholder, has to be there before this ships (Play Console's Data
+   Safety form and the app itself both link to this page).
+2. **Enable GitHub Pages** for this repo: Settings → Pages → Source:
+   "Deploy from a branch" → branch `main` (or whichever your default
+   branch is), folder `/docs`. Once enabled, the page is at
+   `https://vinodwaghmare007.github.io/Paper-treding/privacy-policy.html`
+   — which is the URL both `sign_in_screen.dart`'s in-app link and the
+   Data Safety form (see the Play Store listing notes) assume. If you use
+   a different branch/path, override it at build time:
+   `--dart-define=PRIVACY_POLICY_URL=https://your-actual-url`.
+
+Verify the link actually resolves (not a 404) before submitting — this
+could not be checked from this sandbox (no ability to enable GitHub Pages
+settings or confirm DNS/deploy from here).
+
+## 7. What this sandbox could not verify for you
 
 No Android SDK, device, or emulator was available in the environment this
 was built in — the signing config and ProGuard rules were written and

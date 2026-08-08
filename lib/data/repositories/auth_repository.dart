@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
@@ -40,17 +41,20 @@ class AuthRepository {
     FirebaseFirestore? firestore,
     GoogleSignIn? googleSignIn,
     AnalyticsService? analytics,
+    FirebaseFunctions? functions,
   })  : _auth = auth ?? FirebaseAuth.instance,
         _firestore = firestore ?? FirebaseFirestore.instance,
         _paths = FirestorePaths(firestore ?? FirebaseFirestore.instance),
         _googleSignIn = googleSignIn ?? GoogleSignIn(scopes: const ['email']),
-        _analytics = analytics ?? AnalyticsService();
+        _analytics = analytics ?? AnalyticsService(),
+        _functions = functions ?? FirebaseFunctions.instance;
 
   final FirebaseAuth _auth;
   final FirebaseFirestore _firestore;
   final FirestorePaths _paths;
   final GoogleSignIn _googleSignIn;
   final AnalyticsService _analytics;
+  final FirebaseFunctions _functions;
 
   Stream<User?> get authStateChanges => _auth.authStateChanges();
 
@@ -116,6 +120,24 @@ class AuthRepository {
       _auth.signOut(),
       _googleSignIn.signOut(),
     ]);
+  }
+
+  /// Permanently deletes the signed-in user's account and data via the
+  /// `deleteAccount` callable (see functions/src/account/deleteAccount.ts
+  /// for exactly what that removes) — irreversible, no undo. Routed
+  /// through a Cloud Function rather than client-side deletes for the
+  /// same reason as trading: `orders` is an append-only ledger the client
+  /// can't delete from directly (firestore.rules), and only server-side
+  /// Admin SDK access can delete the Auth account itself. Signs the local
+  /// session out afterward, since the ID token now refers to a user that
+  /// no longer exists.
+  Future<void> deleteAccount() async {
+    try {
+      await _functions.httpsCallable('deleteAccount').call<Map<String, dynamic>>();
+    } on FirebaseFunctionsException catch (e) {
+      throw AuthFailure(e.message ?? 'Could not delete your account (${e.code}).');
+    }
+    await signOut();
   }
 
   /// Creates the `users/{uid}` document with the starting balance if (and

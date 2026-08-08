@@ -10,3 +10,4 @@ export { generateDailyPuzzle } from "./puzzle/generateDailyPuzzle";
 export { submitPuzzleAnswer } from "./puzzle/submitPuzzleAnswer";
 export { computeMarketWeather } from "./weather/computeMarketWeather";
 export { computeCohortMedians } from "./cohorts/computeCohortMedians";
+export { deleteAccount } from "./account/deleteAccount";

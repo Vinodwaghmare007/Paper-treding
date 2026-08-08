@@ -1,11 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../data/repositories/auth_repository.dart';
 import '../puzzle/daily_puzzle_screen.dart';
 import 'auth_providers.dart';
 
 enum _Mode { signIn, signUp }
+
+/// Overridable at build time in case the GitHub Pages source/branch ever
+/// changes: flutter build ... --dart-define=PRIVACY_POLICY_URL=https://...
+/// Default assumes GitHub Pages is enabled for this repo with "Deploy
+/// from a branch: main /docs" (see docs/RELEASE.md) — verify this
+/// resolves before publishing; a broken privacy-policy link is a Play
+/// Store rejection, not just a bad look.
+const _privacyPolicyUrl = String.fromEnvironment(
+  'PRIVACY_POLICY_URL',
+  defaultValue: 'https://vinodwaghmare007.github.io/Paper-treding/privacy-policy.html',
+);
 
 class SignInScreen extends ConsumerStatefulWidget {
   const SignInScreen({super.key});
@@ -186,6 +198,20 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                     ),
                     icon: const Icon(Icons.extension, size: 18),
                     label: const Text("Just want to try today's puzzle?"),
+                  ),
+                  const SizedBox(height: 4),
+                  TextButton(
+                    onPressed: () => launchUrl(
+                      Uri.parse(_privacyPolicyUrl),
+                      mode: LaunchMode.inAppBrowserView,
+                    ),
+                    child: const Text(
+                      'Privacy Policy',
+                      // white70, not white38 — see the contrast note on
+                      // SimulatedFooter; a link needs to actually be
+                      // readable, not just technically present.
+                      style: TextStyle(color: Colors.white70, fontSize: 12),
+                    ),
                   ),
                 ],
               ),
