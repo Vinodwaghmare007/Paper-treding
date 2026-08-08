@@ -11,3 +11,6 @@ export { submitPuzzleAnswer } from "./puzzle/submitPuzzleAnswer";
 export { computeMarketWeather } from "./weather/computeMarketWeather";
 export { computeCohortMedians } from "./cohorts/computeCohortMedians";
 export { deleteAccount } from "./account/deleteAccount";
+export { evaluateTradeMilestones } from "./certifications/evaluateTradeMilestones";
+export { evaluateBacktestMilestones } from "./certifications/evaluateBacktestMilestones";
+export { recordBacktestCompletion } from "./backtester/recordBacktestCompletion";

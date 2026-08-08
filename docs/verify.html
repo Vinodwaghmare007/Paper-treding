@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Verify a Certificate — Crypto Paper Trader</title>
+<style>
+  :root { color-scheme: light dark; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    max-width: 560px;
+    margin: 0 auto;
+    padding: 32px 20px 80px;
+    line-height: 1.6;
+    color: #1a1f27;
+    background: #ffffff;
+  }
+  @media (prefers-color-scheme: dark) {
+    body { color: #e6e8eb; background: #131722; }
+    .card { background: #1e222d; border-color: #2a2f3a; }
+    input { background: #1e222d; color: #e6e8eb; border-color: #2a2f3a; }
+  }
+  h1 { font-size: 1.4rem; }
+  .card {
+    background: #f8f9fa;
+    border: 1px solid #e2e4e8;
+    border-radius: 10px;
+    padding: 18px 20px;
+    margin-top: 20px;
+  }
+  .ok { border-color: #26A69A; }
+  .bad { border-color: #EF5350; }
+  input {
+    font-size: 1rem;
+    padding: 10px 12px;
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    text-transform: uppercase;
+  }
+  button {
+    margin-top: 10px;
+    padding: 10px 18px;
+    border: none;
+    border-radius: 8px;
+    background: #26A69A;
+    color: white;
+    font-size: 1rem;
+    cursor: pointer;
+  }
+  .muted { color: #767f8c; font-size: 0.9em; }
+</style>
+</head>
+<body>
+
+<h1>Verify a Crypto Paper Trader Certificate</h1>
+<p class="muted">
+  Certificates are earned inside the Crypto Paper Trader app — an
+  educational, no-real-money crypto trading simulator — by hitting a
+  usage milestone (e.g. completing a number of simulated trades, or
+  running a number of strategy backtests). This page checks a
+  verification code against our records.
+</p>
+
+<form id="verify-form">
+  <input id="code-input" placeholder="CODE-1234" autocomplete="off" />
+  <button type="submit">Verify</button>
+</form>
+
+<div id="result"></div>
+
+<script type="module">
+  // Fill these in from Firebase Console → Project settings → General →
+  // Your apps → Web app. This is the standard client-side Firebase Web
+  // config (not a secret — Firestore's own security rules are what
+  // actually gate access; see firestore.rules's public_certifications
+  // match block, which allows unauthenticated read-only access).
+  // Could not be filled in or tested from the sandbox this was built in
+  // — see docs/RELEASE.md.
+  const firebaseConfig = {
+    apiKey: "REPLACE_WITH_YOUR_FIREBASE_WEB_API_KEY",
+    authDomain: "REPLACE_WITH_YOUR_PROJECT.firebaseapp.com",
+    projectId: "REPLACE_WITH_YOUR_PROJECT_ID",
+  };
+
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+  import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  const resultEl = document.getElementById("result");
+  const inputEl = document.getElementById("code-input");
+
+  const MILESTONE_TITLES = {
+    "50_disciplined_trades": "50 Disciplined Trades",
+    "backtester_master": "Backtester Master",
+  };
+
+  function render(html, cls) {
+    resultEl.innerHTML = `<div class="card ${cls}">${html}</div>`;
+  }
+
+  async function verify(code) {
+    if (!code) return;
+    render("Checking…", "");
+    try {
+      const snap = await getDoc(doc(db, "public_certifications", code));
+      if (!snap.exists()) {
+        render("✗ No certificate found for that code.", "bad");
+        return;
+      }
+      const data = snap.data();
+      const title = MILESTONE_TITLES[data.milestone_type] || data.milestone_type;
+      const earnedAt = data.earned_at?.toDate?.() ?? null;
+      const dateLabel = earnedAt ? earnedAt.toISOString().slice(0, 10) : "unknown date";
+      render(
+        `✓ Genuine — <strong>${title}</strong><br>` +
+        `Earned ${dateLabel} on Crypto Paper Trader (educational simulator — no real money).`,
+        "ok",
+      );
+    } catch (err) {
+      render(`Could not verify right now (${err.message}). Try again shortly.`, "bad");
+    }
+  }
+
+  document.getElementById("verify-form").addEventListener("submit", (e) => {
+    e.preventDefault();
+    verify(inputEl.value.trim().toUpperCase());
+  });
+
+  // Support a direct link: verify.html?code=ABCDE-12345
+  const params = new URLSearchParams(window.location.search);
+  const codeFromQuery = params.get("code");
+  if (codeFromQuery) {
+    inputEl.value = codeFromQuery;
+    verify(codeFromQuery.toUpperCase());
+  }
+</script>
+
+</body>
+</html>

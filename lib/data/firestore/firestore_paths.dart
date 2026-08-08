@@ -63,4 +63,9 @@ class FirestorePaths {
 
   DocumentReference<Map<String, dynamic>> publicCohortMedian(String cohortKey) =>
       _firestore.collection('public_cohort_medians').doc(cohortKey);
+
+  // Written only by functions/src/certifications/*.ts (Admin SDK) — see
+  // firestore.rules's `certifications` match block.
+  CollectionReference<Map<String, dynamic>> certifications(String uid) =>
+      user(uid).collection('certifications');
 }

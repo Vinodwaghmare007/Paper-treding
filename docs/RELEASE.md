@@ -117,7 +117,30 @@ Verify the link actually resolves (not a 404) before submitting — this
 could not be checked from this sandbox (no ability to enable GitHub Pages
 settings or confirm DNS/deploy from here).
 
-## 7. What this sandbox could not verify for you
+## 7. Certificate verification page
+
+`docs/verify.html` (served from the same GitHub Pages setup as the privacy
+policy) is what makes an earned certification checkable by a third party —
+paste in or link to a `verification_code` and it looks the code up in the
+public, unauthenticated-readable `public_certifications` Firestore
+collection (see `firestore.rules` and
+`functions/src/lib/certifications.ts`).
+
+It needs one thing filled in before it works: `firebaseConfig` near the top
+of the `<script>` block currently has `REPLACE_WITH_YOUR_FIREBASE_WEB_API_KEY`
+placeholders — swap in your project's actual Web app config from Firebase
+Console → Project settings → General → Your apps → Web app (register a Web
+app there if you haven't). This is the standard public client config, not a
+secret; `public_certifications`'s security rule (`allow read: if true`) is
+what actually controls access, the same as every other public doc in this
+app (`public_sentiment`, `public_market_weather`, `public_cohort_medians`).
+
+Couldn't be tested end-to-end from this sandbox — no real Firebase project
+or ability to load a page against live Firestore here. Once the config is
+filled in, sanity-check it against a real earned certificate (Certs tab in
+the app → tap a certificate → the code shown there) before relying on it.
+
+## 8. What this sandbox could not verify for you
 
 No Android SDK, device, or emulator was available in the environment this
 was built in — the signing config and ProGuard rules were written and

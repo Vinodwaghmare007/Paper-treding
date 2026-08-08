@@ -8,6 +8,7 @@ import '../../domain/entities/backtest_condition.dart';
 import '../../domain/entities/order.dart';
 import '../../domain/usecases/backtest_runner.dart';
 import '../auth/auth_providers.dart';
+import '../certifications/certification_providers.dart';
 import '../ticker/ticker_providers.dart';
 import 'equity_curve_chart.dart';
 
@@ -155,6 +156,8 @@ class _BacktesterScreenState extends ConsumerState<BacktesterScreen> {
             unawaited(ref
                 .read(analyticsServiceProvider)
                 .logBacktestRun(closedTrades: result.sellCount));
+            unawaited(
+                ref.read(certificationRepositoryProvider).recordBacktestCompletion());
           case BacktestFailed(:final message):
             setState(() {
               _phase = _RunPhase.error;

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../backtester/backtester_screen.dart';
+import '../certifications/certificate_screen.dart';
 import '../chat/community_chat_screen.dart';
 import '../news/news_feed_screen.dart';
 import '../orders/order_history_screen.dart';
@@ -15,8 +16,8 @@ import 'simulated_footer.dart';
 
 /// Signed-in app shell: bottom-nav between the live chart, portfolio, order
 /// history, strategy backtester, Market Replay, Community chat, News, the
-/// Daily Puzzle, and the What-If Time Machine. Each tab owns its own app
-/// bar (with a sign-out action).
+/// Daily Puzzle, the What-If Time Machine, and Certifications. Each tab
+/// owns its own app bar (with a sign-out action).
 class HomeShell extends ConsumerStatefulWidget {
   const HomeShell({super.key});
 
@@ -37,6 +38,7 @@ class _HomeShellState extends ConsumerState<HomeShell> {
     NewsFeedScreen(),
     DailyPuzzleScreen(),
     WhatIfScreen(),
+    CertificateScreen(),
   ];
 
   @override
@@ -72,6 +74,8 @@ class _HomeShellState extends ConsumerState<HomeShell> {
           NavigationDestination(icon: Icon(Icons.extension), label: 'Puzzle'),
           NavigationDestination(
               icon: Icon(Icons.history_toggle_off), label: 'What-If'),
+          NavigationDestination(
+              icon: Icon(Icons.workspace_premium), label: 'Certs'),
         ],
       ),
     );

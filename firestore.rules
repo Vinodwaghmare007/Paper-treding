@@ -44,7 +44,12 @@ service cloud.firestore {
         && request.resource.data.get('skill_level', null) == resource.data.get('skill_level', null)
         && request.resource.data.get('puzzle_streak', null) == resource.data.get('puzzle_streak', null)
         && request.resource.data.get('puzzle_last_played_date', null) == resource.data.get('puzzle_last_played_date', null)
-        && request.resource.data.get('puzzle_last_played_at', null) == resource.data.get('puzzle_last_played_at', null);
+        && request.resource.data.get('puzzle_last_played_at', null) == resource.data.get('puzzle_last_played_at', null)
+        // backtest_run_count is only ever incremented by
+        // recordBacktestCompletion.ts (Admin SDK, bypasses rules) — same
+        // forgery guard as the skill_level/puzzle fields above, so a
+        // client can't fake its way toward the backtester_master cert.
+        && request.resource.data.get('backtest_run_count', null) == resource.data.get('backtest_run_count', null);
     }
 
     function isValidPosition() {
@@ -88,6 +93,15 @@ service cloud.firestore {
         allow create: if isOwner(userId) && isValidOrder();
         // Order history is an append-only ledger.
         allow update, delete: if false;
+      }
+
+      // Micro-certifications (Phase 7 Part B). Only awarded by
+      // evaluateTradeMilestones.ts / evaluateBacktestMilestones.ts
+      // (Admin SDK, bypasses rules) — never client-writable, so a user
+      // can't self-award a milestone they haven't reached.
+      match /certifications/{certId} {
+        allow read: if isOwner(userId);
+        allow write: if false;
       }
     }
 
@@ -184,6 +198,16 @@ service cloud.firestore {
 
     match /public_cohort_medians/{cohortKey} {
       allow read: if isSignedIn(); // only meaningful to a signed-in trader
+      allow write: if false;
+    }
+
+    // PII-free mirror of an earned certification, keyed by its
+    // verification_code — see functions/src/lib/certifications.ts. Public
+    // and unauthenticated on purpose: this is what lets docs/verify.html
+    // (or a B2B academy) confirm a code is genuine without needing any
+    // access into the earning user's own data.
+    match /public_certifications/{verificationCode} {
+      allow read: if true;
       allow write: if false;
     }
   }
