@@ -17,20 +17,6 @@
       ]
     },
     {
-      "collectionGroup": "profile_settings",
-      "queryScope": "COLLECTION_GROUP",
-      "fields": [
-        { "fieldPath": "is_public", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "profile_stats",
-      "queryScope": "COLLECTION_GROUP",
-      "fields": [
-        { "fieldPath": "is_public", "order": "ASCENDING" }
-      ]
-    },
-    {
       "collectionGroup": "rationale",
       "queryScope": "COLLECTION_GROUP",
       "fields": [
@@ -39,5 +25,22 @@
       ]
     }
   ],
-  "fieldOverrides": []
+  "fieldOverrides": [
+    {
+      "collectionGroup": "profile_settings",
+      "fieldPath": "is_public",
+      "indexes": [
+        { "order": "ASCENDING", "queryScope": "COLLECTION_GROUP" },
+        { "order": "DESCENDING", "queryScope": "COLLECTION_GROUP" }
+      ]
+    },
+    {
+      "collectionGroup": "profile_stats",
+      "fieldPath": "is_public",
+      "indexes": [
+        { "order": "ASCENDING", "queryScope": "COLLECTION_GROUP" },
+        { "order": "DESCENDING", "queryScope": "COLLECTION_GROUP" }
+      ]
+    }
+  ]
 }
