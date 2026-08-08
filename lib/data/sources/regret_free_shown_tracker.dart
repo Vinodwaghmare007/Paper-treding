@@ -15,7 +15,7 @@ class RegretFreeShownTracker {
 
   Future<void> markShown(String orderId) async {
     final prefs = await SharedPreferences.getInstance();
-    final shown = {...prefs.getStringList(_prefsKey) ?? const [], orderId};
+    final shown = <String>{...prefs.getStringList(_prefsKey) ?? const [], orderId};
     await prefs.setStringList(_prefsKey, shown.toList(growable: false));
   }
 }
