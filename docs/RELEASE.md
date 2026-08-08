@@ -73,7 +73,29 @@ Then walk `docs/MANUAL_QA_CHECKLIST.md` against *that* build — a checklist
 pass on a debug build doesn't tell you anything about R8-related
 breakage.
 
-## 5. What this sandbox could not verify for you
+## 5. Crashlytics + Analytics
+
+Both are wired up (`main.dart` initializes Crashlytics' error hooks;
+`AnalyticsService` fires `sign_up`, `first_trade`, `puzzle_played`,
+`backtest_run`, and `forecast_viewed`) but need a couple of things from
+you:
+
+- The Crashlytics Gradle plugin (`com.google.firebase.crashlytics`,
+  needed to upload mapping/symbol files for de-obfuscated crash reports —
+  the pubspec.yaml dependency alone isn't enough) is already wired into
+  `android/settings.gradle.kts` and `android/app/build.gradle.kts`,
+  cross-checked against the plugin's own example project rather than
+  guessed. The pinned plugin version (3.0.2) may be a patch or two behind
+  whatever's newest by the time you build — bump it if Gradle complains.
+- There's no `subscription_started` event — this app has no subscription
+  or paywall feature anywhere in Phases 1-5, so there was nothing to
+  attach it to. Add it the day a real subscription flow ships.
+- Crashlytics collection is disabled in debug builds (`kDebugMode`) on
+  purpose, so a local `flutter run` crash doesn't show up in your
+  production crash-free-users metric. Test the *release* build (per
+  step 4 above) if you want to confirm reporting actually works.
+
+## 6. What this sandbox could not verify for you
 
 No Android SDK, device, or emulator was available in the environment this
 was built in — the signing config and ProGuard rules were written and

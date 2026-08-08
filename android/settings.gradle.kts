@@ -22,6 +22,11 @@ plugins {
     id("org.jetbrains.kotlin.android") version "2.1.0" apply false
     // Reads android/app/google-services.json at build time (see setup notes).
     id("com.google.gms.google-services") version "4.4.2" apply false
+    // Uploads mapping/symbol files at build time for de-obfuscated crash
+    // reports — cross-checked against firebase_crashlytics' own example
+    // project setup (its pub cache ships one), not guessed; pin may be a
+    // patch or two behind whatever's newest by the time this is built.
+    id("com.google.firebase.crashlytics") version "3.0.2" apply false
 }
 
 include(":app")

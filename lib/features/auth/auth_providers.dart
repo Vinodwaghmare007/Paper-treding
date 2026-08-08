@@ -2,13 +2,19 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../data/analytics/analytics_service.dart';
 import '../../data/repositories/auth_repository.dart';
 
 final firebaseFirestoreProvider =
     Provider<FirebaseFirestore>((ref) => FirebaseFirestore.instance);
 
+final analyticsServiceProvider = Provider<AnalyticsService>((ref) => AnalyticsService());
+
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
-  return AuthRepository(firestore: ref.watch(firebaseFirestoreProvider));
+  return AuthRepository(
+    firestore: ref.watch(firebaseFirestoreProvider),
+    analytics: ref.watch(analyticsServiceProvider),
+  );
 });
 
 final authStateChangesProvider = StreamProvider<User?>((ref) {

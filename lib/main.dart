@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:home_widget/home_widget.dart';
@@ -16,8 +18,25 @@ Future<void> main() async {
   // ios/Runner/GoogleService-Info.plist (iOS). See project setup notes for
   // the one-time steps required before this app can reach a real project.
   await Firebase.initializeApp();
+  await _initializeCrashlytics();
   await initializeMarketWeatherSync();
   runApp(const ProviderScope(child: CryptoPaperTraderApp()));
+}
+
+/// Routes both Flutter framework errors and uncaught async errors to
+/// Crashlytics. Disabled in debug builds (`kDebugMode`) so local
+/// development crashes don't pollute production crash-free-user metrics —
+/// this cannot be verified end-to-end in this sandbox (no live Firebase
+/// project or device here to confirm a report actually lands in the
+/// Crashlytics console), so treat "does a real crash on a real device
+/// show up in the console" as its own manual QA step after deploy.
+Future<void> _initializeCrashlytics() async {
+  await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(!kDebugMode);
+  FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
+  PlatformDispatcher.instance.onError = (error, stack) {
+    FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+    return true;
+  };
 }
 
 class CryptoPaperTraderApp extends ConsumerStatefulWidget {

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:firebase_core/firebase_core.dart' show FirebaseException;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -5,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/order.dart';
 import '../../domain/entities/portfolio_position.dart';
 import '../../domain/usecases/execute_trade.dart';
+import '../auth/auth_providers.dart';
 import '../chart/price_source.dart';
 import '../portfolio/portfolio_providers.dart';
 import 'revenge_blocker_sheet.dart';
@@ -76,6 +79,10 @@ class _TradeSheetState extends ConsumerState<TradeSheet> {
               coinSymbol: widget.coinSymbol, price: price, quantity: quantity)
           : await engine.sell(
               coinSymbol: widget.coinSymbol, price: price, quantity: quantity);
+
+      if (await ref.read(firstTradeTrackerProvider).markFirstTradeIfNeeded()) {
+        unawaited(ref.read(analyticsServiceProvider).logFirstTrade(orderType: order.orderType.code));
+      }
 
       if (!mounted) return;
       Navigator.of(context).pop();

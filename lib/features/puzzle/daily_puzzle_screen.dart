@@ -112,6 +112,7 @@ class _PuzzleBodyState extends ConsumerState<_PuzzleBody> {
       });
       unawaited(_animateReveal(result.revealCandles));
       unawaited(_maybePromptSignup());
+      unawaited(ref.read(analyticsServiceProvider).logPuzzlePlayed(correct: result.correct));
     } on PuzzleAnswerRejected catch (e) {
       if (!mounted) return;
       setState(() => _submitting = false);

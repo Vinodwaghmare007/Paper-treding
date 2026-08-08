@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -5,6 +7,7 @@ import '../../data/sources/binance_rest_service.dart';
 import '../../domain/entities/backtest_condition.dart';
 import '../../domain/entities/order.dart';
 import '../../domain/usecases/backtest_runner.dart';
+import '../auth/auth_providers.dart';
 import '../ticker/ticker_providers.dart';
 import 'equity_curve_chart.dart';
 
@@ -149,6 +152,9 @@ class _BacktesterScreenState extends ConsumerState<BacktesterScreen> {
               _phase = _RunPhase.done;
               _result = result;
             });
+            unawaited(ref
+                .read(analyticsServiceProvider)
+                .logBacktestRun(closedTrades: result.sellCount));
           case BacktestFailed(:final message):
             setState(() {
               _phase = _RunPhase.error;

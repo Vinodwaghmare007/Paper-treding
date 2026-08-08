@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../data/sources/first_trade_tracker.dart';
 import '../../domain/entities/cohort_median.dart';
 import '../../domain/entities/order.dart';
 import '../../domain/entities/portfolio_position.dart';
@@ -18,6 +19,8 @@ final tradingRepositoryProvider = Provider<TradingRepository>((ref) {
 final cohortRepositoryProvider = Provider<CohortRepository>((ref) {
   return CohortRepository(ref.watch(firebaseFirestoreProvider));
 });
+
+final firstTradeTrackerProvider = Provider<FirstTradeTracker>((ref) => FirstTradeTracker());
 
 /// Requires a signed-in user — only meant to be watched beneath [AuthGate].
 String _uidOrThrow(Ref ref) {

@@ -7,6 +7,10 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
     // Requires android/app/google-services.json — see setup notes.
     id("com.google.gms.google-services")
+    // Uploads mapping/symbol files at build time for de-obfuscated crash
+    // reports — required for firebase_crashlytics beyond just the Dart
+    // package dependency in pubspec.yaml.
+    id("com.google.firebase.crashlytics")
 }
 
 // Release signing config, read from android/key.properties (gitignored —

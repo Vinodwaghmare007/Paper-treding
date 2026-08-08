@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/models/forecast.dart';
 import '../../data/sources/forecast_api_source.dart';
+import '../auth/auth_providers.dart';
 
 final forecastApiSourceProvider = Provider<ForecastApiSource>((ref) {
   return ForecastApiSource();
@@ -32,7 +33,13 @@ class ForecastController extends AsyncNotifier<PriceForecast?> {
     if (!enabled) return null;
 
     _refreshTimer = Timer.periodic(const Duration(seconds: 60), (_) => refresh());
-    return _fetch();
+    final forecast = await _fetch();
+    // Fired once per toggle-on (from build(), not from refresh()'s 60s
+    // periodic re-fetches) — the signal this event should carry is "did
+    // someone actually look at a forecast," not "how many times did an
+    // already-open one silently refresh in the background."
+    unawaited(ref.read(analyticsServiceProvider).logForecastViewed());
+    return forecast;
   }
 
   Future<PriceForecast?> _fetch() {

@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
+import '../analytics/analytics_service.dart';
 import '../firestore/firestore_paths.dart';
 import '../firestore/trading_mappers.dart';
 
@@ -38,15 +39,18 @@ class AuthRepository {
     FirebaseAuth? auth,
     FirebaseFirestore? firestore,
     GoogleSignIn? googleSignIn,
+    AnalyticsService? analytics,
   })  : _auth = auth ?? FirebaseAuth.instance,
         _firestore = firestore ?? FirebaseFirestore.instance,
         _paths = FirestorePaths(firestore ?? FirebaseFirestore.instance),
-        _googleSignIn = googleSignIn ?? GoogleSignIn(scopes: const ['email']);
+        _googleSignIn = googleSignIn ?? GoogleSignIn(scopes: const ['email']),
+        _analytics = analytics ?? AnalyticsService();
 
   final FirebaseAuth _auth;
   final FirebaseFirestore _firestore;
   final FirestorePaths _paths;
   final GoogleSignIn _googleSignIn;
+  final AnalyticsService _analytics;
 
   Stream<User?> get authStateChanges => _auth.authStateChanges();
 
@@ -65,7 +69,8 @@ class AuthRepository {
       if (uid == null) {
         throw const AuthFailure('Sign-up did not return a user.');
       }
-      await _ensureUserDocument(uid);
+      final created = await _ensureUserDocument(uid);
+      if (created) await _analytics.logSignUp(method: 'email');
     } on FirebaseAuthException catch (e) {
       throw AuthFailure.fromFirebase(e);
     }
@@ -99,7 +104,8 @@ class AuthRepository {
       if (uid == null) {
         throw const AuthFailure('Google sign-in did not return a user.');
       }
-      await _ensureUserDocument(uid);
+      final created = await _ensureUserDocument(uid);
+      if (created) await _analytics.logSignUp(method: 'google');
     } on FirebaseAuthException catch (e) {
       throw AuthFailure.fromFirebase(e);
     }
@@ -115,14 +121,21 @@ class AuthRepository {
   /// Creates the `users/{uid}` document with the starting balance if (and
   /// only if) it doesn't already exist. Safe to call on every sign-in —
   /// covers both brand-new email sign-ups and a user's first Google
-  /// sign-in — without ever resetting an existing account.
-  Future<void> _ensureUserDocument(String uid) async {
+  /// sign-in — without ever resetting an existing account. Returns
+  /// whether this call was the one that created it, which is also exactly
+  /// "was this a brand-new account" — the correct, one-shot signal for
+  /// the `sign_up` analytics event (a returning user's sign-in must never
+  /// re-fire it).
+  Future<bool> _ensureUserDocument(String uid) async {
     final ref = _paths.user(uid);
+    var created = false;
     await _firestore.runTransaction((transaction) async {
       final snap = await transaction.get(ref);
       if (!snap.exists) {
         transaction.set(ref, UserAccountFirestoreMapping.initialDoc());
+        created = true;
       }
     });
+    return created;
   }
 }
