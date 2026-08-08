@@ -82,7 +82,7 @@ void main() {
       );
     });
 
-    test('throws InvalidTradeException for non-positive inputs', () {
+    test('throws InvalidTradeException for a zero price', () {
       expect(
         () => TradeMath.applyBuy(
           account: freshAccount,
@@ -95,6 +95,104 @@ void main() {
         ),
         throwsA(isA<InvalidTradeException>()),
       );
+    });
+
+    test('throws InvalidTradeException for a negative price', () {
+      expect(
+        () => TradeMath.applyBuy(
+          account: freshAccount,
+          existingPosition: null,
+          coinSymbol: 'BTCUSDT',
+          price: -60000,
+          quantity: 1,
+          now: now,
+          orderId: 'order-5b',
+        ),
+        throwsA(isA<InvalidTradeException>()),
+      );
+    });
+
+    test('throws InvalidTradeException for a zero quantity', () {
+      // Regression coverage for the second branch of validatePositive —
+      // the existing "non-positive inputs" cases above only ever exercised
+      // the price check, since it runs first and short-circuits.
+      expect(
+        () => TradeMath.applyBuy(
+          account: freshAccount,
+          existingPosition: null,
+          coinSymbol: 'BTCUSDT',
+          price: 60000,
+          quantity: 0,
+          now: now,
+          orderId: 'order-5c',
+        ),
+        throwsA(isA<InvalidTradeException>()),
+      );
+    });
+
+    test('throws InvalidTradeException for a negative quantity', () {
+      expect(
+        () => TradeMath.applyBuy(
+          account: freshAccount,
+          existingPosition: null,
+          coinSymbol: 'BTCUSDT',
+          price: 60000,
+          quantity: -0.1,
+          now: now,
+          orderId: 'order-5d',
+        ),
+        throwsA(isA<InvalidTradeException>()),
+      );
+    });
+
+    test('a cost exactly equal to the available balance succeeds and '
+        'zeroes the balance', () {
+      final outcome = TradeMath.applyBuy(
+        account: const UserAccount(uid: uid, virtualBalance: 6000, consecutiveLosses: 0),
+        existingPosition: null,
+        coinSymbol: 'BTCUSDT',
+        price: 60000,
+        quantity: 0.1,
+        now: now,
+        orderId: 'order-5e',
+      );
+      expect(outcome.updatedAccount.virtualBalance, 0);
+    });
+
+    test('InsufficientBalanceException reports the exact required and '
+        'available amounts', () {
+      try {
+        TradeMath.applyBuy(
+          account: const UserAccount(uid: uid, virtualBalance: 100, consecutiveLosses: 0),
+          existingPosition: null,
+          coinSymbol: 'BTCUSDT',
+          price: 60000,
+          quantity: 1,
+          now: now,
+          orderId: 'order-5f',
+        );
+        fail('expected InsufficientBalanceException');
+      } on InsufficientBalanceException catch (e) {
+        expect(e.required, 60000);
+        expect(e.available, 100);
+      }
+    });
+
+    test('weighted-average price stays exact under repeating-decimal inputs', () {
+      // 1 @ 10 then 2 @ 20 -> (10 + 40) / 3 = 16.666... — a real float-
+      // precision hazard if the accumulation were done any other way than
+      // total-cost-over-total-quantity in one division.
+      final outcome = TradeMath.applyBuy(
+        account: const UserAccount(uid: uid, virtualBalance: 100000, consecutiveLosses: 0),
+        existingPosition: const PortfolioPosition(
+            coinSymbol: 'BTCUSDT', totalQuantity: 1, avgBuyPrice: 10),
+        coinSymbol: 'BTCUSDT',
+        price: 20,
+        quantity: 2,
+        now: now,
+        orderId: 'order-5g',
+      );
+      expect(outcome.updatedPosition.avgBuyPrice, closeTo(50 / 3, 1e-9));
     });
   });
 
@@ -146,6 +244,104 @@ void main() {
         ),
         throwsA(isA<InsufficientHoldingsException>()),
       );
+    });
+
+    test('InsufficientHoldingsException reports the exact requested and '
+        'held amounts', () {
+      try {
+        TradeMath.applySell(
+          account: freshAccount,
+          existingPosition: holding,
+          coinSymbol: 'BTCUSDT',
+          price: 60000,
+          quantity: 2,
+          now: now,
+          orderId: 'order-8b',
+        );
+        fail('expected InsufficientHoldingsException');
+      } on InsufficientHoldingsException catch (e) {
+        expect(e.requested, 2);
+        expect(e.held, 1);
+      }
+    });
+
+    test('throws InvalidTradeException for a negative price', () {
+      expect(
+        () => TradeMath.applySell(
+          account: freshAccount,
+          existingPosition: holding,
+          coinSymbol: 'BTCUSDT',
+          price: -60000,
+          quantity: 0.5,
+          now: now,
+          orderId: 'order-8c',
+        ),
+        throwsA(isA<InvalidTradeException>()),
+      );
+    });
+
+    test('throws InvalidTradeException for a zero quantity', () {
+      expect(
+        () => TradeMath.applySell(
+          account: freshAccount,
+          existingPosition: holding,
+          coinSymbol: 'BTCUSDT',
+          price: 60000,
+          quantity: 0,
+          now: now,
+          orderId: 'order-8d',
+        ),
+        throwsA(isA<InvalidTradeException>()),
+      );
+    });
+
+    test('normalizes a lowercase coin symbol', () {
+      final outcome = TradeMath.applySell(
+        account: freshAccount,
+        existingPosition: holding,
+        coinSymbol: 'btcusdt',
+        price: 60000,
+        quantity: 0.5,
+        now: now,
+        orderId: 'order-8e',
+      );
+      expect(outcome.order.coinSymbol, 'BTCUSDT');
+      expect(outcome.updatedPosition?.coinSymbol, 'BTCUSDT');
+    });
+
+    test('a breakeven sell (zero realized P&L) is not counted as a loss', () {
+      // Financial-correctness edge case: `realizedPnl < 0` must exclude
+      // exactly-zero, or a breakeven trade would incorrectly march the
+      // revenge-blocker streak forward.
+      final outcome = TradeMath.applySell(
+        account: const UserAccount(uid: uid, virtualBalance: 100000, consecutiveLosses: 2),
+        existingPosition: holding,
+        coinSymbol: 'BTCUSDT',
+        price: 50000, // == avgBuyPrice -> exactly zero P&L
+        quantity: 1,
+        now: now,
+        orderId: 'order-8f',
+      );
+      expect(outcome.order.realizedPnl, 0);
+      expect(outcome.updatedAccount.consecutiveLosses, 0);
+      expect(outcome.updatedAccount.buyLockedUntil, isNull);
+    });
+
+    test('selling down to a float-dust remainder is treated as fully closed', () {
+      // 0.1 + 0.1 + 0.1 != 0.3 exactly in binary floating point; a naive
+      // `remainingQuantity == 0` check would leave a phantom position open.
+      const dustyHolding = PortfolioPosition(
+          coinSymbol: 'BTCUSDT', totalQuantity: 0.1 + 0.1 + 0.1, avgBuyPrice: 50000);
+      final outcome = TradeMath.applySell(
+        account: freshAccount,
+        existingPosition: dustyHolding,
+        coinSymbol: 'BTCUSDT',
+        price: 60000,
+        quantity: 0.3,
+        now: now,
+        orderId: 'order-8g',
+      );
+      expect(outcome.updatedPosition, isNull);
     });
 
     test('a losing sell increments consecutive_losses', () {

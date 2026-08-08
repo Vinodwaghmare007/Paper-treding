@@ -1,3 +1,4 @@
+import 'package:firebase_core/firebase_core.dart' show FirebaseException;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -92,6 +93,18 @@ class _TradeSheetState extends ConsumerState<TradeSheet> {
       );
     } on TradeRejected catch (e) {
       setState(() => _errorText = e.message);
+    } on FirebaseException catch (e) {
+      // A trade is a transaction, which (unlike a plain write) can't be
+      // resolved from Firestore's offline cache — it needs a real
+      // round-trip to check the account/position state first. Offline or
+      // flaky connectivity surfaces here as `unavailable`/`deadline-
+      // exceeded` rather than a TradeRejected, and rather than let that
+      // propagate as an unhandled exception (which would leave the user
+      // with no feedback and no way to know the trade never happened),
+      // it's surfaced as an explicit, retryable error.
+      setState(() => _errorText = e.code == 'unavailable' || e.code == 'deadline-exceeded'
+          ? "Couldn't reach the server — check your connection and try again."
+          : 'Trade failed: ${e.message ?? e.code}');
     } finally {
       if (mounted) setState(() => _submitting = false);
     }

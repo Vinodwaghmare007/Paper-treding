@@ -25,12 +25,20 @@ class BinanceWebSocketService {
     this.interval = '1m',
     this.baseUrl = 'wss://stream.binance.com:9443/ws',
     Random? random,
-  }) : _random = random ?? Random();
+    WebSocketChannel Function(Uri uri)? channelFactory,
+  })  : _random = random ?? Random(),
+        _channelFactory = channelFactory ?? WebSocketChannel.connect;
 
   final String symbol;
   final String interval;
   final String baseUrl;
   final Random _random;
+
+  /// Swappable so tests can exercise the reconnect state machine (backoff,
+  /// malformed-frame tolerance, connection-state transitions) against a
+  /// fake channel instead of a real socket — see
+  /// test/data/sources/binance_websocket_service_test.dart.
+  final WebSocketChannel Function(Uri uri) _channelFactory;
 
   static const _initialBackoff = Duration(seconds: 1);
   static const _maxBackoff = Duration(seconds: 60);
@@ -73,7 +81,7 @@ class BinanceWebSocketService {
         : BinanceConnectionState.connecting);
 
     debugPrint('[BinanceWS] connecting to $_streamUri');
-    final channel = WebSocketChannel.connect(_streamUri);
+    final channel = _channelFactory(_streamUri);
     _channel = channel;
 
     _channelSubscription = channel.stream.listen(

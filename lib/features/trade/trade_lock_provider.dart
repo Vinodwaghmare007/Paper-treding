@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:clock/clock.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../portfolio/portfolio_providers.dart';
@@ -47,8 +48,13 @@ class TradeLockNotifier extends Notifier<TradeLockState> {
     return initial;
   }
 
+  // Reads package:clock's `clock.now()` rather than plain `DateTime.now()`
+  // so tests can fake-advance past a lock deterministically (via
+  // `withClock`/flutter_test's FakeAsync, which `package:clock` integrates
+  // with) instead of needing a real wall-clock wait — see
+  // test/features/trade/revenge_blocker_test.dart.
   TradeLockState _stateFor(DateTime lockedUntil) {
-    final remaining = lockedUntil.difference(DateTime.now().toUtc()).inSeconds;
+    final remaining = lockedUntil.difference(clock.now().toUtc()).inSeconds;
     if (remaining <= 0) return TradeLockState.unlocked;
     return TradeLockState(
       isLocked: true,
