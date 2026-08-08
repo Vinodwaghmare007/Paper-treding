@@ -266,7 +266,11 @@ class _ReplayPlayerViewState extends ConsumerState<_ReplayPlayerView> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: const Color(0xFF1E222D),
-        leading: IconButton(icon: const Icon(Icons.arrow_back), onPressed: widget.onExit),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          tooltip: 'Exit replay',
+          onPressed: widget.onExit,
+        ),
         title: const Text('Market Replay'),
         actions: const [SignOutButton()],
       ),
@@ -355,6 +359,7 @@ class _PlaybackControls extends StatelessWidget {
                 iconSize: 36,
                 color: const Color(0xFF26A69A),
                 icon: Icon(state.isPlaying ? Icons.pause_circle_filled : Icons.play_circle_filled),
+                tooltip: state.isPlaying ? 'Pause' : 'Play',
                 onPressed: state.isPlaying ? engine.pause : engine.play,
               ),
               SegmentedButton<ReplaySpeed>(

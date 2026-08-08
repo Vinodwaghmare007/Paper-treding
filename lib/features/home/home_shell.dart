@@ -11,6 +11,7 @@ import '../replay/market_replay_screen.dart';
 import '../ticker/ticker_screen.dart';
 import '../whatif/whatif_screen.dart';
 import 'home_deep_link.dart';
+import 'simulated_footer.dart';
 
 /// Signed-in app shell: bottom-nav between the live chart, portfolio, order
 /// history, strategy backtester, Market Replay, Community chat, News, the
@@ -47,7 +48,12 @@ class _HomeShellState extends ConsumerState<HomeShell> {
     });
 
     return Scaffold(
-      body: IndexedStack(index: _index, children: _tabs),
+      body: Column(
+        children: [
+          Expanded(child: IndexedStack(index: _index, children: _tabs)),
+          const SimulatedFooter(),
+        ],
+      ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
         onDestinationSelected: (i) => setState(() => _index = i),

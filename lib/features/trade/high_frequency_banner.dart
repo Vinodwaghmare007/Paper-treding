@@ -48,8 +48,14 @@ class _HighFrequencyBannerState extends ConsumerState<HighFrequencyBanner> {
           ),
           IconButton(
             icon: const Icon(Icons.close, color: Color(0xFFFFC107), size: 18),
+            tooltip: 'Dismiss',
+            // Was BoxConstraints() (unconstrained) + zero padding, which
+            // shrinks the tap target down to the bare 18px icon — well
+            // under the 44x44 accessible minimum. minWidth/minHeight
+            // restore that floor without changing the banner's visual
+            // layout otherwise.
             padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
+            constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
             onPressed: () => setState(() => _dismissed = true),
           ),
         ],

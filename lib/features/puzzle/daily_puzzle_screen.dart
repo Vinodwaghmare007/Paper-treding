@@ -229,6 +229,18 @@ class _StatsHeader extends StatelessWidget {
                 : '${pct.toStringAsFixed(0)}% of $totalAnswers players got it right today.',
             style: const TextStyle(color: Colors.white38, fontSize: 11),
           ),
+          const SizedBox(height: 2),
+          // This screen is reachable without an account (see sign_in_screen
+          // .dart), so it can't rely on HomeShell's shared SimulatedFooter
+          // being present — it needs its own reminder regardless of entry
+          // point.
+          const Text(
+            'Practice only — no real trades or money.',
+            // white70 rather than the dimmer white24/38 used for purely
+            // decorative text elsewhere: safety-relevant copy needs to
+            // clear WCAG AA contrast against this dark background.
+            style: TextStyle(color: Colors.white70, fontSize: 10),
+          ),
         ],
       ),
     );

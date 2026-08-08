@@ -227,9 +227,17 @@ class _MessageTile extends ConsumerWidget {
                     style: const TextStyle(color: Colors.white38, fontSize: 10)),
                 if (!isMine) ...[
                   const SizedBox(width: 4),
-                  InkWell(
-                    onTap: () => _report(context, ref),
-                    child: const Icon(Icons.flag_outlined, size: 14, color: Colors.white38),
+                  // A plain 14px Icon+InkWell would give an ~14x14 tap
+                  // target, well under the 44x44 minimum — IconButton pads
+                  // the tappable area out to Material's minimum regardless
+                  // of iconSize, and doubles as the screen-reader label.
+                  IconButton(
+                    onPressed: () => _report(context, ref),
+                    icon: const Icon(Icons.flag_outlined, size: 14, color: Colors.white38),
+                    iconSize: 14,
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+                    tooltip: 'Report message',
                   ),
                 ],
               ],
@@ -283,6 +291,7 @@ class _InputBar extends StatelessWidget {
             const SizedBox(width: 8),
             IconButton(
               onPressed: sending ? null : onSend,
+              tooltip: 'Send',
               icon: sending
                   ? const SizedBox(
                       width: 20,

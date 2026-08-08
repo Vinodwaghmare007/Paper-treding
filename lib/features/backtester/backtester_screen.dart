@@ -404,6 +404,7 @@ class _ConditionRow extends StatelessWidget {
               if (onRemove != null)
                 IconButton(
                   icon: const Icon(Icons.close, size: 18, color: Colors.white38),
+                  tooltip: 'Remove condition',
                   onPressed: enabled ? onRemove : null,
                 ),
             ],
@@ -555,6 +556,14 @@ class _ResultsSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         const Text('Results', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
+        const SizedBox(height: 4),
+        const Text(
+          'Simulated against historical data — past performance on this '
+          'window is not a guarantee of future results.',
+          // white70 rather than white38: this is safety-relevant copy, and
+          // needs to clear WCAG AA contrast against this dark background.
+          style: TextStyle(color: Colors.white70, fontSize: 11),
+        ),
         const SizedBox(height: 12),
         Row(
           children: [
