@@ -32,15 +32,17 @@ echo  1. Debug APK   (fast, unsigned, for testing on your own device)
 echo  2. Release APK (optimized, needs android\key.properties - see docs\RELEASE.md)
 echo  3. Debug APK + install on connected device/emulator (adb install)
 echo  4. Just run "flutter doctor" (check your setup)
+echo  5. Live debug session (flutter run) - hot reload, NO rebuild per change
 echo  0. Exit
 echo ============================================
-set /p choice="Choose an option (0-4): "
+set /p choice="Choose an option (0-5): "
 
 if "%choice%"=="0" exit /b 0
 if "%choice%"=="4" goto doctor
 if "%choice%"=="1" goto debug
 if "%choice%"=="2" goto release
 if "%choice%"=="3" goto debug_install
+if "%choice%"=="5" goto live_debug
 
 echo Invalid choice.
 pause
@@ -48,6 +50,20 @@ exit /b 1
 
 :doctor
 call flutter doctor -v
+pause
+exit /b 0
+
+:live_debug
+call :prepare
+echo.
+echo [2/2] Starting live debug session on a connected device/emulator...
+echo   - Press "r" to hot reload after saving a code change (usually under 1s)
+echo   - Press "R" for a hot restart (resets app state, still no full rebuild)
+echo   - Press "q" to quit
+echo   This needs a device connected over USB with USB debugging on
+echo   (or an emulator already running) - check "adb devices" if it hangs.
+echo.
+call flutter run
 pause
 exit /b 0
 
