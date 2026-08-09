@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/entities/curated_period.dart';
 import '../../data/sources/historical_data_cache.dart';
 import '../../domain/usecases/market_replay_engine.dart';
-import '../auth/sign_out_button.dart';
 import '../chart/price_source.dart';
 import '../chart/trading_chart_view.dart';
 import '../ticker/ticker_providers.dart';
@@ -137,7 +136,6 @@ class _PeriodSelectionScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: const Color(0xFF1E222D),
         title: const Text('Market Replay'),
-        actions: const [SignOutButton()],
       ),
       body: ListView.separated(
         padding: const EdgeInsets.all(16),
@@ -272,7 +270,6 @@ class _ReplayPlayerViewState extends ConsumerState<_ReplayPlayerView> {
           onPressed: widget.onExit,
         ),
         title: const Text('Market Replay'),
-        actions: const [SignOutButton()],
       ),
       body: Column(
         children: [

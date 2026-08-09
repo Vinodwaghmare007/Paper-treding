@@ -5,10 +5,10 @@ import '../../data/models/kline_tick.dart';
 import '../../data/sources/binance_websocket_service.dart';
 import '../../data/models/forecast.dart';
 import '../../data/sources/forecast_api_source.dart';
-import '../auth/sign_out_button.dart';
 import '../chart/forecast_providers.dart';
 import '../chart/trading_chart_view.dart';
 import '../chart/whale_badge.dart';
+import '../home/more_menu_button.dart';
 import '../trade/high_frequency_banner.dart';
 import '../trade/trade_sheet.dart';
 import 'ticker_providers.dart';
@@ -45,7 +45,7 @@ class TickerScreen extends ConsumerWidget {
         actions: const [
           _ConnectionBadge(),
           SizedBox(width: 12),
-          SignOutButton(),
+          MoreMenuButton(),
         ],
       ),
       body: Column(

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../auth/sign_out_button.dart';
+import '../home/more_menu_button.dart';
 import '../trade/trade_sheet.dart';
 import 'portfolio_providers.dart';
 import 'portfolio_twin_card.dart';
@@ -19,7 +19,7 @@ class PortfolioScreen extends ConsumerWidget {
       appBar: AppBar(
         backgroundColor: const Color(0xFF1E222D),
         title: const Text('Portfolio'),
-        actions: const [SignOutButton()],
+        actions: const [MoreMenuButton()],
       ),
       body: accountAsync.when(
         data: (account) => ListView(

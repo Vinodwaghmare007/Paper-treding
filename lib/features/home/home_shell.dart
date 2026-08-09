@@ -1,26 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../backtester/backtester_screen.dart';
-import '../certifications/certificate_screen.dart';
-import '../chat/community_chat_screen.dart';
 import '../news/news_feed_screen.dart';
 import '../orders/order_history_screen.dart';
 import '../portfolio/portfolio_screen.dart';
-import '../puzzle/daily_puzzle_screen.dart';
-import '../replay/market_replay_screen.dart';
-import '../social/following_feed_screen.dart';
-import '../social/leaderboard_screen.dart';
 import '../ticker/ticker_screen.dart';
-import '../whatif/whatif_screen.dart';
 import 'home_deep_link.dart';
 import 'simulated_footer.dart';
 
-/// Signed-in app shell: bottom-nav between the live chart, portfolio, order
-/// history, strategy backtester, Market Replay, Community chat, News, the
-/// Daily Puzzle, the What-If Time Machine, Certifications, the trader
-/// Leaderboard, and the Following feed. Each tab owns its own app bar
-/// (with a sign-out/account action).
+/// Signed-in app shell: bottom-nav between the 4 screens people open every
+/// session — live chart, order history, News, and Portfolio. Everything
+/// else (Backtester, Market Replay, Community chat, Daily Puzzle, What-If
+/// Time Machine, Certifications, Leaderboard, Following feed) lives one tap
+/// away behind the "More" menu (see MoreMenuButton) so the primary nav
+/// stays scannable instead of listing 12 destinations. Each of the 4 tabs
+/// owns its own app bar, with the More menu as its account/overflow action.
 class HomeShell extends ConsumerStatefulWidget {
   const HomeShell({super.key});
 
@@ -33,17 +27,9 @@ class _HomeShellState extends ConsumerState<HomeShell> {
 
   static const _tabs = [
     TickerScreen(),
-    PortfolioScreen(),
     OrderHistoryScreen(),
-    BacktesterScreen(),
-    MarketReplayScreen(),
-    CommunityChatScreen(),
     NewsFeedScreen(),
-    DailyPuzzleScreen(),
-    WhatIfScreen(),
-    CertificateScreen(),
-    LeaderboardScreen(),
-    FollowingFeedScreen(),
+    PortfolioScreen(),
   ];
 
   @override
@@ -68,23 +54,10 @@ class _HomeShellState extends ConsumerState<HomeShell> {
         destinations: const [
           NavigationDestination(
               icon: Icon(Icons.candlestick_chart), label: 'Chart'),
-          NavigationDestination(icon: Icon(Icons.pie_chart), label: 'Portfolio'),
           NavigationDestination(
               icon: Icon(Icons.receipt_long), label: 'Orders'),
-          NavigationDestination(
-              icon: Icon(Icons.query_stats), label: 'Backtest'),
-          NavigationDestination(icon: Icon(Icons.history), label: 'Replay'),
-          NavigationDestination(icon: Icon(Icons.forum), label: 'Chat'),
           NavigationDestination(icon: Icon(Icons.article), label: 'News'),
-          NavigationDestination(icon: Icon(Icons.extension), label: 'Puzzle'),
-          NavigationDestination(
-              icon: Icon(Icons.history_toggle_off), label: 'What-If'),
-          NavigationDestination(
-              icon: Icon(Icons.workspace_premium), label: 'Certs'),
-          NavigationDestination(
-              icon: Icon(Icons.leaderboard), label: 'Ranks'),
-          NavigationDestination(
-              icon: Icon(Icons.people_outline), label: 'Following'),
+          NavigationDestination(icon: Icon(Icons.pie_chart), label: 'Portfolio'),
         ],
       ),
     );

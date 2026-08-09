@@ -4,7 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../data/sources/crypto_news_source.dart';
 import '../../domain/entities/news_headline.dart';
-import '../auth/sign_out_button.dart';
+import '../home/more_menu_button.dart';
 import 'news_providers.dart';
 
 class NewsFeedScreen extends ConsumerWidget {
@@ -18,7 +18,7 @@ class NewsFeedScreen extends ConsumerWidget {
       appBar: AppBar(
         backgroundColor: const Color(0xFF1E222D),
         title: const Text('Crypto News'),
-        actions: const [SignOutButton()],
+        actions: const [MoreMenuButton()],
       ),
       body: RefreshIndicator(
         onRefresh: () => ref.refresh(newsHeadlinesProvider.future),

@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/entities/order.dart';
 import '../../domain/usecases/add_trade_rationale.dart';
-import '../auth/sign_out_button.dart';
+import '../home/more_menu_button.dart';
 import '../portfolio/portfolio_providers.dart';
 import '../regret_free/regret_free_card.dart';
 import '../social/trader_profile_providers.dart';
@@ -19,7 +19,7 @@ class OrderHistoryScreen extends ConsumerWidget {
       appBar: AppBar(
         backgroundColor: const Color(0xFF1E222D),
         title: const Text('Order History'),
-        actions: const [SignOutButton()],
+        actions: const [MoreMenuButton()],
       ),
       body: ordersAsync.when(
         data: (orders) {
