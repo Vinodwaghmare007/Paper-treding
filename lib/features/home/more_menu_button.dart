@@ -6,6 +6,7 @@ import '../auth/auth_providers.dart';
 import '../backtester/backtester_screen.dart';
 import '../certifications/certificate_screen.dart';
 import '../chat/community_chat_screen.dart';
+import '../markets/markets_screen.dart';
 import '../puzzle/daily_puzzle_screen.dart';
 import '../replay/market_replay_screen.dart';
 import '../social/following_feed_screen.dart';
@@ -92,6 +93,13 @@ class MoreMenuButton extends ConsumerWidget {
                 leading: const Icon(Icons.settings_outlined),
                 title: const Text('Public profile settings'),
                 onTap: () => _openScreen(sheetContext, const ProfileSettingsScreen()),
+              ),
+              const Divider(color: Colors.white24),
+              ListTile(
+                leading: const Icon(Icons.currency_exchange),
+                title: const Text('Markets'),
+                subtitle: const Text('Browse and follow coins', style: TextStyle(fontSize: 11)),
+                onTap: () => _openScreen(sheetContext, const MarketsScreen()),
               ),
               const Divider(color: Colors.white24),
               const _SectionHeader('Practice & Analysis'),

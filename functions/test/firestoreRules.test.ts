@@ -299,6 +299,29 @@ test("firestore.rules", async (t) => {
     );
   });
 
+  // ------------------------------------------------------------------
+  // Coin watchlist
+  // ------------------------------------------------------------------
+
+  await t.test("a user can add and remove their own watchlist entries but not someone else's", async () => {
+    const db = testEnv.authenticatedContext("tara").firestore();
+    await assertSucceeds(
+      db.doc("users/tara/watchlist/ETHUSDT").set({ created_at: serverTimestamp() }),
+    );
+    await assertSucceeds(db.doc("users/tara/watchlist/ETHUSDT").delete());
+    await assertFails(
+      db.doc("users/uma/watchlist/ETHUSDT").set({ created_at: serverTimestamp() }),
+    );
+  });
+
+  await t.test("a user cannot read another user's watchlist", async () => {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      await context.firestore().doc("users/tara/watchlist/ETHUSDT").set({ created_at: serverTimestamp() });
+    });
+    const db = testEnv.authenticatedContext("uma").firestore();
+    await assertFails(db.collection("users/tara/watchlist").get());
+  });
+
   await t.test("a public_leaderboard doc is readable by anyone, including signed-out users", async () => {
     await testEnv.withSecurityRulesDisabled(async (context) => {
       await context.firestore().doc("public_leaderboard/weekly").set({ entries: [] });

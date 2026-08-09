@@ -191,6 +191,18 @@ service cloud.firestore {
         allow update: if false;
         allow delete: if isOwner(userId);
       }
+
+      // Coin watchlist — pure personal preference (which curated coins
+      // someone follows on the Markets screen), no server-computed
+      // aggregate involved, so unlike `following` this is safe as a plain
+      // owner-read/owner-write collection with no Cloud Function required.
+      match /watchlist/{symbol} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId)
+          && request.resource.data.created_at == request.time;
+        allow update: if false;
+        allow delete: if isOwner(userId);
+      }
     }
 
     // ------------------------------------------------------------------

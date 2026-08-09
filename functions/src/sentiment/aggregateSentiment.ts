@@ -3,9 +3,15 @@ import { Timestamp } from "firebase-admin/firestore";
 
 import { db } from "../lib/admin";
 
-// The app currently only trades BTCUSDT (see lib/features/ticker), but
-// sentiment is written per-symbol so this extends cleanly if that changes.
-const TRACKED_SYMBOLS = ["BTCUSDT"];
+// Mirrors lib/data/entities/supported_coin.dart's curated coin list —
+// sentiment is written per-symbol, so every coin the app lets someone
+// chart/trade gets its own aggregate rather than only ever computing one
+// for BTCUSDT.
+const TRACKED_SYMBOLS = [
+  "BTCUSDT", "ETHUSDT", "BNBUSDT", "SOLUSDT", "XRPUSDT", "ADAUSDT",
+  "DOGEUSDT", "AVAXUSDT", "DOTUSDT", "LINKUSDT", "POLUSDT", "LTCUSDT",
+  "TRXUSDT", "ATOMUSDT", "UNIUSDT",
+];
 
 /**
  * Runs hourly: aggregates the last hour of BUY vs SELL orders across every

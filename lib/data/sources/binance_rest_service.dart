@@ -133,7 +133,92 @@ class BinanceRestService {
     return candles;
   }
 
+  /// GET /api/v3/ticker/price for several symbols at once — last traded
+  /// price only, no 24h stats. Used to keep portfolio holdings priced live
+  /// even for coins that aren't the one currently open on the chart (which
+  /// already gets its price for free from the WebSocket tick stream).
+  ///
+  /// Binance rejects the whole batch if any [symbols] entry is invalid, so
+  /// a bad/delisted symbol here fails every symbol's price, not just its
+  /// own — this returns an empty map on any error rather than throwing, so
+  /// callers can keep showing their last-known price instead of the whole
+  /// portfolio screen erroring out.
+  Future<Map<String, double>> fetchPrices({required List<String> symbols}) async {
+    if (symbols.isEmpty) return const {};
+    final uri = Uri.parse('$baseUrl/api/v3/ticker/price').replace(
+      queryParameters: {'symbols': jsonEncode(symbols)},
+    );
+    try {
+      final response = await _client.get(uri).timeout(timeout);
+      if (response.statusCode != 200) {
+        debugPrint('[BinanceREST] fetchPrices ${response.statusCode}: ${response.body}');
+        return const {};
+      }
+      final decoded = jsonDecode(response.body);
+      if (decoded is! List) return const {};
+      return {
+        for (final entry in decoded)
+          (entry as Map<String, dynamic>)['symbol'] as String:
+              double.parse(entry['price'] as String),
+      };
+    } catch (e) {
+      debugPrint('[BinanceREST] fetchPrices failed: $e');
+      return const {};
+    }
+  }
+
+  /// GET /api/v3/ticker/24hr for several symbols at once — last price plus
+  /// the rolling 24h open, for a Markets/watchlist-style list. Same
+  /// whole-batch-fails-together caveat as [fetchPrices]; returns an empty
+  /// list on any error.
+  Future<List<TickerSnapshot>> fetch24hrTickers({required List<String> symbols}) async {
+    if (symbols.isEmpty) return const [];
+    final uri = Uri.parse('$baseUrl/api/v3/ticker/24hr').replace(
+      queryParameters: {'symbols': jsonEncode(symbols), 'type': 'MINI'},
+    );
+    try {
+      final response = await _client.get(uri).timeout(timeout);
+      if (response.statusCode != 200) {
+        debugPrint('[BinanceREST] fetch24hrTickers ${response.statusCode}: ${response.body}');
+        return const [];
+      }
+      final decoded = jsonDecode(response.body);
+      if (decoded is! List) return const [];
+      return decoded
+          .map((entry) => TickerSnapshot.fromJson(entry as Map<String, dynamic>))
+          .toList(growable: false);
+    } catch (e) {
+      debugPrint('[BinanceREST] fetch24hrTickers failed: $e');
+      return const [];
+    }
+  }
+
   void dispose() => _client.close();
+}
+
+/// One symbol's last price and rolling-24h open, from `/api/v3/ticker/24hr`
+/// (`type=MINI`) — the percent change is computed locally from these two
+/// rather than trusting Binance's own `priceChangePercent` field, which
+/// `type=MINI` doesn't even return.
+class TickerSnapshot {
+  const TickerSnapshot({
+    required this.symbol,
+    required this.lastPrice,
+    required this.openPrice,
+  });
+
+  factory TickerSnapshot.fromJson(Map<String, dynamic> json) => TickerSnapshot(
+        symbol: json['symbol'] as String,
+        lastPrice: double.parse(json['lastPrice'] as String),
+        openPrice: double.parse(json['openPrice'] as String),
+      );
+
+  final String symbol;
+  final double lastPrice;
+  final double openPrice;
+
+  double get changePercent24h =>
+      openPrice == 0 ? 0 : (lastPrice - openPrice) / openPrice * 100;
 }
 
 const _intervalMillis = {

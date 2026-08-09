@@ -7,11 +7,21 @@ import '../../data/sources/binance_websocket_service.dart';
 import '../../domain/entities/community_sentiment.dart';
 import '../auth/auth_providers.dart';
 
-/// Owns the WebSocket service lifecycle: created lazily, started on first
-/// read, disposed with the container.
+/// The coin currently open on the chart/trade screen — defaults to the
+/// original single-coin symbol so existing behaviour is unchanged until
+/// someone actually uses the coin picker. Everything downstream (the
+/// WebSocket tick stream, sentiment badge, AI forecast) rebuilds off this
+/// one source of truth when it changes.
+final selectedCoinProvider = StateProvider<String>((ref) => 'BTCUSDT');
+
+/// Owns the WebSocket service lifecycle: rebuilt (old socket torn down via
+/// `ref.onDispose`, new one opened) whenever [selectedCoinProvider]
+/// changes, since [BinanceWebSocketService]'s symbol is fixed at
+/// construction.
 final binanceWebSocketServiceProvider =
     Provider<BinanceWebSocketService>((ref) {
-  final service = BinanceWebSocketService(symbol: 'btcusdt', interval: '1m');
+  final symbol = ref.watch(selectedCoinProvider).toLowerCase();
+  final service = BinanceWebSocketService(symbol: symbol, interval: '1m');
   service.start();
   ref.onDispose(service.dispose);
   return service;
@@ -38,8 +48,12 @@ final sentimentRepositoryProvider = Provider<SentimentRepository>((ref) {
   return SentimentRepository(ref.watch(firebaseFirestoreProvider));
 });
 
-/// Anonymized community sentiment for BTCUSDT, refreshed hourly by
-/// functions/src/sentiment/aggregateSentiment.ts.
+/// Anonymized community sentiment for the selected coin, refreshed hourly
+/// by functions/src/sentiment/aggregateSentiment.ts — that function only
+/// tracks a fixed symbol list of its own, so this can come back empty for
+/// a symbol it doesn't cover yet; the badge already renders nothing rather
+/// than a misleading placeholder in that case.
 final communitySentimentProvider = StreamProvider<CommunitySentiment?>((ref) {
-  return ref.watch(sentimentRepositoryProvider).watchSentiment('BTCUSDT');
+  final symbol = ref.watch(selectedCoinProvider);
+  return ref.watch(sentimentRepositoryProvider).watchSentiment(symbol);
 });

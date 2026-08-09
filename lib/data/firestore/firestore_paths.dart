@@ -111,4 +111,18 @@ class FirestorePaths {
 
   DocumentReference<Map<String, dynamic>> publicLeaderboard(String window) =>
       _firestore.collection('public_leaderboard').doc(window);
+
+  // ------------------------------------------------------------------
+  // Coin watchlist
+  // ------------------------------------------------------------------
+
+  // Purely personal preference data (which curated coins someone follows
+  // on the Markets screen) — unlike `following` (Phase 8), there's no
+  // server-computed aggregate here, so this is safe as a plain
+  // owner-read/owner-write collection with no Cloud Function in the loop.
+  CollectionReference<Map<String, dynamic>> watchlist(String uid) =>
+      user(uid).collection('watchlist');
+
+  DocumentReference<Map<String, dynamic>> watchlistDoc(String uid, String symbol) =>
+      watchlist(uid).doc(symbol);
 }

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../data/entities/supported_coin.dart';
 import '../../data/sources/binance_rest_service.dart';
 import '../../domain/entities/backtest_condition.dart';
 import '../../domain/entities/order.dart';
@@ -57,6 +58,7 @@ class BacktesterScreen extends ConsumerStatefulWidget {
 class _BacktesterScreenState extends ConsumerState<BacktesterScreen> {
   final List<_ConditionDraft> _conditions = [_ConditionDraft()];
   bool _combineWithAnd = true;
+  String _symbol = 'BTCUSDT';
   String _interval = '1m';
   DateTimeRange? _dateRange;
   double _startingBalance = 100000;
@@ -107,7 +109,7 @@ class _BacktesterScreenState extends ConsumerState<BacktesterScreen> {
     final restService = ref.read(binanceRestServiceProvider);
     try {
       final candles = await restService.fetchKlinesRange(
-        symbol: 'BTCUSDT',
+        symbol: _symbol,
         interval: _interval,
         start: range.start,
         end: range.end,
@@ -193,7 +195,19 @@ class _BacktesterScreenState extends ConsumerState<BacktesterScreen> {
               children: [
                 Row(
                   children: [
-                    const Text('BTCUSDT', style: TextStyle(color: Colors.white70)),
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        value: _symbol,
+                        dropdownColor: const Color(0xFF1E222D),
+                        style: const TextStyle(color: Colors.white),
+                        decoration: const InputDecoration(labelText: 'Coin', isDense: true),
+                        items: [
+                          for (final coin in supportedCoins)
+                            DropdownMenuItem(value: coin.symbol, child: Text(coin.baseAsset)),
+                        ],
+                        onChanged: isRunning ? null : (v) => setState(() => _symbol = v ?? _symbol),
+                      ),
+                    ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: DropdownButtonFormField<String>(

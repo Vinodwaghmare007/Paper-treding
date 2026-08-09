@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../data/entities/supported_coin.dart';
 import '../../data/models/kline_tick.dart';
 import '../../data/sources/binance_websocket_service.dart';
 import '../../data/models/forecast.dart';
@@ -33,6 +34,7 @@ class TickerScreen extends ConsumerWidget {
       }
     });
 
+    final selectedSymbol = ref.watch(selectedCoinProvider);
     final tickAsync = ref.watch(klineTickProvider);
     final wsService = ref.watch(binanceWebSocketServiceProvider);
     final restService = ref.watch(binanceRestServiceProvider);
@@ -41,7 +43,7 @@ class TickerScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: const Color(0xFF1E222D),
-        title: const Text('BTC/USDT · 1m'),
+        title: const _CoinPickerTitle(),
         actions: const [
           _ConnectionBadge(),
           SizedBox(width: 12),
@@ -53,13 +55,21 @@ class TickerScreen extends ConsumerWidget {
           const HighFrequencyBanner(),
           _PriceHeader(tickAsync: tickAsync),
           const _SentimentBadge(),
-          const WhaleBadge(),
+          // Whale Shadow Mode reads on-chain Bitcoin mempool data — it has
+          // no meaning for any other coin, so it only shows while BTC is
+          // the active chart symbol rather than mislabeling another coin's
+          // screen with Bitcoin whale activity.
+          if (selectedSymbol == 'BTCUSDT') const WhaleBadge(),
           Expanded(
             child: Stack(
               children: [
                 TradingChartView(
+                  // Re-keys the chart's State on coin switch so it re-seeds
+                  // from scratch instead of showing the new symbol's ticks
+                  // layered onto the old symbol's candles.
+                  key: ValueKey(selectedSymbol),
                   fetchSeedCandles: () => restService.fetchKlines(
-                    symbol: 'BTCUSDT',
+                    symbol: selectedSymbol,
                     interval: '1m',
                     limit: 500,
                   ),
@@ -297,6 +307,72 @@ class _ConnectionBadge extends ConsumerWidget {
             Icon(Icons.circle, size: 8, color: color),
             const SizedBox(width: 6),
             Text(label, style: TextStyle(color: color, fontSize: 11)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// AppBar title doubling as the coin switcher — tap to pick any of the
+/// curated [supportedCoins] instead of leaving the chart pinned to BTC.
+class _CoinPickerTitle extends ConsumerWidget {
+  const _CoinPickerTitle();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final selectedSymbol = ref.watch(selectedCoinProvider);
+    final coin = coinForSymbol(selectedSymbol);
+
+    return InkWell(
+      onTap: () => _openPicker(context, ref, selectedSymbol),
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('${coin.baseAsset}/USDT · 1m'),
+            const SizedBox(width: 4),
+            const Icon(Icons.arrow_drop_down, size: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _openPicker(BuildContext context, WidgetRef ref, String selectedSymbol) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: const Color(0xFF1E222D),
+      isScrollControlled: true,
+      builder: (sheetContext) => SafeArea(
+        child: ListView(
+          shrinkWrap: true,
+          children: [
+            const Padding(
+              padding: EdgeInsets.fromLTRB(16, 16, 16, 4),
+              child: Text(
+                'Switch coin',
+                style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
+              ),
+            ),
+            for (final coin in supportedCoins)
+              ListTile(
+                leading: Icon(
+                  coin.symbol == selectedSymbol
+                      ? Icons.radio_button_checked
+                      : Icons.radio_button_unchecked,
+                  color: coin.symbol == selectedSymbol
+                      ? const Color(0xFF6FD3C7)
+                      : Colors.white38,
+                ),
+                title: Text('${coin.baseAsset} · ${coin.displayName}'),
+                onTap: () {
+                  ref.read(selectedCoinProvider.notifier).state = coin.symbol;
+                  Navigator.of(sheetContext).pop();
+                },
+              ),
           ],
         ),
       ),

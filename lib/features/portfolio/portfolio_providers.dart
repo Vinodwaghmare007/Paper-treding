@@ -46,6 +46,36 @@ final orderHistoryStreamProvider = StreamProvider<List<Order>>((ref) {
   return ref.watch(tradingRepositoryProvider).watchOrders(uid);
 });
 
+/// Batch-polled last price (every 15s) for every held coin that ISN'T the
+/// one currently open on the chart — that one already gets a free, more
+/// frequent price from [klineTickProvider]'s live WebSocket tick. Cheap
+/// even for a large portfolio: one Binance REST call covers every distinct
+/// symbol. Starts empty and fills in after the first poll rather than
+/// blocking on it, so the portfolio screen never waits on this.
+final heldCoinPricesProvider = StreamProvider<Map<String, double>>((ref) async* {
+  final rest = ref.watch(binanceRestServiceProvider);
+  var lastPrices = const <String, double>{};
+  yield lastPrices;
+
+  await for (final _ in Stream<int>.periodic(const Duration(seconds: 15), (i) => i)) {
+    final positions = ref.read(portfolioStreamProvider).valueOrNull ?? const [];
+    final activeSymbol = ref.read(selectedCoinProvider);
+    final symbols = {
+      for (final p in positions)
+        if (p.coinSymbol != activeSymbol) p.coinSymbol,
+    }.toList(growable: false);
+    if (symbols.isEmpty) {
+      lastPrices = const {};
+    } else {
+      final fetched = await rest.fetchPrices(symbols: symbols);
+      // A failed poll (empty map) keeps the previous prices rather than
+      // blanking everything back to the avgBuyPrice fallback for one cycle.
+      if (fetched.isNotEmpty) lastPrices = fetched;
+    }
+    yield lastPrices;
+  }
+});
+
 final executeTradeUseCaseProvider = Provider<ExecuteTradeUseCase>((ref) {
   final uid = _uidOrThrow(ref);
   return ref.watch(tradingRepositoryProvider).tradeEngineFor(uid);
@@ -68,14 +98,17 @@ class PositionValuation {
       : (currentPrice - position.avgBuyPrice) / position.avgBuyPrice * 100;
 }
 
-/// Live valuations for every held position, priced against the live
-/// BTCUSDT ticker where the symbol matches (this app currently only trades
-/// BTCUSDT), falling back to the stored average buy price — and therefore
-/// zero unrealized P&L — for any other symbol so the UI never stalls
-/// waiting on a feed it doesn't have.
+/// Live valuations for every held position: the coin currently open on the
+/// chart gets its price from the live WebSocket tick (sub-second), every
+/// other held coin gets its price from [heldCoinPricesProvider]'s 15s
+/// REST poll, and only a coin with neither (freshly held, first poll not
+/// back yet) falls back to the stored average buy price — and therefore
+/// zero unrealized P&L — so the UI never stalls waiting on a feed it
+/// doesn't have data for yet.
 final positionValuationsProvider = Provider<List<PositionValuation>>((ref) {
   final positions = ref.watch(portfolioStreamProvider).valueOrNull ?? const [];
   final liveTick = ref.watch(klineTickProvider).valueOrNull;
+  final polledPrices = ref.watch(heldCoinPricesProvider).valueOrNull ?? const {};
 
   return [
     for (final position in positions)
@@ -83,7 +116,7 @@ final positionValuationsProvider = Provider<List<PositionValuation>>((ref) {
         position: position,
         currentPrice: (liveTick != null && position.coinSymbol == liveTick.symbol)
             ? liveTick.candle.close
-            : position.avgBuyPrice,
+            : polledPrices[position.coinSymbol] ?? position.avgBuyPrice,
       ),
   ];
 });
