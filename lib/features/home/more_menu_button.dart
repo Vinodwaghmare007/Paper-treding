@@ -2,13 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/repositories/auth_repository.dart';
+import '../alerts/create_alert_screen.dart';
 import '../auth/auth_providers.dart';
 import '../backtester/backtester_screen.dart';
 import '../certifications/certificate_screen.dart';
 import '../chat/community_chat_screen.dart';
+import '../dca/dca_simulator_screen.dart';
 import '../markets/markets_screen.dart';
 import '../puzzle/daily_puzzle_screen.dart';
 import '../replay/market_replay_screen.dart';
+import '../settings/settings_screen.dart';
 import '../social/following_feed_screen.dart';
 import '../social/leaderboard_screen.dart';
 import '../social/profile_settings_screen.dart';
@@ -94,12 +97,28 @@ class MoreMenuButton extends ConsumerWidget {
                 title: const Text('Public profile settings'),
                 onTap: () => _openScreen(sheetContext, const ProfileSettingsScreen()),
               ),
+              ListTile(
+                leading: const Icon(Icons.tune),
+                title: const Text('Settings'),
+                subtitle: const Text('Display currency (USD/INR)', style: TextStyle(fontSize: 11)),
+                onTap: () => _openScreen(sheetContext, const SettingsScreen()),
+              ),
               const Divider(color: Colors.white24),
               ListTile(
                 leading: const Icon(Icons.currency_exchange),
                 title: const Text('Markets'),
                 subtitle: const Text('Browse and follow coins', style: TextStyle(fontSize: 11)),
                 onTap: () => _openScreen(sheetContext, const MarketsScreen()),
+              ),
+              ListTile(
+                leading: const Icon(Icons.notifications_active_outlined),
+                title: const Text('Price Alerts'),
+                onTap: () => _openScreen(sheetContext, const CreateAlertScreen()),
+              ),
+              ListTile(
+                leading: const Icon(Icons.savings_outlined),
+                title: const Text('DCA Simulator'),
+                onTap: () => _openScreen(sheetContext, const DcaSimulatorScreen()),
               ),
               const Divider(color: Colors.white24),
               const _SectionHeader('Practice & Analysis'),

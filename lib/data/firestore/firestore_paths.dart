@@ -125,4 +125,21 @@ class FirestorePaths {
 
   DocumentReference<Map<String, dynamic>> watchlistDoc(String uid, String symbol) =>
       watchlist(uid).doc(symbol);
+
+  // ------------------------------------------------------------------
+  // Price alerts + FCM device tokens
+  // ------------------------------------------------------------------
+
+  CollectionReference<Map<String, dynamic>> alerts(String uid) => user(uid).collection('alerts');
+
+  DocumentReference<Map<String, dynamic>> newAlertRef(String uid) => alerts(uid).doc();
+
+  DocumentReference<Map<String, dynamic>> alertDoc(String uid, String alertId) =>
+      alerts(uid).doc(alertId);
+
+  CollectionReference<Map<String, dynamic>> fcmTokens(String uid) =>
+      user(uid).collection('fcm_tokens');
+
+  DocumentReference<Map<String, dynamic>> fcmTokenDoc(String uid, String token) =>
+      fcmTokens(uid).doc(token);
 }

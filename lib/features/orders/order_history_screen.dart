@@ -6,6 +6,7 @@ import '../../domain/usecases/add_trade_rationale.dart';
 import '../home/more_menu_button.dart';
 import '../portfolio/portfolio_providers.dart';
 import '../regret_free/regret_free_card.dart';
+import '../settings/price_text.dart';
 import '../social/trader_profile_providers.dart';
 
 class OrderHistoryScreen extends ConsumerWidget {
@@ -87,17 +88,20 @@ class _OrderTile extends ConsumerWidget {
               '${order.orderType.code} ${order.coinSymbol}',
               style: TextStyle(color: sideColor, fontWeight: FontWeight.w600),
             ),
-            subtitle: Text(
-              'Qty ${order.quantity} @ ${order.price.toStringAsFixed(2)}  ·  $timeLabel',
-              style: const TextStyle(color: Colors.white54, fontSize: 12),
+            subtitle: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('Qty ${order.quantity} @ ',
+                    style: const TextStyle(color: Colors.white54, fontSize: 12)),
+                PriceText(order.price, style: const TextStyle(color: Colors.white54, fontSize: 12)),
+                Text('  ·  $timeLabel', style: const TextStyle(color: Colors.white54, fontSize: 12)),
+              ],
             ),
             trailing: pnl == null
-                ? Text(
-                    order.total.toStringAsFixed(2),
-                    style: const TextStyle(color: Colors.white70),
-                  )
-                : Text(
-                    '${pnl >= 0 ? '+' : ''}${pnl.toStringAsFixed(2)}',
+                ? PriceText(order.total, style: const TextStyle(color: Colors.white70))
+                : PriceText(
+                    pnl,
+                    prefix: pnl >= 0 ? '+' : '',
                     style: TextStyle(
                       color: pnl >= 0 ? const Color(0xFF26A69A) : const Color(0xFFEF5350),
                       fontWeight: FontWeight.w600,

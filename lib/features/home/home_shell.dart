@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../alerts/alerts_providers.dart';
 import '../news/news_feed_screen.dart';
 import '../orders/order_history_screen.dart';
 import '../portfolio/portfolio_screen.dart';
@@ -39,6 +40,10 @@ class _HomeShellState extends ConsumerState<HomeShell> {
       setState(() => _index = tab);
       ref.read(pendingDeepLinkTabProvider.notifier).state = null;
     });
+    // Side-effect only (permission request + FCM token registration) —
+    // the AsyncValue itself is never read, this just needs to run once
+    // per signed-in session.
+    ref.watch(notificationsBootstrapProvider);
 
     return Scaffold(
       body: Column(

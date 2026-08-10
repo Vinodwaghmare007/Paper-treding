@@ -1,33 +1,56 @@
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/entities/supported_coin.dart';
-import '../../data/sources/binance_rest_service.dart';
+import '../../data/sources/coingecko_source.dart';
 import '../auth/auth_providers.dart';
 import '../home/home_deep_link.dart';
+import '../settings/price_text.dart';
 import '../ticker/ticker_providers.dart';
 import 'markets_providers.dart';
 
-/// "All" vs "Following" filter for the Markets list — local to this
-/// screen, not worth persisting.
-final _showFollowedOnlyProvider = StateProvider.autoDispose<bool>((ref) => false);
+enum _SortField { change, name, price }
 
-/// Live price + 24h change for every curated coin (see supported_coin.dart
-/// for why this is a fixed list, not a live top-N feed), with a star to
-/// follow/unfollow and a tap to switch the Chart tab to that coin —
-/// ties the "price ticker list" and "watchlist" asks into one screen.
+/// Sort state — local to this screen (not persisted, resets each visit).
+final _sortFieldProvider = StateProvider.autoDispose<_SortField>((ref) => _SortField.change);
+final _sortAscendingProvider = StateProvider.autoDispose<bool>((ref) => false);
+
+/// Live price + 24h change + sparkline for every curated coin (see
+/// supported_coin.dart for why this is a fixed list, not a live top-N
+/// feed), with a star to follow/unfollow — followed coins stay pinned to
+/// the top regardless of sort — and a tap to switch the Chart tab to that
+/// coin.
 class MarketsScreen extends ConsumerWidget {
   const MarketsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final tickers = ref.watch(marketTickersProvider).valueOrNull ?? const {};
-    final followed = ref.watch(followedSymbolsProvider).valueOrNull ?? const {};
-    final showFollowedOnly = ref.watch(_showFollowedOnlyProvider);
+    final snapshotAsync = ref.watch(coinMarketSnapshotProvider);
+    final marketData = ref.watch(coinMarketDataBySymbolProvider);
+    final followedSymbols = ref.watch(followedSymbolsProvider);
+    final sortField = ref.watch(_sortFieldProvider);
+    final sortAscending = ref.watch(_sortAscendingProvider);
 
-    final coins = showFollowedOnly
-        ? supportedCoins.where((c) => followed.contains(c.symbol)).toList()
-        : supportedCoins;
+    int compare(SupportedCoin a, SupportedCoin b) {
+      final dataA = marketData[a.symbol];
+      final dataB = marketData[b.symbol];
+      final result = switch (sortField) {
+        _SortField.change =>
+          (dataA?.priceChangePercent24h ?? 0).compareTo(dataB?.priceChangePercent24h ?? 0),
+        _SortField.name => a.displayName.compareTo(b.displayName),
+        _SortField.price => (dataA?.currentPriceUsd ?? 0).compareTo(dataB?.currentPriceUsd ?? 0),
+      };
+      return sortAscending ? result : -result;
+    }
+
+    final followed = supportedCoins.where((c) => followedSymbols.contains(c.symbol)).toList()
+      ..sort(compare);
+    final rest = supportedCoins.where((c) => !followedSymbols.contains(c.symbol)).toList()
+      ..sort(compare);
+    final coins = [...followed, ...rest];
+
+    final isStale = snapshotAsync.valueOrNull?.isStale ?? false;
 
     return Scaffold(
       appBar: AppBar(
@@ -36,32 +59,21 @@ class MarketsScreen extends ConsumerWidget {
       ),
       body: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-            child: Row(
-              children: [
-                ChoiceChip(
-                  label: const Text('All'),
-                  selected: !showFollowedOnly,
-                  onSelected: (_) => ref.read(_showFollowedOnlyProvider.notifier).state = false,
-                ),
-                const SizedBox(width: 8),
-                ChoiceChip(
-                  label: const Text('★ Following'),
-                  selected: showFollowedOnly,
-                  onSelected: (_) => ref.read(_showFollowedOnlyProvider.notifier).state = true,
-                ),
-              ],
+          if (isStale)
+            Container(
+              width: double.infinity,
+              color: const Color(0xFFFFC107).withValues(alpha: 0.15),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              child: const Text(
+                'Showing last-known prices — refresh failed.',
+                style: TextStyle(color: Color(0xFFFFC107), fontSize: 11),
+              ),
             ),
-          ),
+          _SortHeader(sortField: sortField, sortAscending: sortAscending),
           Expanded(
-            child: coins.isEmpty
+            child: snapshotAsync.hasError && snapshotAsync.valueOrNull == null
                 ? const Center(
-                    child: Text(
-                      "You're not following any coins yet — tap the star on a coin to add it.",
-                      textAlign: TextAlign.center,
-                      style: TextStyle(color: Colors.white54),
-                    ),
+                    child: Text('Could not load market prices.', style: TextStyle(color: Colors.white54)),
                   )
                 : ListView.separated(
                     padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
@@ -71,8 +83,8 @@ class MarketsScreen extends ConsumerWidget {
                       final coin = coins[index];
                       return _MarketTile(
                         coin: coin,
-                        snapshot: tickers[coin.symbol],
-                        isFollowed: followed.contains(coin.symbol),
+                        data: marketData[coin.symbol],
+                        isFollowed: followedSymbols.contains(coin.symbol),
                       );
                     },
                   ),
@@ -83,15 +95,93 @@ class MarketsScreen extends ConsumerWidget {
   }
 }
 
+class _SortHeader extends ConsumerWidget {
+  const _SortHeader({required this.sortField, required this.sortAscending});
+
+  final _SortField sortField;
+  final bool sortAscending;
+
+  void _tapField(WidgetRef ref, _SortField field) {
+    if (ref.read(_sortFieldProvider) == field) {
+      ref.read(_sortAscendingProvider.notifier).state = !ref.read(_sortAscendingProvider);
+    } else {
+      ref.read(_sortFieldProvider.notifier).state = field;
+      // Gainers-first / Z-A / highest-price-first reads as the natural
+      // "top of the list" default for each field.
+      ref.read(_sortAscendingProvider.notifier).state = false;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+      child: Row(
+        children: [
+          _SortChip(
+            label: sortField == _SortField.change
+                ? (sortAscending ? 'Losers ▲' : 'Gainers ▼')
+                : '24h %',
+            selected: sortField == _SortField.change,
+            onTap: () => _tapField(ref, _SortField.change),
+          ),
+          const SizedBox(width: 8),
+          _SortChip(
+            label: sortField == _SortField.name ? (sortAscending ? 'Name A-Z' : 'Name Z-A') : 'Name',
+            selected: sortField == _SortField.name,
+            onTap: () => _tapField(ref, _SortField.name),
+          ),
+          const SizedBox(width: 8),
+          _SortChip(
+            label: sortField == _SortField.price
+                ? (sortAscending ? 'Price ▲' : 'Price ▼')
+                : 'Price',
+            selected: sortField == _SortField.price,
+            onTap: () => _tapField(ref, _SortField.price),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SortChip extends StatelessWidget {
+  const _SortChip({required this.label, required this.selected, required this.onTap});
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: selected ? const Color(0xFF6FD3C7).withValues(alpha: 0.15) : null,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: selected ? const Color(0xFF6FD3C7) : Colors.white24),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: selected ? const Color(0xFF6FD3C7) : Colors.white54,
+            fontSize: 12,
+            fontWeight: selected ? FontWeight.w700 : FontWeight.w400,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _MarketTile extends ConsumerWidget {
-  const _MarketTile({
-    required this.coin,
-    required this.snapshot,
-    required this.isFollowed,
-  });
+  const _MarketTile({required this.coin, required this.data, required this.isFollowed});
 
   final SupportedCoin coin;
-  final TickerSnapshot? snapshot;
+  final CoinMarketData? data;
   final bool isFollowed;
 
   Future<void> _toggleFollow(WidgetRef ref) async {
@@ -113,7 +203,7 @@ class _MarketTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final changePct = snapshot?.changePercent24h;
+    final changePct = data?.priceChangePercent24h;
     final rising = (changePct ?? 0) >= 0;
     final changeColor = rising ? const Color(0xFF26A69A) : const Color(0xFFEF5350);
 
@@ -121,14 +211,22 @@ class _MarketTile extends ConsumerWidget {
       color: const Color(0xFF1E222D),
       child: ListTile(
         onTap: () => _openOnChart(context, ref),
+        leading: SizedBox(
+          width: 56,
+          height: 32,
+          child: data != null && data!.sparkline7d.length > 1
+              ? _Sparkline(values: data!.sparkline7d, color: changeColor)
+              : null,
+        ),
         title: Text(
           '${coin.baseAsset} · ${coin.displayName}',
           style: const TextStyle(color: Colors.white),
         ),
-        subtitle: snapshot == null
+        subtitle: data == null
             ? const Text('Loading…', style: TextStyle(color: Colors.white38, fontSize: 12))
-            : Text(
-                snapshot!.lastPrice.toStringAsFixed(snapshot!.lastPrice >= 100 ? 2 : 4),
+            : PriceText(
+                data!.currentPriceUsd,
+                decimals: data!.currentPriceUsd >= 100 ? 2 : 4,
                 style: const TextStyle(color: Colors.white70, fontSize: 13),
               ),
         trailing: Row(
@@ -149,6 +247,46 @@ class _MarketTile extends ConsumerWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// A minimal 7-day price sparkline — no axes, labels, or interactivity,
+/// deliberately much lighter than the full TradingView candlestick chart
+/// (fl_chart instead of the WebView bridge) since this is drawn 15+ times
+/// per screen build.
+class _Sparkline extends StatelessWidget {
+  const _Sparkline({required this.values, required this.color});
+
+  final List<double> values;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    final spots = [
+      for (var i = 0; i < values.length; i++) FlSpot(i.toDouble(), values[i]),
+    ];
+    final minY = values.reduce((a, b) => a < b ? a : b);
+    final maxY = values.reduce((a, b) => a > b ? a : b);
+
+    return LineChart(
+      LineChartData(
+        minY: minY,
+        maxY: maxY,
+        gridData: const FlGridData(show: false),
+        titlesData: const FlTitlesData(show: false),
+        borderData: FlBorderData(show: false),
+        lineTouchData: const LineTouchData(enabled: false),
+        lineBarsData: [
+          LineChartBarData(
+            spots: spots,
+            isCurved: true,
+            color: color,
+            barWidth: 1.5,
+            dotData: const FlDotData(show: false),
+          ),
+        ],
       ),
     );
   }

@@ -12,6 +12,12 @@ void main() {
     test('includes BTCUSDT as the original single-coin default', () {
       expect(supportedCoins.any((c) => c.symbol == 'BTCUSDT'), isTrue);
     });
+
+    test('has a non-empty, unique CoinGecko id for every coin', () {
+      final ids = supportedCoins.map((c) => c.coingeckoId).toList();
+      expect(ids, everyElement(isNotEmpty));
+      expect(ids.toSet().length, ids.length);
+    });
   });
 
   group('coinForSymbol', () {

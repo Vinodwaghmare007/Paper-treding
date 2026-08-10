@@ -2,6 +2,10 @@
     <!-- Live market data (WebSocket + REST) and the chart WebView need network access
          in release builds; debug/profile manifests only cover dev builds. -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Android 13+ requires this to show any notification, including
+         price-alert pushes (see notifications_providers.dart, which
+         requests it at runtime via flutter_local_notifications). -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <application
         android:label="Crypto Paper Trader"
         android:name="${applicationName}"
@@ -39,6 +43,18 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+
+        <!-- Default channel for FCM notifications shown while the app is
+             backgrounded/killed (see price_alerts_notification_service.dart
+             for the matching flutter_local_notifications channel used for
+             foreground display, and functions/src/alerts/checkPriceAlerts.ts
+             for the sender — both must agree on this channel id). -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="price_alerts"/>
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@mipmap/ic_launcher"/>
 
         <receiver
             android:name=".MarketWeatherWidgetProvider"

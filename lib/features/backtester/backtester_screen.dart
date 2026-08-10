@@ -8,6 +8,7 @@ import '../../data/sources/binance_rest_service.dart';
 import '../../domain/entities/backtest_condition.dart';
 import '../../domain/entities/order.dart';
 import '../../domain/usecases/backtest_runner.dart';
+import '../../domain/usecases/risk_metrics_calculator.dart';
 import '../auth/auth_providers.dart';
 import '../certifications/certification_providers.dart';
 import '../ticker/ticker_providers.dart';
@@ -574,6 +575,7 @@ class _ResultsSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final pnlColor = result.totalPnl >= 0 ? const Color(0xFF26A69A) : const Color(0xFFEF5350);
+    final riskMetrics = computeRiskMetrics(result.equityCurve);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -624,6 +626,33 @@ class _ResultsSection extends StatelessWidget {
               ),
             ),
           ],
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              child: _StatTile(
+                label: 'Sharpe ratio',
+                value: riskMetrics.sharpeRatio == null
+                    ? '—'
+                    : riskMetrics.sharpeRatio!.toStringAsFixed(2),
+                color: riskMetrics.sharpeRatio == null
+                    ? null
+                    : (riskMetrics.sharpeRatio! >= 0
+                        ? const Color(0xFF26A69A)
+                        : const Color(0xFFEF5350)),
+              ),
+            ),
+            const SizedBox(width: 8),
+            const Expanded(child: SizedBox.shrink()),
+          ],
+        ),
+        const SizedBox(height: 4),
+        const Text(
+          'Sharpe ratio: risk-adjusted return, annualized — assumes a 0% '
+          'risk-free rate. Higher is better; above 1 is generally considered '
+          'good, above 2 very good.',
+          style: TextStyle(color: Colors.white38, fontSize: 10),
         ),
         const SizedBox(height: 16),
         Container(

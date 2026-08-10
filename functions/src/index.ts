@@ -27,3 +27,4 @@ export {
   publicActivityOnRationale,
   publicActivityOnCertification,
 } from "./traderProfile/publicActivity";
+export { checkPriceAlerts } from "./alerts/checkPriceAlerts";

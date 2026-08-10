@@ -306,20 +306,129 @@ test("firestore.rules", async (t) => {
   await t.test("a user can add and remove their own watchlist entries but not someone else's", async () => {
     const db = testEnv.authenticatedContext("tara").firestore();
     await assertSucceeds(
-      db.doc("users/tara/watchlist/ETHUSDT").set({ created_at: serverTimestamp() }),
+      db.doc("users/tara/watchlist/ETHUSDT").set({ added_at: serverTimestamp(), sort_order: 0 }),
     );
     await assertSucceeds(db.doc("users/tara/watchlist/ETHUSDT").delete());
     await assertFails(
-      db.doc("users/uma/watchlist/ETHUSDT").set({ created_at: serverTimestamp() }),
+      db.doc("users/uma/watchlist/ETHUSDT").set({ added_at: serverTimestamp(), sort_order: 0 }),
     );
   });
 
   await t.test("a user cannot read another user's watchlist", async () => {
     await testEnv.withSecurityRulesDisabled(async (context) => {
-      await context.firestore().doc("users/tara/watchlist/ETHUSDT").set({ created_at: serverTimestamp() });
+      await context
+        .firestore()
+        .doc("users/tara/watchlist/ETHUSDT")
+        .set({ added_at: serverTimestamp(), sort_order: 0 });
     });
     const db = testEnv.authenticatedContext("uma").firestore();
     await assertFails(db.collection("users/tara/watchlist").get());
+  });
+
+  await t.test("a user can reorder (change sort_order) but not touch added_at on an existing entry", async () => {
+    const db = testEnv.authenticatedContext("tara").firestore();
+    await db.doc("users/tara/watchlist/BTCUSDT").set({ added_at: serverTimestamp(), sort_order: 0 });
+    const before = await db.doc("users/tara/watchlist/BTCUSDT").get();
+
+    await assertSucceeds(
+      db.doc("users/tara/watchlist/BTCUSDT").set(
+        { added_at: before.data()!.added_at, sort_order: 5 },
+        { merge: true },
+      ),
+    );
+    await assertFails(
+      db.doc("users/tara/watchlist/BTCUSDT").set(
+        { added_at: serverTimestamp(), sort_order: 6 },
+        { merge: true },
+      ),
+    );
+  });
+
+  // ------------------------------------------------------------------
+  // Price alerts + FCM tokens
+  // ------------------------------------------------------------------
+
+  await t.test("a user can create their own alert with a valid shape but not forge is_active/triggered_at", async () => {
+    const db = testEnv.authenticatedContext("vik").firestore();
+    await assertSucceeds(
+      db.collection("users/vik/alerts").add({
+        coin_symbol: "BTCUSDT",
+        target_price: 70000,
+        direction: "above",
+        is_active: true,
+        triggered_at: null,
+        created_at: serverTimestamp(),
+      }),
+    );
+    await assertFails(
+      db.collection("users/vik/alerts").add({
+        coin_symbol: "BTCUSDT",
+        target_price: 70000,
+        direction: "above",
+        is_active: false,
+        triggered_at: null,
+        created_at: serverTimestamp(),
+      }),
+    );
+    await assertFails(
+      db.collection("users/vik/alerts").add({
+        coin_symbol: "BTCUSDT",
+        target_price: 70000,
+        direction: "sideways",
+        is_active: true,
+        triggered_at: null,
+        created_at: serverTimestamp(),
+      }),
+    );
+  });
+
+  await t.test("a user can edit an alert's target but not resurrect a triggered one back to active", async () => {
+    const db = testEnv.authenticatedContext("vik").firestore();
+    const ref = await db.collection("users/vik/alerts").add({
+      coin_symbol: "ETHUSDT",
+      target_price: 3000,
+      direction: "below",
+      is_active: true,
+      triggered_at: null,
+      created_at: serverTimestamp(),
+    });
+
+    await assertSucceeds(ref.update({ target_price: 2800 }));
+    await assertFails(ref.update({ is_active: false }));
+
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      await context
+        .firestore()
+        .doc(`users/vik/alerts/${ref.id}`)
+        .update({ is_active: false, triggered_at: serverTimestamp() });
+    });
+    await assertFails(ref.update({ is_active: true, triggered_at: null }));
+  });
+
+  await t.test("a user cannot read or write another user's alerts", async () => {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      await context.firestore().doc("users/vik/alerts/a1").set({
+        coin_symbol: "BTCUSDT",
+        target_price: 70000,
+        direction: "above",
+        is_active: true,
+        triggered_at: null,
+        created_at: serverTimestamp(),
+      });
+    });
+    const db = testEnv.authenticatedContext("nia").firestore();
+    await assertFails(db.doc("users/vik/alerts/a1").get());
+    await assertFails(db.doc("users/vik/alerts/a1").update({ target_price: 1 }));
+  });
+
+  await t.test("a user can register their own FCM token but not someone else's", async () => {
+    const db = testEnv.authenticatedContext("vik").firestore();
+    await assertSucceeds(
+      db.doc("users/vik/fcm_tokens/tok123").set({ updated_at: serverTimestamp(), platform: "android" }),
+    );
+    await assertFails(
+      db.doc("users/nia/fcm_tokens/tok123").set({ updated_at: serverTimestamp(), platform: "android" }),
+    );
   });
 
   await t.test("a public_leaderboard doc is readable by anyone, including signed-out users", async () => {

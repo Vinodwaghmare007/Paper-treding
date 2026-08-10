@@ -199,9 +199,51 @@ service cloud.firestore {
       match /watchlist/{symbol} {
         allow read: if isOwner(userId);
         allow create: if isOwner(userId)
-          && request.resource.data.created_at == request.time;
-        allow update: if false;
+          && request.resource.data.added_at == request.time
+          && request.resource.data.sort_order is int;
+        // Reordering (drag-and-drop on the Markets screen) only ever
+        // touches sort_order — added_at is immutable once set.
+        allow update: if isOwner(userId)
+          && request.resource.data.added_at == resource.data.added_at
+          && request.resource.data.sort_order is int;
         allow delete: if isOwner(userId);
+      }
+
+      // Price alerts. Lifecycle fields (is_active, triggered_at) are only
+      // ever flipped by the checkPriceAlerts scheduled Cloud Function
+      // (Admin SDK, bypasses these rules) — a client can create a fresh
+      // alert or edit its target while it's still pending, but can't fake
+      // a trigger or resurrect a fired one back to active.
+      match /alerts/{alertId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId)
+          && request.resource.data.coin_symbol is string
+          && request.resource.data.target_price is number
+          && request.resource.data.target_price > 0
+          && request.resource.data.direction in ['above', 'below']
+          && request.resource.data.is_active == true
+          && request.resource.data.triggered_at == null
+          && request.resource.data.created_at == request.time;
+        allow update: if isOwner(userId)
+          && request.resource.data.coin_symbol is string
+          && request.resource.data.target_price is number
+          && request.resource.data.target_price > 0
+          && request.resource.data.direction in ['above', 'below']
+          && request.resource.data.is_active == resource.data.is_active
+          && request.resource.data.triggered_at == resource.data.triggered_at
+          && request.resource.data.created_at == resource.data.created_at;
+        allow delete: if isOwner(userId);
+      }
+
+      // One doc per device token — see notifications_service.dart. Doc id
+      // is the token itself, so re-registering the same device is a
+      // no-op create/overwrite rather than accumulating duplicates. Only
+      // the checkPriceAlerts function ever reads these (Admin SDK), so no
+      // read rule is needed beyond the owner writing their own.
+      match /fcm_tokens/{token} {
+        allow read: if isOwner(userId);
+        allow write: if isOwner(userId)
+          && request.resource.data.updated_at == request.time;
       }
     }
 

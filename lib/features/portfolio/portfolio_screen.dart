@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../home/more_menu_button.dart';
+import '../settings/price_text.dart';
 import '../trade/trade_sheet.dart';
 import 'portfolio_providers.dart';
 import 'portfolio_twin_card.dart';
@@ -96,8 +97,8 @@ class _SummaryCard extends StatelessWidget {
           const Text('Total account value',
               style: TextStyle(color: Colors.white54, fontSize: 12)),
           const SizedBox(height: 4),
-          Text(
-            '\$${totalValue.toStringAsFixed(2)}',
+          PriceText(
+            totalValue,
             style: const TextStyle(
                 color: Colors.white, fontSize: 28, fontWeight: FontWeight.w700),
           ),
@@ -107,14 +108,20 @@ class _SummaryCard extends StatelessWidget {
             children: [
               _StatColumn(
                 label: 'Cash balance',
-                value: '\$${virtualBalance.toStringAsFixed(2)}',
+                valueWidget: PriceText(
+                  virtualBalance,
+                  style: const TextStyle(color: Colors.white, fontSize: 15),
+                ),
               ),
               _StatColumn(
                 label: 'Loss streak',
-                value: '$consecutiveLosses',
-                valueColor: consecutiveLosses > 0
-                    ? const Color(0xFFEF5350)
-                    : Colors.white,
+                valueWidget: Text(
+                  '$consecutiveLosses',
+                  style: TextStyle(
+                    color: consecutiveLosses > 0 ? const Color(0xFFEF5350) : Colors.white,
+                    fontSize: 15,
+                  ),
+                ),
               ),
             ],
           ),
@@ -125,11 +132,10 @@ class _SummaryCard extends StatelessWidget {
 }
 
 class _StatColumn extends StatelessWidget {
-  const _StatColumn({required this.label, required this.value, this.valueColor});
+  const _StatColumn({required this.label, required this.valueWidget});
 
   final String label;
-  final String value;
-  final Color? valueColor;
+  final Widget valueWidget;
 
   @override
   Widget build(BuildContext context) {
@@ -137,7 +143,7 @@ class _StatColumn extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(label, style: const TextStyle(color: Colors.white38, fontSize: 11)),
-        Text(value, style: TextStyle(color: valueColor ?? Colors.white, fontSize: 15)),
+        valueWidget,
       ],
     );
   }
@@ -162,16 +168,24 @@ class _HoldingTile extends StatelessWidget {
           valuation.position.coinSymbol,
           style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
         ),
-        subtitle: Text(
-          'Qty ${valuation.position.totalQuantity}  ·  Avg ${valuation.position.avgBuyPrice.toStringAsFixed(2)}  ·  Now ${valuation.currentPrice.toStringAsFixed(2)}',
-          style: const TextStyle(color: Colors.white54, fontSize: 12),
+        subtitle: Row(
+          children: [
+            Text('Qty ${valuation.position.totalQuantity}  ·  Avg ',
+                style: const TextStyle(color: Colors.white54, fontSize: 12)),
+            PriceText(valuation.position.avgBuyPrice,
+                style: const TextStyle(color: Colors.white54, fontSize: 12)),
+            const Text('  ·  Now ', style: TextStyle(color: Colors.white54, fontSize: 12)),
+            PriceText(valuation.currentPrice,
+                style: const TextStyle(color: Colors.white54, fontSize: 12)),
+          ],
         ),
         trailing: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            Text(
-              '${pnl >= 0 ? '+' : ''}${pnl.toStringAsFixed(2)}',
+            PriceText(
+              pnl,
+              prefix: pnl >= 0 ? '+' : '',
               style: TextStyle(color: pnlColor, fontWeight: FontWeight.w600),
             ),
             Text(

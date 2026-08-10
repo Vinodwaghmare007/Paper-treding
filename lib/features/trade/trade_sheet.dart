@@ -10,6 +10,8 @@ import '../../domain/usecases/execute_trade.dart';
 import '../auth/auth_providers.dart';
 import '../chart/price_source.dart';
 import '../portfolio/portfolio_providers.dart';
+import '../settings/currency_providers.dart';
+import '../settings/price_text.dart';
 import 'revenge_blocker_sheet.dart';
 import 'trade_lock_provider.dart';
 
@@ -86,12 +88,17 @@ class _TradeSheetState extends ConsumerState<TradeSheet> {
 
       if (!mounted) return;
       Navigator.of(context).pop();
+      final currency = ref.read(currencyPreferenceProvider);
+      final rate = ref.read(usdToInrRateProvider).valueOrNull;
+      final priceStr = formatCurrency(order.price, currency, rate);
+      final pnlStr = order.realizedPnl == null
+          ? ''
+          : '  (P&L ${formatCurrency(order.realizedPnl!, currency, rate)})';
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
             '${order.orderType.code} ${order.quantity} ${order.coinSymbol} '
-            '@ ${order.price.toStringAsFixed(2)}'
-            '${order.realizedPnl != null ? '  (P&L ${order.realizedPnl!.toStringAsFixed(2)})' : ''}',
+            '@ $priceStr$pnlStr',
           ),
           backgroundColor: (order.realizedPnl ?? 0) < 0
               ? const Color(0xFFEF5350)
@@ -133,6 +140,9 @@ class _TradeSheetState extends ConsumerState<TradeSheet> {
     final lockState = ref.watch(tradeLockProvider);
     final isLocked = _side == _Side.buy && lockState.isLocked;
 
+    final currency = ref.watch(currencyPreferenceProvider);
+    final rate = ref.watch(usdToInrRateProvider).valueOrNull;
+
     final total = price * _quantity;
     final canAffordBuy = account != null && total <= account.virtualBalance;
     final canAffordSell = holding != null && _quantity <= holding.totalQuantity;
@@ -169,9 +179,12 @@ class _TradeSheetState extends ConsumerState<TradeSheet> {
                 color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 4),
-          Text(
-            'Live price: ${price.toStringAsFixed(2)}',
-            style: const TextStyle(color: Colors.white54, fontSize: 13),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Live price: ', style: TextStyle(color: Colors.white54, fontSize: 13)),
+              PriceText(price, style: const TextStyle(color: Colors.white54, fontSize: 13)),
+            ],
           ),
           const SizedBox(height: 16),
           SegmentedButton<_Side>(
@@ -195,7 +208,8 @@ class _TradeSheetState extends ConsumerState<TradeSheet> {
               suffixText: widget.coinSymbol.replaceAll('USDT', ''),
               border: const OutlineInputBorder(),
               helperText: holding != null
-                  ? 'Holding: ${holding.totalQuantity} @ avg ${holding.avgBuyPrice.toStringAsFixed(2)}'
+                  ? 'Holding: ${holding.totalQuantity} @ avg '
+                      '${formatCurrency(holding.avgBuyPrice, currency, rate)}'
                   : 'No holdings yet',
               helperStyle: const TextStyle(color: Colors.white38),
             ),
@@ -206,10 +220,7 @@ class _TradeSheetState extends ConsumerState<TradeSheet> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text('Estimated total', style: TextStyle(color: Colors.white54)),
-              Text(
-                total.toStringAsFixed(2),
-                style: const TextStyle(color: Colors.white, fontSize: 16),
-              ),
+              PriceText(total, style: const TextStyle(color: Colors.white, fontSize: 16)),
             ],
           ),
           if (account != null) ...[
@@ -218,10 +229,8 @@ class _TradeSheetState extends ConsumerState<TradeSheet> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text('Available balance', style: TextStyle(color: Colors.white38, fontSize: 12)),
-                Text(
-                  account.virtualBalance.toStringAsFixed(2),
-                  style: const TextStyle(color: Colors.white38, fontSize: 12),
-                ),
+                PriceText(account.virtualBalance,
+                    style: const TextStyle(color: Colors.white38, fontSize: 12)),
               ],
             ),
           ],

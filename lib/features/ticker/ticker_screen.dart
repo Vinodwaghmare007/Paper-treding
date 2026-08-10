@@ -11,6 +11,7 @@ import '../chart/forecast_providers.dart';
 import '../chart/trading_chart_view.dart';
 import '../chart/whale_badge.dart';
 import '../home/more_menu_button.dart';
+import '../settings/price_text.dart';
 import '../trade/high_frequency_banner.dart';
 import '../trade/trade_sheet.dart';
 import 'ticker_providers.dart';
@@ -132,8 +133,8 @@ class _PriceHeader extends StatelessWidget {
           return Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(
-                c.close.toStringAsFixed(2),
+              PriceText(
+                c.close,
                 style: TextStyle(
                   color: color,
                   fontSize: 26,
@@ -144,11 +145,16 @@ class _PriceHeader extends StatelessWidget {
               const SizedBox(width: 12),
               Padding(
                 padding: const EdgeInsets.only(bottom: 4),
-                child: Text(
-                  'O ${c.open.toStringAsFixed(2)}  '
-                  'H ${c.high.toStringAsFixed(2)}  '
-                  'L ${c.low.toStringAsFixed(2)}',
-                  style: const TextStyle(color: Colors.white54, fontSize: 12),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text('O ', style: TextStyle(color: Colors.white54, fontSize: 12)),
+                    PriceText(c.open, style: const TextStyle(color: Colors.white54, fontSize: 12)),
+                    const Text('  H ', style: TextStyle(color: Colors.white54, fontSize: 12)),
+                    PriceText(c.high, style: const TextStyle(color: Colors.white54, fontSize: 12)),
+                    const Text('  L ', style: TextStyle(color: Colors.white54, fontSize: 12)),
+                    PriceText(c.low, style: const TextStyle(color: Colors.white54, fontSize: 12)),
+                  ],
                 ),
               ),
             ],
