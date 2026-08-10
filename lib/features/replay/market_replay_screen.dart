@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/entities/curated_period.dart';
 import '../../data/sources/historical_data_cache.dart';
 import '../../domain/usecases/market_replay_engine.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../chart/price_source.dart';
 import '../chart/trading_chart_view.dart';
 import '../ticker/ticker_providers.dart';
@@ -44,6 +45,7 @@ class _MarketReplayScreenState extends ConsumerState<MarketReplayScreen> {
   }
 
   Future<void> _selectPeriod(CuratedPeriod period) async {
+    final l10n = AppLocalizations.of(context)!;
     final cache = ref.read(_historicalDataCacheProvider);
     setState(() {
       _selectedPeriod = period;
@@ -69,7 +71,7 @@ class _MarketReplayScreenState extends ConsumerState<MarketReplayScreen> {
       if (candles.length < 2) {
         setState(() {
           _phase = _ScreenPhase.error;
-          _errorMessage = 'No historical data available for ${period.name}.';
+          _errorMessage = l10n.replayNoDataError(period.name);
         });
         return;
       }
@@ -87,7 +89,7 @@ class _MarketReplayScreenState extends ConsumerState<MarketReplayScreen> {
       if (!mounted) return;
       setState(() {
         _phase = _ScreenPhase.error;
-        _errorMessage = 'Could not prepare ${period.name}: $e';
+        _errorMessage = l10n.replayPrepareError(period.name, e.toString());
       });
     }
   }
@@ -113,7 +115,10 @@ class _MarketReplayScreenState extends ConsumerState<MarketReplayScreen> {
           downloadedCount: _downloadedCount,
         );
       case _ScreenPhase.error:
-        return _ErrorScreen(message: _errorMessage ?? 'Something went wrong.', onRetry: _backToSelection);
+        return _ErrorScreen(
+          message: _errorMessage ?? AppLocalizations.of(context)!.replayGenericError,
+          onRetry: _backToSelection,
+        );
       case _ScreenPhase.playing:
         return ProviderScope(
           overrides: [
@@ -135,7 +140,7 @@ class _PeriodSelectionScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: const Color(0xFF1E222D),
-        title: const Text('Market Replay'),
+        title: Text(AppLocalizations.of(context)!.replayTitle),
       ),
       body: ListView.separated(
         padding: const EdgeInsets.all(16),
@@ -167,6 +172,7 @@ class _DownloadProgressScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(backgroundColor: const Color(0xFF1E222D), title: Text(period.name)),
       body: Center(
@@ -178,18 +184,18 @@ class _DownloadProgressScreen extends StatelessWidget {
               const CircularProgressIndicator(),
               const SizedBox(height: 20),
               Text(
-                'Downloading ${period.name}…',
+                l10n.replayDownloading(period.name),
                 style: const TextStyle(color: Colors.white, fontSize: 16),
               ),
               const SizedBox(height: 8),
               Text(
-                '$downloadedCount candles fetched',
+                l10n.replayCandlesFetched(downloadedCount),
                 style: const TextStyle(color: Colors.white54, fontSize: 12),
               ),
               const SizedBox(height: 4),
-              const Text(
-                'One-time download — cached locally after this.',
-                style: TextStyle(color: Colors.white38, fontSize: 11),
+              Text(
+                l10n.replayOneTimeDownloadNote,
+                style: const TextStyle(color: Colors.white38, fontSize: 11),
               ),
             ],
           ),
@@ -207,8 +213,9 @@ class _ErrorScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: AppBar(backgroundColor: const Color(0xFF1E222D), title: const Text('Market Replay')),
+      appBar: AppBar(backgroundColor: const Color(0xFF1E222D), title: Text(l10n.replayTitle)),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -219,7 +226,7 @@ class _ErrorScreen extends StatelessWidget {
               const SizedBox(height: 12),
               Text(message, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white70)),
               const SizedBox(height: 16),
-              FilledButton(onPressed: onRetry, child: const Text('Back to periods')),
+              FilledButton(onPressed: onRetry, child: Text(l10n.replayBackToPeriods)),
             ],
           ),
         ),
@@ -258,6 +265,7 @@ class _ReplayPlayerViewState extends ConsumerState<_ReplayPlayerView> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final period = widget.engine.period;
     final currentPrice = _state.currentCandle?.close ?? 0;
 
@@ -266,10 +274,10 @@ class _ReplayPlayerViewState extends ConsumerState<_ReplayPlayerView> {
         backgroundColor: const Color(0xFF1E222D),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          tooltip: 'Exit replay',
+          tooltip: l10n.replayExitTooltip,
           onPressed: widget.onExit,
         ),
-        title: const Text('Market Replay'),
+        title: Text(l10n.replayTitle),
       ),
       body: Column(
         children: [
@@ -283,7 +291,7 @@ class _ReplayPlayerViewState extends ConsumerState<_ReplayPlayerView> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'REPLAY MODE — ${period.name}',
+                    l10n.replayModeLabel(period.name),
                     style: const TextStyle(
                       color: Color(0xFFFFC107),
                       fontWeight: FontWeight.bold,
@@ -321,7 +329,7 @@ class _ReplayPlayerViewState extends ConsumerState<_ReplayPlayerView> {
           currentPrice: currentPrice,
         ),
         icon: const Icon(Icons.swap_vert),
-        label: const Text('Trade'),
+        label: Text(l10n.tradeFabLabel),
       ),
     );
   }
@@ -335,6 +343,7 @@ class _PlaybackControls extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       color: const Color(0xFF1E222D),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -344,8 +353,8 @@ class _PlaybackControls extends StatelessWidget {
           LinearProgressIndicator(value: state.progressFraction),
           const SizedBox(height: 4),
           Text(
-            '${state.currentCandleIndex + 1} / ${state.totalCandles} candles'
-            '${state.isFinished ? ' — end of period' : ''}',
+            l10n.replayCandleProgress(state.currentCandleIndex + 1, state.totalCandles) +
+                (state.isFinished ? l10n.replayEndOfPeriod : ''),
             style: const TextStyle(color: Colors.white38, fontSize: 11),
           ),
           const SizedBox(height: 8),
@@ -356,7 +365,7 @@ class _PlaybackControls extends StatelessWidget {
                 iconSize: 36,
                 color: const Color(0xFF26A69A),
                 icon: Icon(state.isPlaying ? Icons.pause_circle_filled : Icons.play_circle_filled),
-                tooltip: state.isPlaying ? 'Pause' : 'Play',
+                tooltip: state.isPlaying ? l10n.replayPauseTooltip : l10n.replayPlayTooltip,
                 onPressed: state.isPlaying ? engine.pause : engine.play,
               ),
               SegmentedButton<ReplaySpeed>(

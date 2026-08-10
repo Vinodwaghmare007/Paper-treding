@@ -431,5 +431,854 @@
   "translationReportEmptyError": "Please describe the issue before submitting.",
   "@translationReportEmptyError": {
     "description": "Validation error shown if the user taps Submit without filling in either field."
+  },
+
+  "commonCancel": "Cancel",
+  "@commonCancel": {
+    "description": "Generic Cancel button, reused across several confirmation dialogs (edit alert, chat username, trade rationale)."
+  },
+
+  "commonSave": "Save",
+  "@commonSave": {
+    "description": "Generic Save button, reused across several confirmation dialogs (edit alert, chat username)."
+  },
+
+  "commonLoading": "Loading…",
+  "@commonLoading": {
+    "description": "Generic short loading placeholder shown in a list tile while its data is still in flight (e.g. a market price row before the first fetch completes)."
+  },
+
+  "coinFieldLabel": "Coin",
+  "@coinFieldLabel": {
+    "description": "Floating label on the coin-picker dropdown, reused across the alert-creation form, DCA Simulator, and Backtester."
+  },
+
+  "marketsTitle": "Markets",
+  "@marketsTitle": {
+    "description": "App bar title on the Markets screen (the curated coin list with sparklines)."
+  },
+
+  "marketsStalePrices": "Showing last-known prices — refresh failed.",
+  "@marketsStalePrices": {
+    "description": "Banner shown at the top of the Markets screen when the latest price refresh failed and stale cached data is shown instead."
+  },
+
+  "marketsLoadError": "Could not load market prices.",
+  "@marketsLoadError": {
+    "description": "Shown instead of the coin list if the very first market-data fetch fails with no cached data to fall back to."
+  },
+
+  "marketsSortChange": "24h %",
+  "@marketsSortChange": {
+    "description": "Sort-chip label for the 24h price-change column when it is not the active sort field."
+  },
+
+  "marketsSortGainers": "Gainers ▼",
+  "@marketsSortGainers": {
+    "description": "Sort-chip label for the 24h price-change column when it IS the active sort field, sorted highest-change-first. Keep the ▼ arrow character."
+  },
+
+  "marketsSortLosers": "Losers ▲",
+  "@marketsSortLosers": {
+    "description": "Sort-chip label for the 24h price-change column when it IS the active sort field, sorted lowest-change-first. Keep the ▲ arrow character."
+  },
+
+  "marketsSortName": "Name",
+  "@marketsSortName": {
+    "description": "Sort-chip label for the coin-name column when it is not the active sort field."
+  },
+
+  "marketsSortNameAZ": "Name A-Z",
+  "@marketsSortNameAZ": {
+    "description": "Sort-chip label for the coin-name column when it IS the active sort field, sorted ascending. 'A-Z' is a Latin-alphabet convention reused as-is since coin names themselves stay in Latin script (proper nouns) — do not attempt to translate 'A-Z' into the target script's own alphabet order."
+  },
+
+  "marketsSortNameZA": "Name Z-A",
+  "@marketsSortNameZA": {
+    "description": "Sort-chip label for the coin-name column when it IS the active sort field, sorted descending. Same Latin-alphabet note as marketsSortNameAZ."
+  },
+
+  "marketsSortPrice": "Price",
+  "@marketsSortPrice": {
+    "description": "Sort-chip label for the price column when it is not the active sort field."
+  },
+
+  "marketsSortPriceUp": "Price ▲",
+  "@marketsSortPriceUp": {
+    "description": "Sort-chip label for the price column when it IS the active sort field, sorted ascending. Keep the ▲ arrow character."
+  },
+
+  "marketsSortPriceDown": "Price ▼",
+  "@marketsSortPriceDown": {
+    "description": "Sort-chip label for the price column when it IS the active sort field, sorted descending. Keep the ▼ arrow character."
+  },
+
+  "marketsFollowTooltip": "Follow",
+  "@marketsFollowTooltip": {
+    "description": "Tooltip/accessibility label on the star icon for a coin the user does not currently follow on the Markets screen."
+  },
+
+  "marketsUnfollowTooltip": "Unfollow",
+  "@marketsUnfollowTooltip": {
+    "description": "Tooltip/accessibility label on the star icon for a coin the user currently follows on the Markets screen."
+  },
+
+  "alertsTitle": "Price Alerts",
+  "@alertsTitle": {
+    "description": "App bar title on the Price Alerts screen."
+  },
+
+  "alertsNewAlertTitle": "New alert",
+  "@alertsNewAlertTitle": {
+    "description": "Heading on the create-alert form card."
+  },
+
+  "alertsTargetPriceLabel": "Target price (USD)",
+  "@alertsTargetPriceLabel": {
+    "description": "Floating label on the target-price text field. Always USD regardless of display-currency setting, since alerts compare against the underlying USD price feed."
+  },
+
+  "alertsDirectionAbove": "Above",
+  "@alertsDirectionAbove": {
+    "description": "Segmented-button option: the alert fires when price rises above the target."
+  },
+
+  "alertsDirectionBelow": "Below",
+  "@alertsDirectionBelow": {
+    "description": "Segmented-button option: the alert fires when price falls below the target."
+  },
+
+  "alertsEnterPriceError": "Enter a target price greater than zero.",
+  "@alertsEnterPriceError": {
+    "description": "Validation error shown when creating an alert with an empty or zero/negative target price."
+  },
+
+  "alertsCreateButton": "Create alert",
+  "@alertsCreateButton": {
+    "description": "Submit button on the create-alert form."
+  },
+
+  "alertsCreatedSnackbar": "Alert created.",
+  "@alertsCreatedSnackbar": {
+    "description": "Confirmation snackbar shown after an alert is successfully created."
+  },
+
+  "alertsActiveSectionTitle": "Active alerts",
+  "@alertsActiveSectionTitle": {
+    "description": "Section heading above the list of alerts that have not yet triggered."
+  },
+
+  "alertsNoActiveAlerts": "No active alerts.",
+  "@alertsNoActiveAlerts": {
+    "description": "Empty-state message under 'Active alerts' when the user has none."
+  },
+
+  "alertsTriggeredSectionTitle": "Triggered",
+  "@alertsTriggeredSectionTitle": {
+    "description": "Section heading above the list of alerts that have already fired, only shown when at least one exists."
+  },
+
+  "alertsLoadError": "Could not load alerts: {error}",
+  "@alertsLoadError": {
+    "description": "Shown if the alerts list fails to load. {error} is a raw technical error/exception string, not user-facing prose.",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+
+  "alertsTriggeredOn": "Triggered {date}",
+  "@alertsTriggeredOn": {
+    "description": "Subtitle on a triggered alert's tile, showing when it fired. {date} is a pre-formatted YYYY-MM-DD string.",
+    "placeholders": {
+      "date": {
+        "type": "String",
+        "example": "2026-08-10"
+      }
+    }
+  },
+
+  "alertsEditDialogTitle": "Edit alert",
+  "@alertsEditDialogTitle": {
+    "description": "Title of the dialog opened by tapping an active alert to change its price/direction."
+  },
+
+  "dcaTitle": "DCA Simulator",
+  "@dcaTitle": {
+    "description": "App bar title on the DCA (Dollar-Cost Averaging) Simulator screen."
+  },
+
+  "dcaRecurringAmountLabel": "Recurring amount (USD)",
+  "@dcaRecurringAmountLabel": {
+    "description": "Floating label on the DCA Simulator's recurring-purchase-amount text field. Always USD, the simulator's underlying unit."
+  },
+
+  "dcaRunButton": "Run simulation",
+  "@dcaRunButton": {
+    "description": "Button that runs the DCA simulation with the current inputs."
+  },
+
+  "dcaSimulationError": "Could not run the simulation: {error}",
+  "@dcaSimulationError": {
+    "description": "Shown if the DCA simulation fails to run. {error} is a raw technical error/exception string.",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+
+  "dcaTotalInvested": "Total invested",
+  "@dcaTotalInvested": {
+    "description": "Stat-tile label for the cumulative amount the simulated recurring purchases would have cost."
+  },
+
+  "dcaCurrentValue": "Current value",
+  "@dcaCurrentValue": {
+    "description": "Stat-tile label for what those purchased coins would be worth today."
+  },
+
+  "dcaReturnLabel": "Return",
+  "@dcaReturnLabel": {
+    "description": "Stat-tile label for the overall percentage return of the simulated DCA strategy."
+  },
+
+  "dcaLegendInvested": "Invested",
+  "@dcaLegendInvested": {
+    "description": "Chart legend label for the 'total invested so far' line on the two-line DCA comparison chart."
+  },
+
+  "dcaLegendValue": "Value",
+  "@dcaLegendValue": {
+    "description": "Chart legend label for the 'portfolio value over time' line on the two-line DCA comparison chart."
+  },
+
+  "dcaSharePreparing": "Preparing…",
+  "@dcaSharePreparing": {
+    "description": "Share button label while the shareable result image is being captured."
+  },
+
+  "dcaShareButton": "Share result",
+  "@dcaShareButton": {
+    "description": "Button that captures and shares the DCA result as an image."
+  },
+
+  "backtesterTitle": "Strategy Backtester",
+  "@backtesterTitle": {
+    "description": "App bar title on the Strategy Backtester screen."
+  },
+
+  "backtesterDataSectionTitle": "Data",
+  "@backtesterDataSectionTitle": {
+    "description": "Section heading for the coin/interval/date-range inputs on the Backtester screen."
+  },
+
+  "backtesterIntervalLabel": "Interval",
+  "@backtesterIntervalLabel": {
+    "description": "Floating label on the candle-interval dropdown (1m/5m/15m/1h/4h/1d — the interval values themselves are not translated)."
+  },
+
+  "backtesterPickDateRange": "Pick date range",
+  "@backtesterPickDateRange": {
+    "description": "Button label before a date range has been chosen for the backtest."
+  },
+
+  "backtesterPositionSizingTitle": "Position sizing",
+  "@backtesterPositionSizingTitle": {
+    "description": "Section heading for the starting-balance and per-trade-size inputs."
+  },
+
+  "backtesterStartingBalanceLabel": "Starting balance",
+  "@backtesterStartingBalanceLabel": {
+    "description": "Floating label on the starting virtual balance text field."
+  },
+
+  "backtesterPositionSizeLabel": "% of balance / trade",
+  "@backtesterPositionSizeLabel": {
+    "description": "Floating label on the per-trade position-size percentage text field."
+  },
+
+  "backtesterConditionSectionTitle": "Entry / exit condition",
+  "@backtesterConditionSectionTitle": {
+    "description": "Section heading for the strategy condition builder."
+  },
+
+  "backtesterConditionSectionSubtitle": "Long while true, flat while false.",
+  "@backtesterConditionSectionSubtitle": {
+    "description": "Explanatory subtitle under the condition section heading, describing how the condition tree drives the simulated position."
+  },
+
+  "backtesterAndLabel": "AND",
+  "@backtesterAndLabel": {
+    "description": "Segmented-button option combining multiple conditions with logical AND. Conventionally shown in caps in English."
+  },
+
+  "backtesterOrLabel": "OR",
+  "@backtesterOrLabel": {
+    "description": "Segmented-button option combining multiple conditions with logical OR. Conventionally shown in caps in English."
+  },
+
+  "backtesterAddCondition": "Add condition",
+  "@backtesterAddCondition": {
+    "description": "Button that adds another condition row to the strategy builder."
+  },
+
+  "backtesterRemoveConditionTooltip": "Remove condition",
+  "@backtesterRemoveConditionTooltip": {
+    "description": "Tooltip on the X icon that deletes a condition row."
+  },
+
+  "backtesterIndicatorRsiLevel": "RSI level",
+  "@backtesterIndicatorRsiLevel": {
+    "description": "Indicator-kind dropdown option: RSI compared against a fixed threshold. RSI is a standard technical-analysis abbreviation, kept as-is."
+  },
+
+  "backtesterIndicatorRsiCrosses": "RSI crosses",
+  "@backtesterIndicatorRsiCrosses": {
+    "description": "Indicator-kind dropdown option: RSI crossing a threshold in a given direction."
+  },
+
+  "backtesterIndicatorMacdCrosses": "MACD crosses signal",
+  "@backtesterIndicatorMacdCrosses": {
+    "description": "Indicator-kind dropdown option: MACD line crossing its signal line. MACD is a standard technical-analysis abbreviation, kept as-is."
+  },
+
+  "backtesterIndicatorPriceCrossesSma": "Price crosses SMA",
+  "@backtesterIndicatorPriceCrossesSma": {
+    "description": "Indicator-kind dropdown option: price crossing a simple moving average. SMA is a standard technical-analysis abbreviation, kept as-is."
+  },
+
+  "backtesterPeriodLabel": "Period",
+  "@backtesterPeriodLabel": {
+    "description": "Floating label on the indicator lookback-period number field (e.g. RSI-14's '14')."
+  },
+
+  "backtesterThresholdLabel": "Threshold",
+  "@backtesterThresholdLabel": {
+    "description": "Floating label on the indicator threshold-value number field."
+  },
+
+  "backtesterVsLabel": "vs",
+  "@backtesterVsLabel": {
+    "description": "Short floating label on the comparison-operator dropdown ('<' or '>'), read as 'RSI [vs] threshold'."
+  },
+
+  "backtesterDirectionLabel": "Direction",
+  "@backtesterDirectionLabel": {
+    "description": "Floating label on the crossing-direction dropdown."
+  },
+
+  "backtesterCrossesUp": "Crosses UP",
+  "@backtesterCrossesUp": {
+    "description": "Crossing-direction dropdown option: the indicator/price crosses from below to above."
+  },
+
+  "backtesterCrossesDown": "Crosses DOWN",
+  "@backtesterCrossesDown": {
+    "description": "Crossing-direction dropdown option: the indicator/price crosses from above to below."
+  },
+
+  "backtesterRunButton": "Run Backtest",
+  "@backtesterRunButton": {
+    "description": "Main button that starts the backtest, when idle."
+  },
+
+  "backtesterRunningButton": "Running…",
+  "@backtesterRunningButton": {
+    "description": "Main button label while the backtest is fetching data or running."
+  },
+
+  "backtesterNoDateRangeError": "Pick a date range first.",
+  "@backtesterNoDateRangeError": {
+    "description": "Validation error shown when Run Backtest is tapped with no date range chosen."
+  },
+
+  "backtesterNoConditionError": "Add at least one condition.",
+  "@backtesterNoConditionError": {
+    "description": "Validation error shown when Run Backtest is tapped with zero condition rows (should not normally be reachable since a row is never removable below one, but guarded anyway)."
+  },
+
+  "backtesterInsufficientCandles": "Only {count} candles in that range — pick a wider range or a shorter interval.",
+  "@backtesterInsufficientCandles": {
+    "description": "Error shown when the chosen date range/interval combination returns too few candles (under 30) to run a meaningful backtest.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+
+  "backtesterFetchError": "Could not fetch historical data: {message}",
+  "@backtesterFetchError": {
+    "description": "Error shown when fetching historical candles for the backtest fails. {message} is a raw technical error message.",
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+
+  "backtesterFetchingData": "Fetching historical data… {count} candles",
+  "@backtesterFetchingData": {
+    "description": "Progress label while historical candles are being downloaded for the backtest, updating live as candles arrive.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+
+  "backtesterRunningProgress": "Running backtest… {percent}%",
+  "@backtesterRunningProgress": {
+    "description": "Progress label while the backtest itself is running on the downloaded candles. {percent} is a whole-number 0-100 string.",
+    "placeholders": {
+      "percent": {
+        "type": "String",
+        "example": "42"
+      }
+    }
+  },
+
+  "backtesterResultsTitle": "Results",
+  "@backtesterResultsTitle": {
+    "description": "Section heading above the backtest results."
+  },
+
+  "backtesterResultsDisclaimer": "Simulated against historical data — past performance on this window is not a guarantee of future results.",
+  "@backtesterResultsDisclaimer": {
+    "description": "Disclaimer shown directly under the Results heading. LEGAL/COMPLIANCE-ADJACENT TEXT: should get the same native-review priority as the disclaimer* keys before public launch.",
+    "disclaimer": true
+  },
+
+  "backtesterTotalPnl": "Total P&L",
+  "@backtesterTotalPnl": {
+    "description": "Stat-tile label for total realized profit/loss across all simulated trades. 'P&L' is a standard trading abbreviation, kept as-is (matches the glossary's 'unrealized P&L' term)."
+  },
+
+  "backtesterWinRate": "Win rate",
+  "@backtesterWinRate": {
+    "description": "Stat-tile label for the percentage of closed trades that were profitable."
+  },
+
+  "backtesterMaxDrawdown": "Max drawdown",
+  "@backtesterMaxDrawdown": {
+    "description": "Stat-tile label for the largest peak-to-trough decline in the simulated equity curve. Use the glossary's fixed term for 'drawdown'."
+  },
+
+  "backtesterClosedTrades": "Closed trades",
+  "@backtesterClosedTrades": {
+    "description": "Stat-tile label for the count of completed (bought-then-sold) simulated trades."
+  },
+
+  "backtesterSharpeRatio": "Sharpe ratio",
+  "@backtesterSharpeRatio": {
+    "description": "Stat-tile label for the risk-adjusted-return metric. 'Sharpe ratio' is a standard finance term/proper name, kept as-is."
+  },
+
+  "backtesterSharpeExplanation": "Sharpe ratio: risk-adjusted return, annualized — assumes a 0% risk-free rate. Higher is better; above 1 is generally considered good, above 2 very good.",
+  "@backtesterSharpeExplanation": {
+    "description": "Short explanatory footnote under the Sharpe ratio stat tile, for users unfamiliar with the metric."
+  },
+
+  "backtesterTradesSectionTitle": "Trades",
+  "@backtesterTradesSectionTitle": {
+    "description": "Section heading above the list of individual simulated trades from the backtest."
+  },
+
+  "replayTitle": "Market Replay",
+  "@replayTitle": {
+    "description": "App bar title on the Market Replay screen, shown on the period-selection, downloading, and error states."
+  },
+
+  "replayDownloading": "Downloading {name}…",
+  "@replayDownloading": {
+    "description": "Progress label while a curated historical period's candles are being downloaded for the first time. {name} is the period's own name (e.g. '2021 Bull Run'), a proper-noun-like label not otherwise translated.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+
+  "replayCandlesFetched": "{count} candles fetched",
+  "@replayCandlesFetched": {
+    "description": "Live-updating count under the download progress spinner.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+
+  "replayOneTimeDownloadNote": "One-time download — cached locally after this.",
+  "@replayOneTimeDownloadNote": {
+    "description": "Small note under the download progress explaining this only happens once per period."
+  },
+
+  "replayNoDataError": "No historical data available for {name}.",
+  "@replayNoDataError": {
+    "description": "Error shown if a curated period downloads but has too few candles to play. {name} is the period's own name.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+
+  "replayPrepareError": "Could not prepare {name}: {error}",
+  "@replayPrepareError": {
+    "description": "Error shown if preparing a curated period fails outright (download or cache error). {name} is the period's own name, {error} is a raw technical error.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+
+  "replayGenericError": "Something went wrong.",
+  "@replayGenericError": {
+    "description": "Fallback error message on the Market Replay error screen when no more specific message is available."
+  },
+
+  "replayBackToPeriods": "Back to periods",
+  "@replayBackToPeriods": {
+    "description": "Button on the Market Replay error screen that returns to the period-selection list."
+  },
+
+  "replayExitTooltip": "Exit replay",
+  "@replayExitTooltip": {
+    "description": "Tooltip on the back-arrow button that exits an in-progress replay session back to period selection."
+  },
+
+  "replayModeLabel": "REPLAY MODE — {name}",
+  "@replayModeLabel": {
+    "description": "Persistent banner shown at the top of an active replay session, so it's never mistaken for live trading. {name} is the period's own name. Conventionally shown in caps in English for 'REPLAY MODE'; use whatever emphasis is natural in the target language.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+
+  "replayCandleProgress": "{current} / {total} candles",
+  "@replayCandleProgress": {
+    "description": "Progress readout under the playback scrubber, showing how far through the period the replay currently is.",
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+
+  "replayEndOfPeriod": " — end of period",
+  "@replayEndOfPeriod": {
+    "description": "Appended after replayCandleProgress once playback reaches the last candle. Note the leading space — it's concatenated directly onto that string, not shown as a separate sentence."
+  },
+
+  "replayPlayTooltip": "Play",
+  "@replayPlayTooltip": {
+    "description": "Tooltip on the playback button when replay is currently paused."
+  },
+
+  "replayPauseTooltip": "Pause",
+  "@replayPauseTooltip": {
+    "description": "Tooltip on the playback button when replay is currently playing."
+  },
+
+  "chatTitle": "Community Chat",
+  "@chatTitle": {
+    "description": "App bar title on the Community Chat screen, used both as a fallback before the room name loads and if it fails to load."
+  },
+
+  "chatNoRoomAvailable": "No chat room is available for your skill level yet. Check back soon.",
+  "@chatNoRoomAvailable": {
+    "description": "Empty state shown if no chat room exists for the signed-in user's skill level."
+  },
+
+  "chatLoadRoomError": "Failed to load chat room: {error}",
+  "@chatLoadRoomError": {
+    "description": "Error shown if the chat room fails to load. {error} is a raw technical error string.",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+
+  "chatNoMessagesYet": "No messages yet — say hello.",
+  "@chatNoMessagesYet": {
+    "description": "Empty state shown inside a chat room with zero messages."
+  },
+
+  "chatLoadMessagesError": "Failed to load messages: {error}",
+  "@chatLoadMessagesError": {
+    "description": "Error shown if the message list fails to load. {error} is a raw technical error string.",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+
+  "chatMessageHint": "Message the room…",
+  "@chatMessageHint": {
+    "description": "Placeholder text in the chat message input field."
+  },
+
+  "chatSendTooltip": "Send",
+  "@chatSendTooltip": {
+    "description": "Tooltip on the send-message button."
+  },
+
+  "chatReportMessageAction": "Report message",
+  "@chatReportMessageAction": {
+    "description": "Used as both the report dialog's title and the flag icon's tooltip on another user's message."
+  },
+
+  "chatReportSpam": "Spam or scam",
+  "@chatReportSpam": {
+    "description": "Report-reason option in the message report dialog."
+  },
+
+  "chatReportHarassment": "Harassment or abuse",
+  "@chatReportHarassment": {
+    "description": "Report-reason option in the message report dialog."
+  },
+
+  "chatReportFinancialAdvice": "Financial advice / pump-and-dump",
+  "@chatReportFinancialAdvice": {
+    "description": "Report-reason option in the message report dialog, for messages giving real (not paper-trading) financial advice or promoting a coin. 'Pump-and-dump' is a standard, widely recognized market-manipulation term — translate only if there is an equally recognized equivalent in the target language, otherwise keep the English term."
+  },
+
+  "chatReportOther": "Other",
+  "@chatReportOther": {
+    "description": "Catch-all report-reason option in the message report dialog."
+  },
+
+  "chatReportedSnackbar": "Reported for moderator review.",
+  "@chatReportedSnackbar": {
+    "description": "Confirmation snackbar shown after submitting a message report."
+  },
+
+  "chatUsernameDialogTitle": "Chat username",
+  "@chatUsernameDialogTitle": {
+    "description": "Title of the dialog for setting/changing the display name shown in chat."
+  },
+
+  "chatUsernameHint": "Never your real name",
+  "@chatUsernameHint": {
+    "description": "Placeholder/safety hint in the chat-username text field, reminding users not to use an identifying real name."
+  },
+
+  "chatUsernameTooltip": "Chat username: {name}",
+  "@chatUsernameTooltip": {
+    "description": "Tooltip on the badge icon in the app bar showing the current chat display name. {name} is the user's own chosen display name, not translated.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+
+  "leaderboardTitle": "Leaderboard",
+  "@leaderboardTitle": {
+    "description": "App bar title on the Leaderboard screen."
+  },
+
+  "leaderboardWeeklyTab": "Weekly",
+  "@leaderboardWeeklyTab": {
+    "description": "Tab label for the weekly leaderboard window."
+  },
+
+  "leaderboardAllTimeTab": "All-Time",
+  "@leaderboardAllTimeTab": {
+    "description": "Tab label for the all-time leaderboard window."
+  },
+
+  "leaderboardDisclaimer": "Ranked by simulated discipline + win rate — educational only, not investment advice.",
+  "@leaderboardDisclaimer": {
+    "description": "Banner shown above the leaderboard list on both tabs. LEGAL/COMPLIANCE-ADJACENT TEXT: should get the same native-review priority as the disclaimer* keys before public launch.",
+    "disclaimer": true
+  },
+
+  "leaderboardEmptyWeekly": "No active traders on the weekly leaderboard yet.",
+  "@leaderboardEmptyWeekly": {
+    "description": "Empty state on the Weekly tab when the leaderboard has zero entries."
+  },
+
+  "leaderboardEmptyAllTime": "No traders on the leaderboard yet.",
+  "@leaderboardEmptyAllTime": {
+    "description": "Empty state on the All-Time tab when the leaderboard has zero entries."
+  },
+
+  "leaderboardLoadError": "Could not load the leaderboard: {error}",
+  "@leaderboardLoadError": {
+    "description": "Error shown if the leaderboard fails to load. {error} is a raw technical error string.",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+
+  "leaderboardStatLine": "Discipline {score}  ·  Win rate {pct}%",
+  "@leaderboardStatLine": {
+    "description": "Subtitle on each leaderboard row, showing the trader's discipline score and win rate. {score} and {pct} are already-rounded whole-number strings.",
+    "placeholders": {
+      "score": {
+        "type": "String",
+        "example": "82"
+      },
+      "pct": {
+        "type": "String",
+        "example": "64"
+      }
+    }
+  },
+
+  "puzzleTitle": "Daily Chart Puzzle",
+  "@puzzleTitle": {
+    "description": "App bar title on the Daily Puzzle screen."
+  },
+
+  "puzzleNotReady": "Today's puzzle isn't ready yet — check back soon.",
+  "@puzzleNotReady": {
+    "description": "Shown if today's puzzle hasn't been generated yet (should be rare — generated server-side once per day)."
+  },
+
+  "puzzleLoadError": "Failed to load the puzzle: {error}",
+  "@puzzleLoadError": {
+    "description": "Error shown if the puzzle fails to load. {error} is a raw technical error string.",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+
+  "puzzleSignupPrompt": "Enjoying the puzzle? Sign up to keep your streak.",
+  "@puzzleSignupPrompt": {
+    "description": "Snackbar nudge shown to an anonymous (not signed in) player after their 3rd puzzle play, encouraging account creation."
+  },
+
+  "puzzleSignupAction": "Sign up",
+  "@puzzleSignupAction": {
+    "description": "Snackbar action button label on puzzleSignupPrompt."
+  },
+
+  "puzzleUpButton": "Up",
+  "@puzzleUpButton": {
+    "description": "Answer button: the player guesses the price went up over the puzzle's next 15 minutes."
+  },
+
+  "puzzleDownButton": "Down",
+  "@puzzleDownButton": {
+    "description": "Answer button: the player guesses the price went down over the puzzle's next 15 minutes."
+  },
+
+  "puzzleQuestion": "{symbol} · will the next 15 minutes go up or down?",
+  "@puzzleQuestion": {
+    "description": "The puzzle's prompt, shown above the chart. {symbol} is a coin ticker (e.g. 'BTCUSDT'), not translated.",
+    "placeholders": {
+      "symbol": {
+        "type": "String",
+        "example": "BTCUSDT"
+      }
+    }
+  },
+
+  "puzzleBeFirst": "Be the first to answer today.",
+  "@puzzleBeFirst": {
+    "description": "Shown instead of the aggregate stat line when nobody has answered today's puzzle yet."
+  },
+
+  "puzzlePlayersCorrect": "{pct}% of {total} players got it right today.",
+  "@puzzlePlayersCorrect": {
+    "description": "Aggregate stat line shown once at least one person has answered today's puzzle. {pct} is a whole-number percentage string, {total} is the player count.",
+    "placeholders": {
+      "pct": {
+        "type": "String",
+        "example": "58"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+
+  "puzzlePracticeOnlyNote": "Practice only — no real trades or money.",
+  "@puzzlePracticeOnlyNote": {
+    "description": "Disclaimer shown on the puzzle screen, which is reachable without signing in and so can't rely on the shared SimulatedFooter being present. LEGAL/COMPLIANCE TEXT: needs the same native-review priority as the disclaimer* keys before public launch.",
+    "disclaimer": true
+  },
+
+  "puzzleDirectionUp": "up",
+  "@puzzleDirectionUp": {
+    "description": "Lowercase 'up', used inside the puzzleCorrectResult/puzzleIncorrectResult sentences (e.g. 'BTC actually went up'). Kept as a separate key rather than baked into those messages since it's also matched against the player's up/down guess."
+  },
+
+  "puzzleDirectionDown": "down",
+  "@puzzleDirectionDown": {
+    "description": "Lowercase 'down', used inside the puzzleCorrectResult/puzzleIncorrectResult sentences. See puzzleDirectionUp."
+  },
+
+  "puzzleCorrectResult": "Correct! BTC actually went {direction} ({move}).",
+  "@puzzleCorrectResult": {
+    "description": "Result banner shown when the player's guess matched the actual price direction. {direction} is puzzleDirectionUp/Down's value, {move} is a pre-formatted signed percentage string like '+2.34%'.",
+    "placeholders": {
+      "direction": {
+        "type": "String"
+      },
+      "move": {
+        "type": "String",
+        "example": "+2.34%"
+      }
+    }
+  },
+
+  "puzzleIncorrectResult": "Not quite — BTC actually went {direction} ({move}).",
+  "@puzzleIncorrectResult": {
+    "description": "Result banner shown when the player's guess did not match the actual price direction. Same placeholders as puzzleCorrectResult.",
+    "placeholders": {
+      "direction": {
+        "type": "String"
+      },
+      "move": {
+        "type": "String",
+        "example": "+2.34%"
+      }
+    }
+  },
+
+  "newsTitle": "Crypto News",
+  "@newsTitle": {
+    "description": "App bar title on the Crypto News screen."
+  },
+
+  "newsEmpty": "No headlines right now.",
+  "@newsEmpty": {
+    "description": "Empty state when the news feed successfully loads but returns zero headlines."
+  },
+
+  "newsLoadError": "Failed to load headlines: {error}",
+  "@newsLoadError": {
+    "description": "Fallback error shown if the news feed fails to load with a non-CryptoNewsException error. {error} is a raw technical error string.",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+
+  "newsLinkOpenError": "Could not open this link.",
+  "@newsLinkOpenError": {
+    "description": "Snackbar shown if tapping a headline fails to open the external article link."
   }
 }

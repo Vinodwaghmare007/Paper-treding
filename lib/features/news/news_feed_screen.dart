@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../data/sources/crypto_news_source.dart';
 import '../../domain/entities/news_headline.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../home/more_menu_button.dart';
 import 'news_providers.dart';
 
@@ -12,12 +13,13 @@ class NewsFeedScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     final headlinesAsync = ref.watch(newsHeadlinesProvider);
 
     return Scaffold(
       appBar: AppBar(
         backgroundColor: const Color(0xFF1E222D),
-        title: const Text('Crypto News'),
+        title: Text(l10n.newsTitle),
         actions: const [MoreMenuButton()],
       ),
       body: RefreshIndicator(
@@ -26,12 +28,12 @@ class NewsFeedScreen extends ConsumerWidget {
           data: (headlines) {
             if (headlines.isEmpty) {
               return ListView(
-                children: const [
+                children: [
                   Padding(
-                    padding: EdgeInsets.all(24),
+                    padding: const EdgeInsets.all(24),
                     child: Center(
-                      child: Text('No headlines right now.',
-                          style: TextStyle(color: Colors.white54)),
+                      child: Text(l10n.newsEmpty,
+                          style: const TextStyle(color: Colors.white54)),
                     ),
                   ),
                 ],
@@ -54,7 +56,7 @@ class NewsFeedScreen extends ConsumerWidget {
                   child: Text(
                     e is CryptoNewsException
                         ? e.message
-                        : 'Failed to load headlines: $e',
+                        : l10n.newsLoadError(e.toString()),
                     textAlign: TextAlign.center,
                     style: const TextStyle(color: Color(0xFFEF5350)),
                   ),
@@ -84,7 +86,7 @@ class _HeadlineCard extends StatelessWidget {
     );
     if (!launched && context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not open this link.')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.newsLinkOpenError)),
       );
     }
   }

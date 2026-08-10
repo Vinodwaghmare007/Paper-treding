@@ -3,15 +3,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/entities/chat_message.dart';
 import '../../domain/usecases/send_chat_message.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../auth/auth_providers.dart';
 import 'chat_providers.dart';
 
-const _reportReasons = [
-  'Spam or scam',
-  'Harassment or abuse',
-  'Financial advice / pump-and-dump',
-  'Other',
-];
+List<String> _reportReasons(AppLocalizations l10n) => [
+      l10n.chatReportSpam,
+      l10n.chatReportHarassment,
+      l10n.chatReportFinancialAdvice,
+      l10n.chatReportOther,
+    ];
 
 /// Combines the "room list filtered by skill level" and "chat screen"
 /// requirements into one screen: the seeded layout is one room per skill
@@ -23,15 +24,16 @@ class CommunityChatScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     final roomAsync = ref.watch(myChatRoomProvider);
 
     return Scaffold(
       appBar: AppBar(
         backgroundColor: const Color(0xFF1E222D),
         title: roomAsync.when(
-          data: (room) => Text(room?.name ?? 'Community Chat'),
-          loading: () => const Text('Community Chat'),
-          error: (_, __) => const Text('Community Chat'),
+          data: (room) => Text(room?.name ?? l10n.chatTitle),
+          loading: () => Text(l10n.chatTitle),
+          error: (_, __) => Text(l10n.chatTitle),
         ),
         actions: const [_DisplayNameAction()],
       ),
@@ -41,7 +43,7 @@ class CommunityChatScreen extends ConsumerWidget {
             : _ChatBody(roomId: room.id),
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
-          child: Text('Failed to load chat room: $e',
+          child: Text(l10n.chatLoadRoomError(e.toString()),
               style: const TextStyle(color: Color(0xFFEF5350))),
         ),
       ),
@@ -54,13 +56,13 @@ class _EmptyRoomsNotice extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
+    return Center(
       child: Padding(
-        padding: EdgeInsets.all(24),
+        padding: const EdgeInsets.all(24),
         child: Text(
-          'No chat room is available for your skill level yet. Check back soon.',
+          AppLocalizations.of(context)!.chatNoRoomAvailable,
           textAlign: TextAlign.center,
-          style: TextStyle(color: Colors.white54),
+          style: const TextStyle(color: Colors.white54),
         ),
       ),
     );
@@ -112,6 +114,7 @@ class _ChatBodyState extends ConsumerState<_ChatBody> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final messagesAsync = ref.watch(chatMessagesProvider(widget.roomId));
     final myUid = ref.watch(currentUidProvider);
 
@@ -120,9 +123,9 @@ class _ChatBodyState extends ConsumerState<_ChatBody> {
         Expanded(
           child: messagesAsync.when(
             data: (messages) => messages.isEmpty
-                ? const Center(
-                    child: Text('No messages yet — say hello.',
-                        style: TextStyle(color: Colors.white54)),
+                ? Center(
+                    child: Text(l10n.chatNoMessagesYet,
+                        style: const TextStyle(color: Colors.white54)),
                   )
                 : ListView.builder(
                     reverse: true,
@@ -139,7 +142,7 @@ class _ChatBodyState extends ConsumerState<_ChatBody> {
                   ),
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (e, _) => Center(
-              child: Text('Failed to load messages: $e',
+              child: Text(l10n.chatLoadMessagesError(e.toString()),
                   style: const TextStyle(color: Color(0xFFEF5350))),
             ),
           ),
@@ -166,13 +169,14 @@ class _MessageTile extends ConsumerWidget {
   final String roomId;
 
   Future<void> _report(BuildContext context, WidgetRef ref) async {
+    final l10n = AppLocalizations.of(context)!;
     final reason = await showDialog<String>(
       context: context,
       builder: (context) => SimpleDialog(
         backgroundColor: const Color(0xFF1E222D),
-        title: const Text('Report message', style: TextStyle(color: Colors.white)),
+        title: Text(l10n.chatReportMessageAction, style: const TextStyle(color: Colors.white)),
         children: [
-          for (final reason in _reportReasons)
+          for (final reason in _reportReasons(l10n))
             SimpleDialogOption(
               onPressed: () => Navigator.of(context).pop(reason),
               child: Text(reason, style: const TextStyle(color: Colors.white)),
@@ -194,12 +198,13 @@ class _MessageTile extends ConsumerWidget {
 
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Reported for moderator review.')),
+      SnackBar(content: Text(l10n.chatReportedSnackbar)),
     );
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     final time = TimeOfDay.fromDateTime(message.timestamp.toLocal());
     return Align(
       alignment: isMine ? Alignment.centerRight : Alignment.centerLeft,
@@ -237,7 +242,7 @@ class _MessageTile extends ConsumerWidget {
                     iconSize: 14,
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
-                    tooltip: 'Report message',
+                    tooltip: l10n.chatReportMessageAction,
                   ),
                 ],
               ],
@@ -264,6 +269,7 @@ class _InputBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.all(8),
@@ -276,14 +282,14 @@ class _InputBar extends StatelessWidget {
                 minLines: 1,
                 maxLines: 4,
                 style: const TextStyle(color: Colors.white),
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   counterText: '',
-                  hintText: 'Message the room…',
-                  hintStyle: TextStyle(color: Colors.white38),
+                  hintText: l10n.chatMessageHint,
+                  hintStyle: const TextStyle(color: Colors.white38),
                   filled: true,
-                  fillColor: Color(0xFF1E222D),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(20))),
-                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  fillColor: const Color(0xFF1E222D),
+                  border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(20))),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 ),
                 onSubmitted: (_) => onSend(),
               ),
@@ -291,7 +297,7 @@ class _InputBar extends StatelessWidget {
             const SizedBox(width: 8),
             IconButton(
               onPressed: sending ? null : onSend,
-              tooltip: 'Send',
+              tooltip: l10n.chatSendTooltip,
               icon: sending
                   ? const SizedBox(
                       width: 20,
@@ -311,30 +317,31 @@ class _DisplayNameAction extends ConsumerWidget {
   const _DisplayNameAction();
 
   Future<void> _edit(BuildContext context, WidgetRef ref, String current) async {
+    final l10n = AppLocalizations.of(context)!;
     final controller = TextEditingController(text: current);
     final newName = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: const Color(0xFF1E222D),
-        title: const Text('Chat username', style: TextStyle(color: Colors.white)),
+        title: Text(l10n.chatUsernameDialogTitle, style: const TextStyle(color: Colors.white)),
         content: TextField(
           controller: controller,
           autofocus: true,
           maxLength: 24,
           style: const TextStyle(color: Colors.white),
-          decoration: const InputDecoration(
-            hintText: 'Never your real name',
-            hintStyle: TextStyle(color: Colors.white38),
+          decoration: InputDecoration(
+            hintText: l10n.chatUsernameHint,
+            hintStyle: const TextStyle(color: Colors.white38),
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
+            child: Text(l10n.commonCancel),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(controller.text),
-            child: const Text('Save'),
+            child: Text(l10n.commonSave),
           ),
         ],
       ),
@@ -345,10 +352,11 @@ class _DisplayNameAction extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     final nameAsync = ref.watch(chatDisplayNameProvider);
     return nameAsync.when(
       data: (name) => IconButton(
-        tooltip: 'Chat username: $name',
+        tooltip: l10n.chatUsernameTooltip(name),
         icon: const Icon(Icons.badge_outlined),
         onPressed: () => _edit(context, ref, name),
       ),

@@ -6,6 +6,7 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../data/entities/supported_coin.dart';
 import '../../domain/usecases/dca_simulator.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../settings/currency_providers.dart';
 import '../settings/price_text.dart';
 import 'dca_providers.dart';
@@ -81,6 +82,7 @@ class _DcaSimulatorScreenState extends ConsumerState<DcaSimulatorScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final inputs = ref.watch(dcaInputsProvider);
     final resultAsync = ref.watch(dcaResultProvider);
     final coin = coinForSymbol(inputs.symbol);
@@ -90,7 +92,7 @@ class _DcaSimulatorScreenState extends ConsumerState<DcaSimulatorScreen> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: const Color(0xFF1E222D),
-        title: const Text('DCA Simulator'),
+        title: Text(l10n.dcaTitle),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
@@ -105,7 +107,7 @@ class _DcaSimulatorScreenState extends ConsumerState<DcaSimulatorScreen> {
                     height: 20,
                     child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                   )
-                : const Text('Run simulation'),
+                : Text(l10n.dcaRunButton),
           ),
           const SizedBox(height: 20),
           resultAsync.when(
@@ -126,7 +128,7 @@ class _DcaSimulatorScreenState extends ConsumerState<DcaSimulatorScreen> {
             error: (e, _) => Padding(
               padding: const EdgeInsets.all(16),
               child: Text(
-                'Could not run the simulation: $e',
+                l10n.dcaSimulationError(e.toString()),
                 style: const TextStyle(color: Color(0xFFEF5350)),
               ),
             ),
@@ -145,6 +147,7 @@ class _InputsCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     final inputs = ref.watch(dcaInputsProvider);
 
     return Container(
@@ -160,7 +163,7 @@ class _InputsCard extends ConsumerWidget {
             value: inputs.symbol,
             dropdownColor: const Color(0xFF1E222D),
             style: const TextStyle(color: Colors.white),
-            decoration: const InputDecoration(labelText: 'Coin', isDense: true),
+            decoration: InputDecoration(labelText: l10n.coinFieldLabel, isDense: true),
             items: [
               for (final coin in supportedCoins)
                 DropdownMenuItem(value: coin.symbol, child: Text('${coin.baseAsset} · ${coin.displayName}')),
@@ -176,10 +179,10 @@ class _InputsCard extends ConsumerWidget {
             controller: amountController,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             style: const TextStyle(color: Colors.white),
-            decoration: const InputDecoration(
-              labelText: 'Recurring amount (USD)',
+            decoration: InputDecoration(
+              labelText: l10n.dcaRecurringAmountLabel,
               isDense: true,
-              border: OutlineInputBorder(),
+              border: const OutlineInputBorder(),
             ),
           ),
           const SizedBox(height: 12),
@@ -229,6 +232,7 @@ class _ResultsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final profit = result.returnPercent >= 0;
     final color = profit ? const Color(0xFF26A69A) : const Color(0xFFEF5350);
 
@@ -238,12 +242,12 @@ class _ResultsSection extends StatelessWidget {
         Row(
           children: [
             Expanded(
-              child: _StatTile(label: 'Total invested', child: PriceText(result.totalInvested)),
+              child: _StatTile(label: l10n.dcaTotalInvested, child: PriceText(result.totalInvested)),
             ),
             const SizedBox(width: 8),
             Expanded(
               child: _StatTile(
-                label: 'Current value',
+                label: l10n.dcaCurrentValue,
                 child: PriceText(result.currentValue, style: TextStyle(color: color)),
               ),
             ),
@@ -251,7 +255,7 @@ class _ResultsSection extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         _StatTile(
-          label: 'Return',
+          label: l10n.dcaReturnLabel,
           child: Text(
             '${profit ? '+' : ''}${result.returnPercent.toStringAsFixed(2)}%  '
             '(${result.totalUnits.toStringAsFixed(6)} ${coin.baseAsset})',
@@ -270,10 +274,10 @@ class _ResultsSection extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         Row(
-          children: const [
-            _LegendDot(color: Color(0xFF6FD3C7), label: 'Invested'),
-            SizedBox(width: 16),
-            _LegendDot(color: Color(0xFF26A69A), label: 'Value'),
+          children: [
+            _LegendDot(color: const Color(0xFF6FD3C7), label: l10n.dcaLegendInvested),
+            const SizedBox(width: 16),
+            _LegendDot(color: const Color(0xFF26A69A), label: l10n.dcaLegendValue),
           ],
         ),
         const SizedBox(height: 20),
@@ -296,7 +300,7 @@ class _ResultsSection extends StatelessWidget {
         FilledButton.icon(
           onPressed: sharing ? null : onShare,
           icon: const Icon(Icons.share),
-          label: Text(sharing ? 'Preparing…' : 'Share result'),
+          label: Text(sharing ? l10n.dcaSharePreparing : l10n.dcaShareButton),
         ),
       ],
     );

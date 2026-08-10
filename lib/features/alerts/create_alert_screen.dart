@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/entities/supported_coin.dart';
 import '../../domain/entities/price_alert.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../auth/auth_providers.dart';
 import '../settings/price_text.dart';
 import 'alerts_providers.dart';
@@ -32,9 +33,10 @@ class _CreateAlertScreenState extends ConsumerState<CreateAlertScreen> {
   }
 
   Future<void> _create() async {
+    final l10n = AppLocalizations.of(context)!;
     final price = double.tryParse(_priceController.text);
     if (price == null || price <= 0) {
-      setState(() => _error = 'Enter a target price greater than zero.');
+      setState(() => _error = l10n.alertsEnterPriceError);
       return;
     }
     final uid = ref.read(currentUidProvider);
@@ -54,7 +56,7 @@ class _CreateAlertScreenState extends ConsumerState<CreateAlertScreen> {
       _priceController.clear();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Alert created.')),
+          SnackBar(content: Text(l10n.alertsCreatedSnackbar)),
         );
       }
     } finally {
@@ -64,12 +66,13 @@ class _CreateAlertScreenState extends ConsumerState<CreateAlertScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final alertsAsync = ref.watch(alertsProvider);
 
     return Scaffold(
       appBar: AppBar(
         backgroundColor: const Color(0xFF1E222D),
-        title: const Text('Price Alerts'),
+        title: Text(l10n.alertsTitle),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
@@ -92,20 +95,20 @@ class _CreateAlertScreenState extends ConsumerState<CreateAlertScreen> {
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Text('Active alerts',
-                      style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600)),
+                  Text(l10n.alertsActiveSectionTitle,
+                      style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600)),
                   const SizedBox(height: 8),
                   if (active.isEmpty)
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 8),
-                      child: Text('No active alerts.', style: TextStyle(color: Colors.white38)),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      child: Text(l10n.alertsNoActiveAlerts, style: const TextStyle(color: Colors.white38)),
                     )
                   else
                     ...active.map((a) => _AlertTile(alert: a)),
                   if (triggered.isNotEmpty) ...[
                     const SizedBox(height: 20),
-                    const Text('Triggered',
-                        style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600)),
+                    Text(l10n.alertsTriggeredSectionTitle,
+                        style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600)),
                     const SizedBox(height: 8),
                     ...triggered.map((a) => _AlertTile(alert: a)),
                   ],
@@ -114,7 +117,7 @@ class _CreateAlertScreenState extends ConsumerState<CreateAlertScreen> {
             },
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (e, _) =>
-                Text('Could not load alerts: $e', style: const TextStyle(color: Color(0xFFEF5350))),
+                Text(l10n.alertsLoadError(e.toString()), style: const TextStyle(color: Color(0xFFEF5350))),
           ),
         ],
       ),
@@ -145,6 +148,7 @@ class _CreateCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -154,14 +158,14 @@ class _CreateCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text('New alert',
-              style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600)),
+          Text(l10n.alertsNewAlertTitle,
+              style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600)),
           const SizedBox(height: 12),
           DropdownButtonFormField<String>(
             value: symbol,
             dropdownColor: const Color(0xFF1E222D),
             style: const TextStyle(color: Colors.white),
-            decoration: const InputDecoration(labelText: 'Coin', isDense: true),
+            decoration: InputDecoration(labelText: l10n.coinFieldLabel, isDense: true),
             items: [
               for (final coin in supportedCoins)
                 DropdownMenuItem(value: coin.symbol, child: Text('${coin.baseAsset} · ${coin.displayName}')),
@@ -178,18 +182,18 @@ class _CreateCard extends StatelessWidget {
                   controller: priceController,
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   style: const TextStyle(color: Colors.white),
-                  decoration: const InputDecoration(
-                    labelText: 'Target price (USD)',
+                  decoration: InputDecoration(
+                    labelText: l10n.alertsTargetPriceLabel,
                     isDense: true,
-                    border: OutlineInputBorder(),
+                    border: const OutlineInputBorder(),
                   ),
                 ),
               ),
               const SizedBox(width: 12),
               SegmentedButton<AlertDirection>(
-                segments: const [
-                  ButtonSegment(value: AlertDirection.above, label: Text('Above')),
-                  ButtonSegment(value: AlertDirection.below, label: Text('Below')),
+                segments: [
+                  ButtonSegment(value: AlertDirection.above, label: Text(l10n.alertsDirectionAbove)),
+                  ButtonSegment(value: AlertDirection.below, label: Text(l10n.alertsDirectionBelow)),
                 ],
                 selected: {direction},
                 onSelectionChanged: (s) => onDirectionChanged(s.first),
@@ -209,7 +213,7 @@ class _CreateCard extends StatelessWidget {
                     height: 20,
                     child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                   )
-                : const Text('Create alert'),
+                : Text(l10n.alertsCreateButton),
           ),
         ],
       ),
@@ -229,6 +233,7 @@ class _AlertTile extends ConsumerWidget {
   }
 
   Future<void> _editPrice(BuildContext context, WidgetRef ref) async {
+    final l10n = AppLocalizations.of(context)!;
     final controller = TextEditingController(text: alert.targetPrice.toString());
     var direction = alert.direction;
     final result = await showDialog<bool>(
@@ -236,7 +241,7 @@ class _AlertTile extends ConsumerWidget {
       builder: (dialogContext) => StatefulBuilder(
         builder: (dialogContext, setDialogState) => AlertDialog(
           backgroundColor: const Color(0xFF1E222D),
-          title: const Text('Edit alert', style: TextStyle(color: Colors.white)),
+          title: Text(l10n.alertsEditDialogTitle, style: const TextStyle(color: Colors.white)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -244,13 +249,13 @@ class _AlertTile extends ConsumerWidget {
                 controller: controller,
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 style: const TextStyle(color: Colors.white),
-                decoration: const InputDecoration(labelText: 'Target price (USD)'),
+                decoration: InputDecoration(labelText: l10n.alertsTargetPriceLabel),
               ),
               const SizedBox(height: 12),
               SegmentedButton<AlertDirection>(
-                segments: const [
-                  ButtonSegment(value: AlertDirection.above, label: Text('Above')),
-                  ButtonSegment(value: AlertDirection.below, label: Text('Below')),
+                segments: [
+                  ButtonSegment(value: AlertDirection.above, label: Text(l10n.alertsDirectionAbove)),
+                  ButtonSegment(value: AlertDirection.below, label: Text(l10n.alertsDirectionBelow)),
                 ],
                 selected: {direction},
                 onSelectionChanged: (s) => setDialogState(() => direction = s.first),
@@ -260,11 +265,11 @@ class _AlertTile extends ConsumerWidget {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: const Text('Cancel'),
+              child: Text(l10n.commonCancel),
             ),
             FilledButton(
               onPressed: () => Navigator.of(dialogContext).pop(true),
-              child: const Text('Save'),
+              child: Text(l10n.commonSave),
             ),
           ],
         ),
@@ -287,6 +292,7 @@ class _AlertTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     final coin = coinForSymbol(alert.coinSymbol);
     final isAbove = alert.direction == AlertDirection.above;
 
@@ -310,7 +316,7 @@ class _AlertTile extends ConsumerWidget {
           ],
         ),
         subtitle: !alert.isActive && alert.triggeredAt != null
-            ? Text('Triggered ${_fmt(alert.triggeredAt!)}',
+            ? Text(l10n.alertsTriggeredOn(_fmt(alert.triggeredAt!)),
                 style: const TextStyle(color: Colors.white38, fontSize: 12))
             : null,
         trailing: IconButton(

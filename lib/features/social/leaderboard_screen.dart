@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/entities/leaderboard_entry.dart';
+import '../../l10n/generated/app_localizations.dart';
 import 'trader_profile_providers.dart';
 import 'trader_profile_screen.dart';
 
@@ -14,14 +15,15 @@ class LeaderboardScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return DefaultTabController(
       length: 2,
       child: Scaffold(
         appBar: AppBar(
           backgroundColor: const Color(0xFF1E222D),
-          title: const Text('Leaderboard'),
-          bottom: const TabBar(
-            tabs: [Tab(text: 'Weekly'), Tab(text: 'All-Time')],
+          title: Text(l10n.leaderboardTitle),
+          bottom: TabBar(
+            tabs: [Tab(text: l10n.leaderboardWeeklyTab), Tab(text: l10n.leaderboardAllTimeTab)],
           ),
         ),
         body: const TabBarView(
@@ -41,6 +43,7 @@ class _LeaderboardList extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     final entriesAsync = ref.watch(leaderboardProvider(window));
 
     return Column(
@@ -49,10 +52,9 @@ class _LeaderboardList extends ConsumerWidget {
           width: double.infinity,
           color: const Color(0xFF1E222D),
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-          child: const Text(
-            'Ranked by simulated discipline + win rate — educational only, '
-            'not investment advice.',
-            style: TextStyle(color: Colors.white38, fontSize: 11),
+          child: Text(
+            l10n.leaderboardDisclaimer,
+            style: const TextStyle(color: Colors.white38, fontSize: 11),
           ),
         ),
         Expanded(
@@ -64,8 +66,8 @@ class _LeaderboardList extends ConsumerWidget {
                     padding: const EdgeInsets.all(24),
                     child: Text(
                       window == LeaderboardWindow.weekly
-                          ? 'No active traders on the weekly leaderboard yet.'
-                          : 'No traders on the leaderboard yet.',
+                          ? l10n.leaderboardEmptyWeekly
+                          : l10n.leaderboardEmptyAllTime,
                       textAlign: TextAlign.center,
                       style: const TextStyle(color: Colors.white54),
                     ),
@@ -84,7 +86,7 @@ class _LeaderboardList extends ConsumerWidget {
             },
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (e, _) => Center(
-              child: Text('Could not load the leaderboard: $e',
+              child: Text(l10n.leaderboardLoadError(e.toString()),
                   style: const TextStyle(color: Color(0xFFEF5350))),
             ),
           ),
@@ -111,8 +113,10 @@ class _LeaderboardTile extends StatelessWidget {
         ),
         title: Text(entry.displayName, style: const TextStyle(color: Colors.white)),
         subtitle: Text(
-          'Discipline ${entry.disciplineScore.toStringAsFixed(0)}  ·  '
-          'Win rate ${entry.winRatePct.toStringAsFixed(0)}%',
+          AppLocalizations.of(context)!.leaderboardStatLine(
+            entry.disciplineScore.toStringAsFixed(0),
+            entry.winRatePct.toStringAsFixed(0),
+          ),
           style: const TextStyle(color: Colors.white54, fontSize: 12),
         ),
         onTap: () => Navigator.of(context).push(

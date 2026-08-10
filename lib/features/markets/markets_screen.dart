@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/entities/supported_coin.dart';
 import '../../data/sources/coingecko_source.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../auth/auth_providers.dart';
 import '../home/home_deep_link.dart';
 import '../settings/price_text.dart';
@@ -51,11 +52,12 @@ class MarketsScreen extends ConsumerWidget {
     final coins = [...followed, ...rest];
 
     final isStale = snapshotAsync.valueOrNull?.isStale ?? false;
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       appBar: AppBar(
         backgroundColor: const Color(0xFF1E222D),
-        title: const Text('Markets'),
+        title: Text(l10n.marketsTitle),
       ),
       body: Column(
         children: [
@@ -64,16 +66,16 @@ class MarketsScreen extends ConsumerWidget {
               width: double.infinity,
               color: const Color(0xFFFFC107).withValues(alpha: 0.15),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-              child: const Text(
-                'Showing last-known prices — refresh failed.',
-                style: TextStyle(color: Color(0xFFFFC107), fontSize: 11),
+              child: Text(
+                l10n.marketsStalePrices,
+                style: const TextStyle(color: Color(0xFFFFC107), fontSize: 11),
               ),
             ),
           _SortHeader(sortField: sortField, sortAscending: sortAscending),
           Expanded(
             child: snapshotAsync.hasError && snapshotAsync.valueOrNull == null
-                ? const Center(
-                    child: Text('Could not load market prices.', style: TextStyle(color: Colors.white54)),
+                ? Center(
+                    child: Text(l10n.marketsLoadError, style: const TextStyle(color: Colors.white54)),
                   )
                 : ListView.separated(
                     padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
@@ -114,28 +116,31 @@ class _SortHeader extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
       child: Row(
         children: [
           _SortChip(
             label: sortField == _SortField.change
-                ? (sortAscending ? 'Losers ▲' : 'Gainers ▼')
-                : '24h %',
+                ? (sortAscending ? l10n.marketsSortLosers : l10n.marketsSortGainers)
+                : l10n.marketsSortChange,
             selected: sortField == _SortField.change,
             onTap: () => _tapField(ref, _SortField.change),
           ),
           const SizedBox(width: 8),
           _SortChip(
-            label: sortField == _SortField.name ? (sortAscending ? 'Name A-Z' : 'Name Z-A') : 'Name',
+            label: sortField == _SortField.name
+                ? (sortAscending ? l10n.marketsSortNameAZ : l10n.marketsSortNameZA)
+                : l10n.marketsSortName,
             selected: sortField == _SortField.name,
             onTap: () => _tapField(ref, _SortField.name),
           ),
           const SizedBox(width: 8),
           _SortChip(
             label: sortField == _SortField.price
-                ? (sortAscending ? 'Price ▲' : 'Price ▼')
-                : 'Price',
+                ? (sortAscending ? l10n.marketsSortPriceUp : l10n.marketsSortPriceDown)
+                : l10n.marketsSortPrice,
             selected: sortField == _SortField.price,
             onTap: () => _tapField(ref, _SortField.price),
           ),
@@ -203,6 +208,7 @@ class _MarketTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     final changePct = data?.priceChangePercent24h;
     final rising = (changePct ?? 0) >= 0;
     final changeColor = rising ? const Color(0xFF26A69A) : const Color(0xFFEF5350);
@@ -223,7 +229,7 @@ class _MarketTile extends ConsumerWidget {
           style: const TextStyle(color: Colors.white),
         ),
         subtitle: data == null
-            ? const Text('Loading…', style: TextStyle(color: Colors.white38, fontSize: 12))
+            ? Text(l10n.commonLoading, style: const TextStyle(color: Colors.white38, fontSize: 12))
             : PriceText(
                 data!.currentPriceUsd,
                 decimals: data!.currentPriceUsd >= 100 ? 2 : 4,
@@ -242,7 +248,7 @@ class _MarketTile extends ConsumerWidget {
                 isFollowed ? Icons.star : Icons.star_border,
                 color: isFollowed ? const Color(0xFFFFC107) : Colors.white38,
               ),
-              tooltip: isFollowed ? 'Unfollow' : 'Follow',
+              tooltip: isFollowed ? l10n.marketsUnfollowTooltip : l10n.marketsFollowTooltip,
               onPressed: () => _toggleFollow(ref),
             ),
           ],

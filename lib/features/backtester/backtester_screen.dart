@@ -9,6 +9,7 @@ import '../../domain/entities/backtest_condition.dart';
 import '../../domain/entities/order.dart';
 import '../../domain/usecases/backtest_runner.dart';
 import '../../domain/usecases/risk_metrics_calculator.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../auth/auth_providers.dart';
 import '../certifications/certification_providers.dart';
 import '../ticker/ticker_providers.dart';
@@ -17,11 +18,11 @@ import 'equity_curve_chart.dart';
 enum _IndicatorKind { rsiThreshold, rsiCrosses, macdCrosses, priceCrossesSma }
 
 extension on _IndicatorKind {
-  String get label => switch (this) {
-        _IndicatorKind.rsiThreshold => 'RSI level',
-        _IndicatorKind.rsiCrosses => 'RSI crosses',
-        _IndicatorKind.macdCrosses => 'MACD crosses signal',
-        _IndicatorKind.priceCrossesSma => 'Price crosses SMA',
+  String label(AppLocalizations l10n) => switch (this) {
+        _IndicatorKind.rsiThreshold => l10n.backtesterIndicatorRsiLevel,
+        _IndicatorKind.rsiCrosses => l10n.backtesterIndicatorRsiCrosses,
+        _IndicatorKind.macdCrosses => l10n.backtesterIndicatorMacdCrosses,
+        _IndicatorKind.priceCrossesSma => l10n.backtesterIndicatorPriceCrossesSma,
       };
 }
 
@@ -84,18 +85,19 @@ class _BacktesterScreenState extends ConsumerState<BacktesterScreen> {
   }
 
   Future<void> _runBacktest() async {
+    final l10n = AppLocalizations.of(context)!;
     final range = _dateRange;
     if (range == null) {
       setState(() {
         _phase = _RunPhase.error;
-        _errorMessage = 'Pick a date range first.';
+        _errorMessage = l10n.backtesterNoDateRangeError;
       });
       return;
     }
     if (_conditions.isEmpty) {
       setState(() {
         _phase = _RunPhase.error;
-        _errorMessage = 'Add at least one condition.';
+        _errorMessage = l10n.backtesterNoConditionError;
       });
       return;
     }
@@ -122,8 +124,7 @@ class _BacktesterScreenState extends ConsumerState<BacktesterScreen> {
       if (candles.length < 30) {
         setState(() {
           _phase = _RunPhase.error;
-          _errorMessage =
-              'Only ${candles.length} candles in that range — pick a wider range or a shorter interval.';
+          _errorMessage = l10n.backtesterInsufficientCandles(candles.length);
         });
         return;
       }
@@ -172,25 +173,26 @@ class _BacktesterScreenState extends ConsumerState<BacktesterScreen> {
       if (!mounted) return;
       setState(() {
         _phase = _RunPhase.error;
-        _errorMessage = 'Could not fetch historical data: ${e.message}';
+        _errorMessage = l10n.backtesterFetchError(e.message);
       });
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final isRunning = _phase == _RunPhase.fetchingData || _phase == _RunPhase.running;
 
     return Scaffold(
       appBar: AppBar(
         backgroundColor: const Color(0xFF1E222D),
-        title: const Text('Strategy Backtester'),
+        title: Text(l10n.backtesterTitle),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           _SectionCard(
-            title: 'Data',
+            title: l10n.backtesterDataSectionTitle,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -201,7 +203,7 @@ class _BacktesterScreenState extends ConsumerState<BacktesterScreen> {
                         value: _symbol,
                         dropdownColor: const Color(0xFF1E222D),
                         style: const TextStyle(color: Colors.white),
-                        decoration: const InputDecoration(labelText: 'Coin', isDense: true),
+                        decoration: InputDecoration(labelText: l10n.coinFieldLabel, isDense: true),
                         items: [
                           for (final coin in supportedCoins)
                             DropdownMenuItem(value: coin.symbol, child: Text(coin.baseAsset)),
@@ -215,7 +217,7 @@ class _BacktesterScreenState extends ConsumerState<BacktesterScreen> {
                         value: _interval,
                         dropdownColor: const Color(0xFF1E222D),
                         style: const TextStyle(color: Colors.white),
-                        decoration: const InputDecoration(labelText: 'Interval', isDense: true),
+                        decoration: InputDecoration(labelText: l10n.backtesterIntervalLabel, isDense: true),
                         items: const ['1m', '5m', '15m', '1h', '4h', '1d']
                             .map((i) => DropdownMenuItem(value: i, child: Text(i)))
                             .toList(),
@@ -230,7 +232,7 @@ class _BacktesterScreenState extends ConsumerState<BacktesterScreen> {
                   icon: const Icon(Icons.date_range),
                   label: Text(
                     _dateRange == null
-                        ? 'Pick date range'
+                        ? l10n.backtesterPickDateRange
                         : '${_fmtDate(_dateRange!.start)} — ${_fmtDate(_dateRange!.end)}',
                   ),
                 ),
@@ -239,7 +241,7 @@ class _BacktesterScreenState extends ConsumerState<BacktesterScreen> {
           ),
           const SizedBox(height: 16),
           _SectionCard(
-            title: 'Position sizing',
+            title: l10n.backtesterPositionSizingTitle,
             child: Row(
               children: [
                 Expanded(
@@ -248,7 +250,7 @@ class _BacktesterScreenState extends ConsumerState<BacktesterScreen> {
                     enabled: !isRunning,
                     keyboardType: TextInputType.number,
                     style: const TextStyle(color: Colors.white),
-                    decoration: const InputDecoration(labelText: 'Starting balance', isDense: true),
+                    decoration: InputDecoration(labelText: l10n.backtesterStartingBalanceLabel, isDense: true),
                     onChanged: (v) => _startingBalance = double.tryParse(v) ?? _startingBalance,
                   ),
                 ),
@@ -259,7 +261,7 @@ class _BacktesterScreenState extends ConsumerState<BacktesterScreen> {
                     enabled: !isRunning,
                     keyboardType: TextInputType.number,
                     style: const TextStyle(color: Colors.white),
-                    decoration: const InputDecoration(labelText: '% of balance / trade', isDense: true),
+                    decoration: InputDecoration(labelText: l10n.backtesterPositionSizeLabel, isDense: true),
                     onChanged: (v) => _positionSizePercent = double.tryParse(v) ?? _positionSizePercent,
                   ),
                 ),
@@ -268,8 +270,8 @@ class _BacktesterScreenState extends ConsumerState<BacktesterScreen> {
           ),
           const SizedBox(height: 16),
           _SectionCard(
-            title: 'Entry / exit condition',
-            subtitle: 'Long while true, flat while false.',
+            title: l10n.backtesterConditionSectionTitle,
+            subtitle: l10n.backtesterConditionSectionSubtitle,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -277,9 +279,9 @@ class _BacktesterScreenState extends ConsumerState<BacktesterScreen> {
                   Padding(
                     padding: const EdgeInsets.only(bottom: 8),
                     child: SegmentedButton<bool>(
-                      segments: const [
-                        ButtonSegment(value: true, label: Text('AND')),
-                        ButtonSegment(value: false, label: Text('OR')),
+                      segments: [
+                        ButtonSegment(value: true, label: Text(l10n.backtesterAndLabel)),
+                        ButtonSegment(value: false, label: Text(l10n.backtesterOrLabel)),
                       ],
                       selected: {_combineWithAnd},
                       onSelectionChanged: isRunning
@@ -306,7 +308,7 @@ class _BacktesterScreenState extends ConsumerState<BacktesterScreen> {
                         ? null
                         : () => setState(() => _conditions.add(_ConditionDraft())),
                     icon: const Icon(Icons.add),
-                    label: const Text('Add condition'),
+                    label: Text(l10n.backtesterAddCondition),
                   ),
                 ),
               ],
@@ -316,20 +318,20 @@ class _BacktesterScreenState extends ConsumerState<BacktesterScreen> {
           FilledButton(
             onPressed: isRunning ? null : _runBacktest,
             style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(48)),
-            child: Text(isRunning ? 'Running…' : 'Run Backtest'),
+            child: Text(isRunning ? l10n.backtesterRunningButton : l10n.backtesterRunButton),
           ),
           if (_phase == _RunPhase.fetchingData) ...[
             const SizedBox(height: 12),
             const LinearProgressIndicator(),
             const SizedBox(height: 6),
-            Text('Fetching historical data… $_fetchedCandleCount candles',
+            Text(l10n.backtesterFetchingData(_fetchedCandleCount),
                 style: const TextStyle(color: Colors.white54, fontSize: 12)),
           ],
           if (_phase == _RunPhase.running) ...[
             const SizedBox(height: 12),
             LinearProgressIndicator(value: _backtestProgress),
             const SizedBox(height: 6),
-            Text('Running backtest… ${(_backtestProgress * 100).toStringAsFixed(0)}%',
+            Text(l10n.backtesterRunningProgress((_backtestProgress * 100).toStringAsFixed(0)),
                 style: const TextStyle(color: Colors.white54, fontSize: 12)),
           ],
           if (_phase == _RunPhase.error && _errorMessage != null) ...[
@@ -397,6 +399,7 @@ class _ConditionRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
@@ -415,7 +418,7 @@ class _ConditionRow extends StatelessWidget {
                   style: const TextStyle(color: Colors.white, fontSize: 13),
                   decoration: const InputDecoration(isDense: true, border: InputBorder.none),
                   items: _IndicatorKind.values
-                      .map((k) => DropdownMenuItem(value: k, child: Text(k.label)))
+                      .map((k) => DropdownMenuItem(value: k, child: Text(k.label(l10n))))
                       .toList(),
                   onChanged: enabled
                       ? (k) {
@@ -428,7 +431,7 @@ class _ConditionRow extends StatelessWidget {
               if (onRemove != null)
                 IconButton(
                   icon: const Icon(Icons.close, size: 18, color: Colors.white38),
-                  tooltip: 'Remove condition',
+                  tooltip: l10n.backtesterRemoveConditionTooltip,
                   onPressed: enabled ? onRemove : null,
                 ),
             ],
@@ -438,7 +441,7 @@ class _ConditionRow extends StatelessWidget {
               if (draft.kind != _IndicatorKind.macdCrosses) ...[
                 Expanded(
                   child: _NumberField(
-                    label: 'Period',
+                    label: l10n.backtesterPeriodLabel,
                     value: draft.period.toDouble(),
                     enabled: enabled,
                     onChanged: (v) {
@@ -455,7 +458,7 @@ class _ConditionRow extends StatelessWidget {
                     value: draft.comparisonOperator,
                     dropdownColor: const Color(0xFF1E222D),
                     style: const TextStyle(color: Colors.white, fontSize: 13),
-                    decoration: const InputDecoration(isDense: true, labelText: 'vs'),
+                    decoration: InputDecoration(isDense: true, labelText: l10n.backtesterVsLabel),
                     items: const [
                       DropdownMenuItem(value: ComparisonOperator.lessThan, child: Text('<')),
                       DropdownMenuItem(value: ComparisonOperator.greaterThan, child: Text('>')),
@@ -471,7 +474,7 @@ class _ConditionRow extends StatelessWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: _NumberField(
-                    label: 'Threshold',
+                    label: l10n.backtesterThresholdLabel,
                     value: draft.threshold,
                     enabled: enabled,
                     onChanged: (v) {
@@ -486,7 +489,7 @@ class _ConditionRow extends StatelessWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: _NumberField(
-                    label: 'Threshold',
+                    label: l10n.backtesterThresholdLabel,
                     value: draft.threshold,
                     enabled: enabled,
                     onChanged: (v) {
@@ -517,14 +520,15 @@ class _DirectionDropdown extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return DropdownButtonFormField<CrossDirection>(
       value: draft.direction,
       dropdownColor: const Color(0xFF1E222D),
       style: const TextStyle(color: Colors.white, fontSize: 13),
-      decoration: const InputDecoration(isDense: true, labelText: 'Direction'),
-      items: const [
-        DropdownMenuItem(value: CrossDirection.up, child: Text('Crosses UP')),
-        DropdownMenuItem(value: CrossDirection.down, child: Text('Crosses DOWN')),
+      decoration: InputDecoration(isDense: true, labelText: l10n.backtesterDirectionLabel),
+      items: [
+        DropdownMenuItem(value: CrossDirection.up, child: Text(l10n.backtesterCrossesUp)),
+        DropdownMenuItem(value: CrossDirection.down, child: Text(l10n.backtesterCrossesDown)),
       ],
       onChanged: enabled
           ? (v) {
@@ -574,27 +578,28 @@ class _ResultsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final pnlColor = result.totalPnl >= 0 ? const Color(0xFF26A69A) : const Color(0xFFEF5350);
     final riskMetrics = computeRiskMetrics(result.equityCurve);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Text('Results', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
+        Text(l10n.backtesterResultsTitle,
+            style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
         const SizedBox(height: 4),
-        const Text(
-          'Simulated against historical data — past performance on this '
-          'window is not a guarantee of future results.',
+        Text(
+          l10n.backtesterResultsDisclaimer,
           // white70 rather than white38: this is safety-relevant copy, and
           // needs to clear WCAG AA contrast against this dark background.
-          style: TextStyle(color: Colors.white70, fontSize: 11),
+          style: const TextStyle(color: Colors.white70, fontSize: 11),
         ),
         const SizedBox(height: 12),
         Row(
           children: [
             Expanded(
               child: _StatTile(
-                label: 'Total P&L',
+                label: l10n.backtesterTotalPnl,
                 value: '${result.totalPnl >= 0 ? '+' : ''}${result.totalPnl.toStringAsFixed(2)}',
                 color: pnlColor,
               ),
@@ -602,7 +607,7 @@ class _ResultsSection extends StatelessWidget {
             const SizedBox(width: 8),
             Expanded(
               child: _StatTile(
-                label: 'Win rate',
+                label: l10n.backtesterWinRate,
                 value: result.winRate == null ? '—' : '${(result.winRate! * 100).toStringAsFixed(1)}%',
               ),
             ),
@@ -613,7 +618,7 @@ class _ResultsSection extends StatelessWidget {
           children: [
             Expanded(
               child: _StatTile(
-                label: 'Max drawdown',
+                label: l10n.backtesterMaxDrawdown,
                 value: '${result.maxDrawdownPercent.toStringAsFixed(2)}%',
                 color: const Color(0xFFEF5350),
               ),
@@ -621,7 +626,7 @@ class _ResultsSection extends StatelessWidget {
             const SizedBox(width: 8),
             Expanded(
               child: _StatTile(
-                label: 'Closed trades',
+                label: l10n.backtesterClosedTrades,
                 value: '${result.sellCount}',
               ),
             ),
@@ -632,7 +637,7 @@ class _ResultsSection extends StatelessWidget {
           children: [
             Expanded(
               child: _StatTile(
-                label: 'Sharpe ratio',
+                label: l10n.backtesterSharpeRatio,
                 value: riskMetrics.sharpeRatio == null
                     ? '—'
                     : riskMetrics.sharpeRatio!.toStringAsFixed(2),
@@ -648,11 +653,9 @@ class _ResultsSection extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 4),
-        const Text(
-          'Sharpe ratio: risk-adjusted return, annualized — assumes a 0% '
-          'risk-free rate. Higher is better; above 1 is generally considered '
-          'good, above 2 very good.',
-          style: TextStyle(color: Colors.white38, fontSize: 10),
+        Text(
+          l10n.backtesterSharpeExplanation,
+          style: const TextStyle(color: Colors.white38, fontSize: 10),
         ),
         const SizedBox(height: 16),
         Container(
@@ -665,7 +668,8 @@ class _ResultsSection extends StatelessWidget {
           child: EquityCurveChart(points: result.equityCurve, startingBalance: startingBalance),
         ),
         const SizedBox(height: 16),
-        const Text('Trades', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
+        Text(l10n.backtesterTradesSectionTitle,
+            style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
         const SizedBox(height: 8),
         ...result.trades.map((t) => _TradeTile(trade: t)),
       ],

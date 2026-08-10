@@ -7,6 +7,7 @@ import '../../data/models/kline_tick.dart';
 import '../../domain/entities/daily_puzzle.dart';
 import '../../domain/entities/puzzle_guess.dart';
 import '../../domain/usecases/submit_puzzle_answer.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../auth/auth_providers.dart';
 import '../chart/trading_chart_view.dart';
 import '../portfolio/portfolio_providers.dart';
@@ -20,32 +21,33 @@ class DailyPuzzleScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     final puzzleAsync = ref.watch(todayPuzzleProvider);
 
     return Scaffold(
       appBar: AppBar(
         backgroundColor: const Color(0xFF1E222D),
-        title: const Text('Daily Chart Puzzle'),
+        title: Text(l10n.puzzleTitle),
         actions: [
           if (ref.watch(currentUidProvider) != null) const _StreakBadge(),
         ],
       ),
       body: puzzleAsync.when(
         data: (puzzle) => puzzle == null
-            ? const Center(
+            ? Center(
                 child: Padding(
-                  padding: EdgeInsets.all(24),
+                  padding: const EdgeInsets.all(24),
                   child: Text(
-                    "Today's puzzle isn't ready yet — check back soon.",
+                    l10n.puzzleNotReady,
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.white54),
+                    style: const TextStyle(color: Colors.white54),
                   ),
                 ),
               )
             : _PuzzleBody(key: ValueKey(puzzle.date), puzzle: puzzle),
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
-          child: Text('Failed to load the puzzle: $e',
+          child: Text(l10n.puzzleLoadError(e.toString()),
               style: const TextStyle(color: Color(0xFFEF5350))),
         ),
       ),
@@ -144,12 +146,13 @@ class _PuzzleBodyState extends ConsumerState<_PuzzleBody> {
     if (ref.read(currentUidProvider) != null) return;
     final count = await ref.read(anonymousPuzzlePlayCounterProvider).increment();
     if (count >= 3 && mounted) {
+      final l10n = AppLocalizations.of(context)!;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           duration: const Duration(seconds: 8),
-          content: const Text("Enjoying the puzzle? Sign up to keep your streak."),
+          content: Text(l10n.puzzleSignupPrompt),
           action: SnackBarAction(
-            label: 'Sign up',
+            label: l10n.puzzleSignupAction,
             onPressed: () => Navigator.of(context).maybePop(),
           ),
         ),
@@ -159,6 +162,7 @@ class _PuzzleBodyState extends ConsumerState<_PuzzleBody> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final result = _result;
     return Column(
       children: [
@@ -182,7 +186,7 @@ class _PuzzleBodyState extends ConsumerState<_PuzzleBody> {
                       : null,
                   style: FilledButton.styleFrom(backgroundColor: const Color(0xFF26A69A)),
                   icon: const Icon(Icons.arrow_upward),
-                  label: const Text('Up'),
+                  label: Text(l10n.puzzleUpButton),
                 ),
               ),
               const SizedBox(width: 12),
@@ -193,7 +197,7 @@ class _PuzzleBodyState extends ConsumerState<_PuzzleBody> {
                       : null,
                   style: FilledButton.styleFrom(backgroundColor: const Color(0xFFEF5350)),
                   icon: const Icon(Icons.arrow_downward),
-                  label: const Text('Down'),
+                  label: Text(l10n.puzzleDownButton),
                 ),
               ),
             ],
@@ -212,6 +216,7 @@ class _StatsHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final pct = result?.aggregateCorrectPct ?? puzzle.correctPct;
     final totalAnswers = result?.totalAnswers ?? puzzle.totalAnswers;
     return Container(
@@ -221,13 +226,13 @@ class _StatsHeader extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('${puzzle.symbol} · will the next 15 minutes go up or down?',
+          Text(l10n.puzzleQuestion(puzzle.symbol),
               style: const TextStyle(color: Colors.white70, fontSize: 13)),
           const SizedBox(height: 4),
           Text(
             pct == null
-                ? 'Be the first to answer today.'
-                : '${pct.toStringAsFixed(0)}% of $totalAnswers players got it right today.',
+                ? l10n.puzzleBeFirst
+                : l10n.puzzlePlayersCorrect(pct.toStringAsFixed(0), totalAnswers),
             style: const TextStyle(color: Colors.white38, fontSize: 11),
           ),
           const SizedBox(height: 2),
@@ -235,12 +240,12 @@ class _StatsHeader extends StatelessWidget {
           // .dart), so it can't rely on HomeShell's shared SimulatedFooter
           // being present — it needs its own reminder regardless of entry
           // point.
-          const Text(
-            'Practice only — no real trades or money.',
+          Text(
+            l10n.puzzlePracticeOnlyNote,
             // white70 rather than the dimmer white24/38 used for purely
             // decorative text elsewhere: safety-relevant copy needs to
             // clear WCAG AA contrast against this dark background.
-            style: TextStyle(color: Colors.white70, fontSize: 10),
+            style: const TextStyle(color: Colors.white70, fontSize: 10),
           ),
         ],
       ),
@@ -255,17 +260,20 @@ class _ResultBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final color = result.correct ? const Color(0xFF26A69A) : const Color(0xFFEF5350);
-    final direction = result.correctAnswer == PuzzleGuess.up ? 'up' : 'down';
+    final direction =
+        result.correctAnswer == PuzzleGuess.up ? l10n.puzzleDirectionUp : l10n.puzzleDirectionDown;
     final sign = result.actualMovePct >= 0 ? '+' : '';
+    final move = '$sign${result.actualMovePct.toStringAsFixed(2)}%';
     return Container(
       width: double.infinity,
       color: color.withValues(alpha: 0.15),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       child: Text(
         result.correct
-            ? "Correct! BTC actually went $direction ($sign${result.actualMovePct.toStringAsFixed(2)}%)."
-            : "Not quite — BTC actually went $direction ($sign${result.actualMovePct.toStringAsFixed(2)}%).",
+            ? l10n.puzzleCorrectResult(direction, move)
+            : l10n.puzzleIncorrectResult(direction, move),
         style: TextStyle(color: color, fontWeight: FontWeight.w600),
       ),
     );
