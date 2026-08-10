@@ -302,6 +302,19 @@ service cloud.firestore {
       allow read, update, delete: if false;
     }
 
+    // Settings > "Report a translation issue" (i18n Part D) — write-only
+    // from the client, same shape as /reports above. Reviewed manually
+    // against docs/translation_glossary.md, never read back in-app.
+    match /translation_reports/{reportId} {
+      allow create: if isSignedIn()
+        && request.resource.data.reported_by == request.auth.uid
+        && request.resource.data.language_code is string
+        && request.resource.data.arb_key is string
+        && request.resource.data.suggestion is string
+        && request.resource.data.timestamp == request.time;
+      allow read, update, delete: if false;
+    }
+
     // ------------------------------------------------------------------
     // Daily puzzle (Part C)
     // ------------------------------------------------------------------

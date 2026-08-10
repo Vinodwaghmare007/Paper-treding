@@ -1,0 +1,435 @@
+{
+  "@@locale": "en",
+
+  "appTitle": "Crypto Paper Trader",
+  "@appTitle": {
+    "description": "The app's name, shown on the sign-in screen and as the OS app title. Proper noun — do not localize, transliterate to the target script only if that's how the app would realistically be marketed there; otherwise keep in Latin script."
+  },
+
+  "disclaimerEducationalSimulator": "Educational simulator — no real funds involved.",
+  "@disclaimerEducationalSimulator": {
+    "description": "Subtitle directly under the app name on the sign-in screen — the very first thing any new user reads. LEGAL/COMPLIANCE TEXT: must be reviewed by a native speaker before this locale ships publicly; never approximate this meaning.",
+    "disclaimer": true
+  },
+
+  "disclaimerSimulatedFooter": "SIMULATED — Educational only, no real money",
+  "@disclaimerSimulatedFooter": {
+    "description": "Persistent one-line footer shown at the bottom of every signed-in screen (chart, portfolio, orders, news). LEGAL/COMPLIANCE TEXT: must be reviewed by a native speaker before this locale ships publicly. Keep it short — this renders in a single line at font size 10.",
+    "disclaimer": true
+  },
+
+  "disclaimerNotFinancialAdvice": "Educational only — not financial advice.",
+  "@disclaimerNotFinancialAdvice": {
+    "description": "Short disclaimer reused across share cards and results screens (What-If Time Machine, DCA Simulator, backtester). LEGAL/COMPLIANCE TEXT: must be reviewed by a native speaker before this locale ships publicly.",
+    "disclaimer": true
+  },
+
+  "chooseLanguageTitle": "Choose your language",
+  "@chooseLanguageTitle": {
+    "description": "Heading on the first-run language picker, shown once before sign-in, and reused as a section heading in Settings. Keep this string itself in English in every ARB file except ideally it should read naturally to someone who hasn't picked a language yet — many apps show this line in the *target* language on each row instead of translating this heading; see languagePickerRowLabel."
+  },
+
+  "chooseLanguageSubtitle": "You can change this anytime in Settings.",
+  "@chooseLanguageSubtitle": {
+    "description": "Small helper text under the first-run language picker's heading, reassuring the user this choice isn't permanent."
+  },
+
+  "continueButton": "Continue",
+  "@continueButton": {
+    "description": "Button that confirms the chosen language and proceeds to sign-in, on the first-run language picker screen."
+  },
+
+  "settingsTitle": "Settings",
+  "@settingsTitle": {
+    "description": "App bar title on the Settings screen."
+  },
+
+  "settingsLanguageSectionTitle": "Language",
+  "@settingsLanguageSectionTitle": {
+    "description": "Section heading in Settings above the language picker (same picker as the first-run onboarding step)."
+  },
+
+  "settingsCurrencySectionTitle": "Display currency",
+  "@settingsCurrencySectionTitle": {
+    "description": "Section heading in Settings for the USD/INR display-currency toggle."
+  },
+
+  "settingsCurrencyDescription": "Applies to every price shown in the app — the chart, portfolio, orders, and Markets screen. Trades are always recorded in USD underneath; this only changes the display.",
+  "@settingsCurrencyDescription": {
+    "description": "Explanatory text under the currency section heading in Settings, clarifying that only the display changes, not the underlying stored values."
+  },
+
+  "settingsCurrencyUsdLabel": "USD ($)",
+  "@settingsCurrencyUsdLabel": {
+    "description": "Label on the USD option of the currency toggle in Settings. The $ symbol itself is not translated."
+  },
+
+  "settingsCurrencyInrLabel": "INR (₹)",
+  "@settingsCurrencyInrLabel": {
+    "description": "Label on the INR option of the currency toggle in Settings. The ₹ symbol itself is not translated."
+  },
+
+  "settingsExchangeRateLine": "1 USD ≈ {rate}",
+  "@settingsExchangeRateLine": {
+    "description": "Shows the current USD-to-INR exchange rate below the currency toggle, only visible when INR is selected. {rate} is a pre-formatted currency string (e.g. '₹84.12') built with intl's NumberFormat, not a raw number — do not add another currency symbol around it.",
+    "placeholders": {
+      "rate": {
+        "type": "String",
+        "example": "₹84.12"
+      }
+    }
+  },
+
+  "settingsExchangeRateStale": " (last known rate — refresh failed)",
+  "@settingsExchangeRateStale": {
+    "description": "Appended after settingsExchangeRateLine when the rate is a stale cached value because the latest fetch failed. Note the leading space — it's concatenated directly onto the rate line, not shown as a separate sentence."
+  },
+
+  "settingsExchangeRateLoading": "Loading exchange rate…",
+  "@settingsExchangeRateLoading": {
+    "description": "Shown below the currency toggle while the first USD-to-INR rate fetch is still in flight."
+  },
+
+  "settingsExchangeRateError": "Could not load an exchange rate yet — showing USD until it does.",
+  "@settingsExchangeRateError": {
+    "description": "Shown below the currency toggle if the USD-to-INR rate has never successfully loaded (no cached fallback available either)."
+  },
+
+  "settingsReportTranslationIssue": "Report a translation issue",
+  "@settingsReportTranslationIssue": {
+    "description": "Settings menu entry that opens a form to report a mistranslated or awkward string, for languages the developer can't read (Tamil/Telugu/Kannada) to be corrected by community feedback."
+  },
+
+  "navChart": "Chart",
+  "@navChart": {
+    "description": "Bottom navigation bar label for the live price chart tab. Keep very short — this is a label under a small icon in a 4-item bottom bar, long translations will wrap or get cut off."
+  },
+
+  "navOrders": "Orders",
+  "@navOrders": {
+    "description": "Bottom navigation bar label for the order history tab. Keep very short, same space constraint as navChart."
+  },
+
+  "navNews": "News",
+  "@navNews": {
+    "description": "Bottom navigation bar label for the crypto news tab. Keep very short, same space constraint as navChart."
+  },
+
+  "navPortfolio": "Portfolio",
+  "@navPortfolio": {
+    "description": "Bottom navigation bar label for the portfolio/holdings tab. Keep very short, same space constraint as navChart — this is usually the longest of the 4 labels in English already, so watch for overflow especially in Tamil/Telugu/Kannada."
+  },
+
+  "signInEmailLabel": "Email",
+  "@signInEmailLabel": {
+    "description": "Floating label on the email text field on the sign-in/sign-up form."
+  },
+
+  "signInEmailInvalid": "Enter a valid email",
+  "@signInEmailInvalid": {
+    "description": "Validation error shown under the email field when it doesn't contain '@'."
+  },
+
+  "signInPasswordLabel": "Password",
+  "@signInPasswordLabel": {
+    "description": "Floating label on the password text field on the sign-in/sign-up form."
+  },
+
+  "signInPasswordTooShort": "At least 6 characters",
+  "@signInPasswordTooShort": {
+    "description": "Validation error shown under the password field when it's fewer than 6 characters."
+  },
+
+  "signInButtonSignIn": "Sign in",
+  "@signInButtonSignIn": {
+    "description": "Primary submit button label when the form is in sign-in mode (existing account)."
+  },
+
+  "signInButtonCreateAccount": "Create account",
+  "@signInButtonCreateAccount": {
+    "description": "Primary submit button label when the form is in sign-up mode (new account)."
+  },
+
+  "signInToggleToSignIn": "Already have an account? Sign in",
+  "@signInToggleToSignIn": {
+    "description": "Text-button shown in sign-up mode that switches the form back to sign-in mode."
+  },
+
+  "signInToggleToSignUp": "Don't have an account? Create one",
+  "@signInToggleToSignUp": {
+    "description": "Text-button shown in sign-in mode that switches the form to sign-up mode."
+  },
+
+  "signInOrDivider": "OR",
+  "@signInOrDivider": {
+    "description": "Short divider label between the email/password form and the 'Continue with Google' button. Conventionally shown in all caps in English; use whatever capitalization/emphasis is natural for a divider word in the target language rather than forcing all-caps if that looks odd."
+  },
+
+  "signInContinueWithGoogle": "Continue with Google",
+  "@signInContinueWithGoogle": {
+    "description": "Button label for Google Sign-In. 'Google' is a proper noun and stays in Latin script even in Devanagari/Tamil/Telugu/Kannada text."
+  },
+
+  "signInTryTodaysPuzzle": "Just want to try today's puzzle?",
+  "@signInTryTodaysPuzzle": {
+    "description": "Text-button on the sign-in screen that lets someone try the Daily Puzzle feature without creating an account first."
+  },
+
+  "signInPrivacyPolicy": "Privacy Policy",
+  "@signInPrivacyPolicy": {
+    "description": "Link/button at the bottom of the sign-in screen that opens the privacy policy in a browser."
+  },
+
+  "connectionLive": "LIVE",
+  "@connectionLive": {
+    "description": "Chart screen's connection-status badge when the live price WebSocket is connected. Very short (fits a small pill-shaped badge) — conventionally shown in caps in English."
+  },
+
+  "connectionConnecting": "CONNECTING",
+  "@connectionConnecting": {
+    "description": "Chart screen's connection-status badge while the live price WebSocket is first connecting. Very short, same badge as connectionLive."
+  },
+
+  "connectionReconnecting": "RECONNECTING",
+  "@connectionReconnecting": {
+    "description": "Chart screen's connection-status badge while the live price WebSocket is retrying after a drop. Very short, same badge as connectionLive."
+  },
+
+  "connectionOffline": "OFFLINE",
+  "@connectionOffline": {
+    "description": "Chart screen's connection-status badge when the live price WebSocket is disconnected. Very short, same badge as connectionLive."
+  },
+
+  "tickerWaitingForFirstTick": "Waiting for first tick…",
+  "@tickerWaitingForFirstTick": {
+    "description": "Shown in the chart screen's price header before the very first live price update has arrived."
+  },
+
+  "tickerLiveFeedError": "Live feed error: {error}",
+  "@tickerLiveFeedError": {
+    "description": "Shown in the chart screen's price header if the live price stream errors out. {error} is a raw technical error message/exception string, not user-facing prose — do not try to make it grammatical, it's appended as-is for debugging.",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+
+  "tickerOpenLabel": "O",
+  "@tickerOpenLabel": {
+    "description": "Single-letter abbreviation for 'Open price' in the chart screen's OHLC price header (e.g. 'O 65,234.50'). Keep to 1-2 characters — this is a compact abbreviation next to a number, not a full word, matching how every trading app (including Indian ones) shows OHLC."
+  },
+
+  "tickerHighLabel": "H",
+  "@tickerHighLabel": {
+    "description": "Single-letter abbreviation for 'High price' in the chart screen's OHLC price header. Same space constraint as tickerOpenLabel."
+  },
+
+  "tickerLowLabel": "L",
+  "@tickerLowLabel": {
+    "description": "Single-letter abbreviation for 'Low price' in the chart screen's OHLC price header. Same space constraint as tickerOpenLabel."
+  },
+
+  "forecastToggleLabel": "Show AI Forecast",
+  "@forecastToggleLabel": {
+    "description": "Label next to the switch that turns the AI price forecast overlay on/off, on the chart screen."
+  },
+
+  "tradeFabLabel": "Trade",
+  "@tradeFabLabel": {
+    "description": "Label on the floating action button that opens the Buy/Sell sheet from the chart screen."
+  },
+
+  "coinPickerTitle": "Switch coin",
+  "@coinPickerTitle": {
+    "description": "Heading at the top of the bottom sheet that lists the 15 curated coins to switch the chart to."
+  },
+
+  "whaleActivityBadge": "{count, plural, =0{No large transactions} =1{1 large transaction} other{{count} large transactions}} in the last hour",
+  "@whaleActivityBadge": {
+    "description": "Chart screen's 'Whale Shadow Mode' badge, showing how many large Bitcoin transactions were observed in the last hour. MUST stay one ICU plural message — do not translate as separate concatenated fragments, since Tamil/Telugu/Kannada pluralization and word order don't map onto English's 'N things' pattern at all.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+
+  "tradeSheetBuy": "BUY",
+  "@tradeSheetBuy": {
+    "description": "Segmented-button label for the Buy side of the trade sheet. Shown in caps in English; use natural capitalization for the target language."
+  },
+
+  "tradeSheetSell": "SELL",
+  "@tradeSheetSell": {
+    "description": "Segmented-button label for the Sell side of the trade sheet. Same styling as tradeSheetBuy."
+  },
+
+  "tradeSheetLivePrice": "Live price: {price}",
+  "@tradeSheetLivePrice": {
+    "description": "Shows the live price of the coin being traded, at the top of the trade sheet. {price} is a pre-formatted currency string (already includes the $ or ₹ symbol and correct digit grouping) — do not add another currency symbol.",
+    "placeholders": {
+      "price": {
+        "type": "String",
+        "example": "$65,234.50"
+      }
+    }
+  },
+
+  "tradeSheetQuantityLabel": "Quantity",
+  "@tradeSheetQuantityLabel": {
+    "description": "Floating label on the quantity text field in the trade sheet."
+  },
+
+  "tradeSheetNoHoldingsYet": "No holdings yet",
+  "@tradeSheetNoHoldingsYet": {
+    "description": "Helper text under the quantity field when the user doesn't currently hold any of this coin."
+  },
+
+  "tradeSheetHoldingSummary": "Holding: {quantity} @ avg {avgPrice}",
+  "@tradeSheetHoldingSummary": {
+    "description": "Helper text under the quantity field showing the user's current holding of this coin and their average buy price. {quantity} is a plain number (already locale-formatted by the caller); {avgPrice} is a pre-formatted currency string.",
+    "placeholders": {
+      "quantity": {
+        "type": "String",
+        "example": "0.0231"
+      },
+      "avgPrice": {
+        "type": "String",
+        "example": "$64,120.00"
+      }
+    }
+  },
+
+  "tradeSheetEstimatedTotal": "Estimated total",
+  "@tradeSheetEstimatedTotal": {
+    "description": "Label for the row showing quantity × price, in the trade sheet."
+  },
+
+  "tradeSheetAvailableBalance": "Available balance",
+  "@tradeSheetAvailableBalance": {
+    "description": "Label for the row showing the user's remaining virtual cash balance, in the trade sheet."
+  },
+
+  "tradeSheetEnterQuantity": "Enter a quantity greater than zero.",
+  "@tradeSheetEnterQuantity": {
+    "description": "Validation error shown when the user tries to submit a trade with zero or no quantity entered."
+  },
+
+  "tradeSheetConfirmBuy": "Confirm Buy",
+  "@tradeSheetConfirmBuy": {
+    "description": "Submit button label when the trade sheet is in Buy mode and not locked."
+  },
+
+  "tradeSheetConfirmSell": "Confirm Sell",
+  "@tradeSheetConfirmSell": {
+    "description": "Submit button label when the trade sheet is in Sell mode and not locked."
+  },
+
+  "tradeSheetLockedRemaining": "Locked — {countdown} remaining",
+  "@tradeSheetLockedRemaining": {
+    "description": "Submit button label when Buying is locked after 3 losing trades in a row (the revenge-trading blocker). {countdown} is a pre-formatted MM:SS string.",
+    "placeholders": {
+      "countdown": {
+        "type": "String",
+        "example": "04:32"
+      }
+    }
+  },
+
+  "tradeSheetOfflineError": "Couldn't reach the server — check your connection and try again.",
+  "@tradeSheetOfflineError": {
+    "description": "Error shown when a trade fails because the device is offline or the request timed out (Firestore 'unavailable'/'deadline-exceeded')."
+  },
+
+  "tradeSheetLockNotice": "Buying locked after 3 losing trades in a row. Try again in {countdown}.",
+  "@tradeSheetLockNotice": {
+    "description": "Explanation shown in the trade sheet while the revenge-trading lock is active. {countdown} is a pre-formatted MM:SS string, same value as tradeSheetLockedRemaining's placeholder.",
+    "placeholders": {
+      "countdown": {
+        "type": "String",
+        "example": "04:32"
+      }
+    }
+  },
+
+  "portfolioTitle": "Portfolio",
+  "@portfolioTitle": {
+    "description": "App bar title on the Portfolio tab."
+  },
+
+  "portfolioTotalAccountValue": "Total account value",
+  "@portfolioTotalAccountValue": {
+    "description": "Label above the large total-account-value figure at the top of the Portfolio tab (cash + market value of all holdings)."
+  },
+
+  "portfolioCashBalance": "Cash balance",
+  "@portfolioCashBalance": {
+    "description": "Label for the user's uninvested virtual cash balance, on the Portfolio tab's summary card."
+  },
+
+  "portfolioLossStreak": "Loss streak",
+  "@portfolioLossStreak": {
+    "description": "Label for the count of consecutive losing trades, on the Portfolio tab's summary card — this count is what triggers the revenge-trading lock at 3."
+  },
+
+  "portfolioHoldingsSectionTitle": "Holdings",
+  "@portfolioHoldingsSectionTitle": {
+    "description": "Section heading above the list of currently-held coins on the Portfolio tab."
+  },
+
+  "portfolioNoOpenPositions": "No open positions yet. Trade from the chart screen.",
+  "@portfolioNoOpenPositions": {
+    "description": "Empty-state message on the Portfolio tab when the user holds no coins at all."
+  },
+
+  "orderHistoryTitle": "Order History",
+  "@orderHistoryTitle": {
+    "description": "App bar title on the Order History tab."
+  },
+
+  "orderHistoryEmpty": "No orders yet.",
+  "@orderHistoryEmpty": {
+    "description": "Empty-state message on the Order History tab when the user hasn't placed any trades yet."
+  },
+
+  "translationReportTitle": "Report a translation issue",
+  "@translationReportTitle": {
+    "description": "Heading on the bottom sheet opened from Settings > Report a translation issue."
+  },
+
+  "translationReportDescription": "Spotted a wrong or awkward translation? Describe where you saw it and what it should say instead — this goes straight to the developer for review.",
+  "@translationReportDescription": {
+    "description": "Explanatory text under the heading on the translation-report bottom sheet."
+  },
+
+  "translationReportWhereLabel": "Where did you see it? (screen or button name)",
+  "@translationReportWhereLabel": {
+    "description": "Label on the text field where the user describes which screen/string was wrong, since they can't be expected to know the internal ARB key name."
+  },
+
+  "translationReportSuggestionLabel": "What's wrong, or what should it say instead?",
+  "@translationReportSuggestionLabel": {
+    "description": "Label on the multi-line text field where the user describes the problem or suggests a correction."
+  },
+
+  "translationReportSubmit": "Submit",
+  "@translationReportSubmit": {
+    "description": "Submit button on the translation-report bottom sheet."
+  },
+
+  "translationReportSuccess": "Thanks — this has been sent for review.",
+  "@translationReportSuccess": {
+    "description": "Confirmation snackbar shown after a translation report is successfully submitted."
+  },
+
+  "translationReportError": "Couldn't submit — check your connection and try again.",
+  "@translationReportError": {
+    "description": "Error snackbar shown if submitting a translation report fails (offline or Firestore error)."
+  },
+
+  "translationReportEmptyError": "Please describe the issue before submitting.",
+  "@translationReportEmptyError": {
+    "description": "Validation error shown if the user taps Submit without filling in either field."
+  }
+}

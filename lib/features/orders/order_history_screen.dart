@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/entities/order.dart';
 import '../../domain/usecases/add_trade_rationale.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../home/more_menu_button.dart';
 import '../portfolio/portfolio_providers.dart';
 import '../regret_free/regret_free_card.dart';
@@ -14,21 +15,22 @@ class OrderHistoryScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     final ordersAsync = ref.watch(orderHistoryStreamProvider);
 
     return Scaffold(
       appBar: AppBar(
         backgroundColor: const Color(0xFF1E222D),
-        title: const Text('Order History'),
+        title: Text(l10n.orderHistoryTitle),
         actions: const [MoreMenuButton()],
       ),
       body: ordersAsync.when(
         data: (orders) {
           if (orders.isEmpty) {
-            return const Center(
+            return Center(
               child: Text(
-                'No orders yet.',
-                style: TextStyle(color: Colors.white54),
+                l10n.orderHistoryEmpty,
+                style: const TextStyle(color: Colors.white54),
               ),
             );
           }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../l10n/generated/app_localizations.dart';
 import '../alerts/alerts_providers.dart';
 import '../news/news_feed_screen.dart';
 import '../orders/order_history_screen.dart';
@@ -44,6 +45,7 @@ class _HomeShellState extends ConsumerState<HomeShell> {
     // the AsyncValue itself is never read, this just needs to run once
     // per signed-in session.
     ref.watch(notificationsBootstrapProvider);
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       body: Column(
@@ -56,13 +58,14 @@ class _HomeShellState extends ConsumerState<HomeShell> {
         selectedIndex: _index,
         onDestinationSelected: (i) => setState(() => _index = i),
         backgroundColor: const Color(0xFF1E222D),
-        destinations: const [
+        destinations: [
           NavigationDestination(
-              icon: Icon(Icons.candlestick_chart), label: 'Chart'),
+              icon: const Icon(Icons.candlestick_chart), label: l10n.navChart),
           NavigationDestination(
-              icon: Icon(Icons.receipt_long), label: 'Orders'),
-          NavigationDestination(icon: Icon(Icons.article), label: 'News'),
-          NavigationDestination(icon: Icon(Icons.pie_chart), label: 'Portfolio'),
+              icon: const Icon(Icons.receipt_long), label: l10n.navOrders),
+          NavigationDestination(icon: const Icon(Icons.article), label: l10n.navNews),
+          NavigationDestination(
+              icon: const Icon(Icons.pie_chart), label: l10n.navPortfolio),
         ],
       ),
     );

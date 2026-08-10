@@ -7,6 +7,7 @@ import '../../data/models/kline_tick.dart';
 import '../../data/sources/binance_websocket_service.dart';
 import '../../data/models/forecast.dart';
 import '../../data/sources/forecast_api_source.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../chart/forecast_providers.dart';
 import '../chart/trading_chart_view.dart';
 import '../chart/whale_badge.dart';
@@ -106,7 +107,7 @@ class TickerScreen extends ConsumerWidget {
             currentPrice: tick.candle.close,
           ),
           icon: const Icon(Icons.swap_vert),
-          label: const Text('Trade'),
+          label: Text(AppLocalizations.of(context)!.tradeFabLabel),
         ),
         orElse: () => null,
       ),
@@ -121,6 +122,7 @@ class _PriceHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       width: double.infinity,
       color: const Color(0xFF1E222D),
@@ -148,11 +150,14 @@ class _PriceHeader extends StatelessWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Text('O ', style: TextStyle(color: Colors.white54, fontSize: 12)),
+                    Text('${l10n.tickerOpenLabel} ',
+                        style: const TextStyle(color: Colors.white54, fontSize: 12)),
                     PriceText(c.open, style: const TextStyle(color: Colors.white54, fontSize: 12)),
-                    const Text('  H ', style: TextStyle(color: Colors.white54, fontSize: 12)),
+                    Text('  ${l10n.tickerHighLabel} ',
+                        style: const TextStyle(color: Colors.white54, fontSize: 12)),
                     PriceText(c.high, style: const TextStyle(color: Colors.white54, fontSize: 12)),
-                    const Text('  L ', style: TextStyle(color: Colors.white54, fontSize: 12)),
+                    Text('  ${l10n.tickerLowLabel} ',
+                        style: const TextStyle(color: Colors.white54, fontSize: 12)),
                     PriceText(c.low, style: const TextStyle(color: Colors.white54, fontSize: 12)),
                   ],
                 ),
@@ -161,12 +166,12 @@ class _PriceHeader extends StatelessWidget {
           );
         },
         error: (e, _) => Text(
-          'Live feed error: $e',
+          l10n.tickerLiveFeedError(e.toString()),
           style: const TextStyle(color: Color(0xFFEF5350)),
         ),
-        loading: () => const Text(
-          'Waiting for first tick…',
-          style: TextStyle(color: Colors.white54),
+        loading: () => Text(
+          l10n.tickerWaitingForFirstTick,
+          style: const TextStyle(color: Colors.white54),
         ),
       ),
     );
@@ -250,7 +255,8 @@ class _ForecastToggle extends ConsumerWidget {
             children: [
               const Icon(Icons.auto_graph, color: Color(0xFFFFC107), size: 16),
               const SizedBox(width: 6),
-              const Text('Show AI Forecast', style: TextStyle(color: Colors.white, fontSize: 13)),
+              Text(AppLocalizations.of(context)!.forecastToggleLabel,
+                  style: const TextStyle(color: Colors.white, fontSize: 13)),
               Switch(
                 value: enabled,
                 onChanged: (value) =>
@@ -301,13 +307,14 @@ class _ConnectionBadge extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     final state = ref.watch(connectionStateProvider).valueOrNull ??
         BinanceConnectionState.connecting;
     final (color, label) = switch (state) {
-      BinanceConnectionState.connected => (const Color(0xFF26A69A), 'LIVE'),
-      BinanceConnectionState.connecting => (Colors.amber, 'CONNECTING'),
-      BinanceConnectionState.reconnecting => (Colors.amber, 'RECONNECTING'),
-      BinanceConnectionState.disconnected => (const Color(0xFFEF5350), 'OFFLINE'),
+      BinanceConnectionState.connected => (const Color(0xFF26A69A), l10n.connectionLive),
+      BinanceConnectionState.connecting => (Colors.amber, l10n.connectionConnecting),
+      BinanceConnectionState.reconnecting => (Colors.amber, l10n.connectionReconnecting),
+      BinanceConnectionState.disconnected => (const Color(0xFFEF5350), l10n.connectionOffline),
     };
     return Center(
       child: Container(
@@ -418,6 +425,7 @@ class _CoinPickerTitle extends ConsumerWidget {
   }
 
   void _openPicker(BuildContext context, WidgetRef ref, String selectedSymbol) {
+    final title = AppLocalizations.of(context)!.coinPickerTitle;
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: const Color(0xFF1E222D),
@@ -426,11 +434,11 @@ class _CoinPickerTitle extends ConsumerWidget {
         child: ListView(
           shrinkWrap: true,
           children: [
-            const Padding(
-              padding: EdgeInsets.fromLTRB(16, 16, 16, 4),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
               child: Text(
-                'Switch coin',
-                style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
+                title,
+                style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
               ),
             ),
             for (final coin in supportedCoins)

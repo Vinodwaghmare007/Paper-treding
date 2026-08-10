@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../data/repositories/auth_repository.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../puzzle/daily_puzzle_screen.dart';
 import 'auth_providers.dart';
 
@@ -83,6 +84,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final isSignUp = _mode == _Mode.signUp;
     return Scaffold(
       body: SafeArea(
@@ -99,28 +101,28 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                       size: 56, color: Color(0xFF26A69A)),
                   const SizedBox(height: 12),
                   Text(
-                    'Crypto Paper Trader',
+                    l10n.appTitle,
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.headlineSmall,
                   ),
                   const SizedBox(height: 4),
-                  const Text(
-                    'Educational simulator — no real funds involved.',
+                  Text(
+                    l10n.disclaimerEducationalSimulator,
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.white54, fontSize: 12),
+                    style: const TextStyle(color: Colors.white54, fontSize: 12),
                   ),
                   const SizedBox(height: 32),
                   TextFormField(
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
                     autofillHints: const [AutofillHints.email],
-                    decoration: const InputDecoration(
-                      labelText: 'Email',
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: l10n.signInEmailLabel,
+                      border: const OutlineInputBorder(),
                     ),
                     validator: (value) {
                       if (value == null || !value.contains('@')) {
-                        return 'Enter a valid email';
+                        return l10n.signInEmailInvalid;
                       }
                       return null;
                     },
@@ -130,13 +132,13 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                     controller: _passwordController,
                     obscureText: true,
                     autofillHints: const [AutofillHints.password],
-                    decoration: const InputDecoration(
-                      labelText: 'Password',
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: l10n.signInPasswordLabel,
+                      border: const OutlineInputBorder(),
                     ),
                     validator: (value) {
                       if (value == null || value.length < 6) {
-                        return 'At least 6 characters';
+                        return l10n.signInPasswordTooShort;
                       }
                       return null;
                     },
@@ -158,7 +160,9 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                             height: 20,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : Text(isSignUp ? 'Create account' : 'Sign in'),
+                        : Text(isSignUp
+                            ? l10n.signInButtonCreateAccount
+                            : l10n.signInButtonSignIn),
                   ),
                   TextButton(
                     onPressed: _submitting
@@ -170,24 +174,25 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                             }),
                     child: Text(
                       isSignUp
-                          ? 'Already have an account? Sign in'
-                          : "Don't have an account? Create one",
+                          ? l10n.signInToggleToSignIn
+                          : l10n.signInToggleToSignUp,
                     ),
                   ),
                   const SizedBox(height: 8),
-                  const Row(children: [
-                    Expanded(child: Divider()),
+                  Row(children: [
+                    const Expanded(child: Divider()),
                     Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 8),
-                      child: Text('OR', style: TextStyle(color: Colors.white38)),
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      child: Text(l10n.signInOrDivider,
+                          style: const TextStyle(color: Colors.white38)),
                     ),
-                    Expanded(child: Divider()),
+                    const Expanded(child: Divider()),
                   ]),
                   const SizedBox(height: 8),
                   OutlinedButton.icon(
                     onPressed: _submitting ? null : _submitGoogle,
                     icon: const Icon(Icons.g_mobiledata, size: 28),
-                    label: const Text('Continue with Google'),
+                    label: Text(l10n.signInContinueWithGoogle),
                   ),
                   const SizedBox(height: 20),
                   TextButton.icon(
@@ -197,7 +202,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                       ),
                     ),
                     icon: const Icon(Icons.extension, size: 18),
-                    label: const Text("Just want to try today's puzzle?"),
+                    label: Text(l10n.signInTryTodaysPuzzle),
                   ),
                   const SizedBox(height: 4),
                   TextButton(
@@ -205,12 +210,12 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                       Uri.parse(_privacyPolicyUrl),
                       mode: LaunchMode.inAppBrowserView,
                     ),
-                    child: const Text(
-                      'Privacy Policy',
+                    child: Text(
+                      l10n.signInPrivacyPolicy,
                       // white70, not white38 — see the contrast note on
                       // SimulatedFooter; a link needs to actually be
                       // readable, not just technically present.
-                      style: TextStyle(color: Colors.white70, fontSize: 12),
+                      style: const TextStyle(color: Colors.white70, fontSize: 12),
                     ),
                   ),
                 ],

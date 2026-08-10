@@ -142,4 +142,17 @@ class FirestorePaths {
 
   DocumentReference<Map<String, dynamic>> fcmTokenDoc(String uid, String token) =>
       fcmTokens(uid).doc(token);
+
+  // ------------------------------------------------------------------
+  // Translation quality feedback (i18n Part D) — flat top-level
+  // collection, same shape as reports() above. See
+  // docs/translation_glossary.md for how these feed back into fixing a
+  // machine_draft ARB entry for a locale the developer can't read.
+  // ------------------------------------------------------------------
+
+  CollectionReference<Map<String, dynamic>> translationReports() =>
+      _firestore.collection('translation_reports');
+
+  DocumentReference<Map<String, dynamic>> newTranslationReportRef() =>
+      translationReports().doc();
 }

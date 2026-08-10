@@ -10,6 +10,13 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  # No version pin: flutter_localizations (from the SDK) already pins an
+  # exact intl version internally, and pub fails the whole resolution if a
+  # second, different pin is declared here. "any" lets pub pick whatever
+  # version flutter_localizations itself requires.
+  intl: any
 
   cupertino_icons: ^1.0.8
   clock: ^1.1.2
@@ -52,7 +59,18 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  generate: true
 
   assets:
     - assets/charts/tradingview.html
     - assets/charts/lightweight-charts.standalone.production.js
+
+  # Font fallback for hi/mr/ta/te/kn (Devanagari/Tamil/Telugu/Kannada) is
+  # NOT bundled here — see docs/translation_glossary.md's "Font rendering"
+  # section for why (this environment can't fetch/embed real font binaries)
+  # and the exact steps to add Noto Sans as a fallback family once someone
+  # downloads the .ttf files. Every Android device sold in India ships
+  # with Noto Sans already in its own system font-fallback chain, so text
+  # in these scripts already renders correctly without an app-bundled
+  # font in the common case — bundling one is a safety net against the
+  # rare device that doesn't, not a correctness requirement.

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../l10n/generated/app_localizations.dart';
 import '../home/more_menu_button.dart';
 import '../settings/price_text.dart';
 import '../trade/trade_sheet.dart';
@@ -12,6 +13,7 @@ class PortfolioScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     final accountAsync = ref.watch(accountStreamProvider);
     final valuations = ref.watch(positionValuationsProvider);
     final totalValue = ref.watch(totalAccountValueProvider);
@@ -19,7 +21,7 @@ class PortfolioScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: const Color(0xFF1E222D),
-        title: const Text('Portfolio'),
+        title: Text(l10n.portfolioTitle),
         actions: const [MoreMenuButton()],
       ),
       body: accountAsync.when(
@@ -35,17 +37,17 @@ class PortfolioScreen extends ConsumerWidget {
             const PortfolioTwinCard(),
             const SizedBox(height: 20),
             Text(
-              'Holdings',
+              l10n.portfolioHoldingsSectionTitle,
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
             if (valuations.isEmpty)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 24),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 24),
                 child: Center(
                   child: Text(
-                    'No open positions yet. Trade from the chart screen.',
-                    style: TextStyle(color: Colors.white54),
+                    l10n.portfolioNoOpenPositions,
+                    style: const TextStyle(color: Colors.white54),
                   ),
                 ),
               )
@@ -85,6 +87,7 @@ class _SummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -94,8 +97,8 @@ class _SummaryCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Total account value',
-              style: TextStyle(color: Colors.white54, fontSize: 12)),
+          Text(l10n.portfolioTotalAccountValue,
+              style: const TextStyle(color: Colors.white54, fontSize: 12)),
           const SizedBox(height: 4),
           PriceText(
             totalValue,
@@ -107,14 +110,14 @@ class _SummaryCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               _StatColumn(
-                label: 'Cash balance',
+                label: l10n.portfolioCashBalance,
                 valueWidget: PriceText(
                   virtualBalance,
                   style: const TextStyle(color: Colors.white, fontSize: 15),
                 ),
               ),
               _StatColumn(
-                label: 'Loss streak',
+                label: l10n.portfolioLossStreak,
                 valueWidget: Text(
                   '$consecutiveLosses',
                   style: TextStyle(

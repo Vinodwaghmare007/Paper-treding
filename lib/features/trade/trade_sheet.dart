@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/order.dart';
 import '../../domain/entities/portfolio_position.dart';
 import '../../domain/usecases/execute_trade.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../auth/auth_providers.dart';
 import '../chart/price_source.dart';
 import '../portfolio/portfolio_providers.dart';
@@ -64,9 +65,10 @@ class _TradeSheetState extends ConsumerState<TradeSheet> {
   double get _quantity => double.tryParse(_quantityController.text) ?? 0;
 
   Future<void> _submit(double price, PortfolioPosition? holding) async {
+    final l10n = AppLocalizations.of(context)!;
     final quantity = _quantity;
     if (quantity <= 0) {
-      setState(() => _errorText = 'Enter a quantity greater than zero.');
+      setState(() => _errorText = l10n.tradeSheetEnterQuantity);
       return;
     }
     setState(() {
@@ -117,7 +119,7 @@ class _TradeSheetState extends ConsumerState<TradeSheet> {
       // with no feedback and no way to know the trade never happened),
       // it's surfaced as an explicit, retryable error.
       setState(() => _errorText = e.code == 'unavailable' || e.code == 'deadline-exceeded'
-          ? "Couldn't reach the server — check your connection and try again."
+          ? l10n.tradeSheetOfflineError
           : 'Trade failed: ${e.message ?? e.code}');
     } finally {
       if (mounted) setState(() => _submitting = false);
@@ -126,6 +128,7 @@ class _TradeSheetState extends ConsumerState<TradeSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final latestTick = ref.watch(activeTickProvider).valueOrNull;
     final price = (latestTick != null && latestTick.symbol == widget.coinSymbol)
         ? latestTick.candle.close
@@ -179,18 +182,15 @@ class _TradeSheetState extends ConsumerState<TradeSheet> {
                 color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 4),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text('Live price: ', style: TextStyle(color: Colors.white54, fontSize: 13)),
-              PriceText(price, style: const TextStyle(color: Colors.white54, fontSize: 13)),
-            ],
+          Text(
+            l10n.tradeSheetLivePrice(formatCurrency(price, currency, rate)),
+            style: const TextStyle(color: Colors.white54, fontSize: 13),
           ),
           const SizedBox(height: 16),
           SegmentedButton<_Side>(
-            segments: const [
-              ButtonSegment(value: _Side.buy, label: Text('BUY')),
-              ButtonSegment(value: _Side.sell, label: Text('SELL')),
+            segments: [
+              ButtonSegment(value: _Side.buy, label: Text(l10n.tradeSheetBuy)),
+              ButtonSegment(value: _Side.sell, label: Text(l10n.tradeSheetSell)),
             ],
             selected: {_side},
             onSelectionChanged: (selection) => setState(() {
@@ -204,13 +204,15 @@ class _TradeSheetState extends ConsumerState<TradeSheet> {
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             style: const TextStyle(color: Colors.white),
             decoration: InputDecoration(
-              labelText: 'Quantity',
+              labelText: l10n.tradeSheetQuantityLabel,
               suffixText: widget.coinSymbol.replaceAll('USDT', ''),
               border: const OutlineInputBorder(),
               helperText: holding != null
-                  ? 'Holding: ${holding.totalQuantity} @ avg '
-                      '${formatCurrency(holding.avgBuyPrice, currency, rate)}'
-                  : 'No holdings yet',
+                  ? l10n.tradeSheetHoldingSummary(
+                      holding.totalQuantity.toString(),
+                      formatCurrency(holding.avgBuyPrice, currency, rate),
+                    )
+                  : l10n.tradeSheetNoHoldingsYet,
               helperStyle: const TextStyle(color: Colors.white38),
             ),
             onChanged: (_) => setState(() {}),
@@ -219,7 +221,7 @@ class _TradeSheetState extends ConsumerState<TradeSheet> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Estimated total', style: TextStyle(color: Colors.white54)),
+              Text(l10n.tradeSheetEstimatedTotal, style: const TextStyle(color: Colors.white54)),
               PriceText(total, style: const TextStyle(color: Colors.white, fontSize: 16)),
             ],
           ),
@@ -228,7 +230,8 @@ class _TradeSheetState extends ConsumerState<TradeSheet> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Available balance', style: TextStyle(color: Colors.white38, fontSize: 12)),
+                Text(l10n.tradeSheetAvailableBalance,
+                    style: const TextStyle(color: Colors.white38, fontSize: 12)),
                 PriceText(account.virtualBalance,
                     style: const TextStyle(color: Colors.white38, fontSize: 12)),
               ],
@@ -267,8 +270,8 @@ class _TradeSheetState extends ConsumerState<TradeSheet> {
                   )
                 : Text(
                     isLocked
-                        ? 'Locked — ${_formatCountdown(lockState.remainingSeconds)} remaining'
-                        : (_side == _Side.buy ? 'Confirm Buy' : 'Confirm Sell'),
+                        ? l10n.tradeSheetLockedRemaining(_formatCountdown(lockState.remainingSeconds))
+                        : (_side == _Side.buy ? l10n.tradeSheetConfirmBuy : l10n.tradeSheetConfirmSell),
                     style: TextStyle(color: isLocked ? Colors.white38 : null),
                   ),
           ),
@@ -304,8 +307,8 @@ class _LockNotice extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              'Buying locked after 3 losing trades in a row. '
-              'Try again in ${_formatCountdown(lockState.remainingSeconds)}.',
+              AppLocalizations.of(context)!
+                  .tradeSheetLockNotice(_formatCountdown(lockState.remainingSeconds)),
               style: const TextStyle(color: Color(0xFFEF5350), fontSize: 12),
             ),
           ),

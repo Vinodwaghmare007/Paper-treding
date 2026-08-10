@@ -4,13 +4,16 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:home_widget/home_widget.dart';
 
 import 'data/background/market_weather_sync_task.dart';
-import 'features/auth/auth_gate.dart';
 import 'features/home/home_deep_link.dart';
 import 'features/home/home_shell.dart';
+import 'features/onboarding/language_onboarding_gate.dart';
+import 'features/settings/locale_provider.dart';
+import 'l10n/generated/app_localizations.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -82,7 +85,15 @@ class _CryptoPaperTraderAppState extends ConsumerState<CryptoPaperTraderApp> {
         scaffoldBackgroundColor: const Color(0xFF131722),
         useMaterial3: true,
       ),
-      home: const AuthGate(signedIn: _buildHomeShell),
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: supportedAppLocales,
+      locale: ref.watch(localeProvider),
+      home: const LanguageOnboardingGate(signedIn: _buildHomeShell),
     );
   }
 

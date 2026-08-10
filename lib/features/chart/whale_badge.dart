@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../l10n/generated/app_localizations.dart';
 import 'whale_providers.dart';
 
 /// "🐋 N large transactions in the last hour" — purely informational, on
@@ -29,7 +30,7 @@ class WhaleBadge extends ConsumerWidget {
             const Text('🐋', style: TextStyle(fontSize: 14)),
             const SizedBox(width: 6),
             Text(
-              '$count large transaction${count == 1 ? '' : 's'} in the last hour',
+              AppLocalizations.of(context)!.whaleActivityBadge(count),
               style: const TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w600),
             ),
             const SizedBox(width: 4),
