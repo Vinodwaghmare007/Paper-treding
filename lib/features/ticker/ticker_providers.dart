@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../data/entities/chart_range.dart';
 import '../../data/models/kline_tick.dart';
 import '../../data/repositories/sentiment_repository.dart';
 import '../../data/sources/binance_rest_service.dart';
@@ -14,14 +15,22 @@ import '../auth/auth_providers.dart';
 /// one source of truth when it changes.
 final selectedCoinProvider = StateProvider<String>((ref) => 'BTCUSDT');
 
+/// The chart's active time range — drives both the seed-candle REST
+/// fetch's interval/limit and the live WebSocket subscription's interval
+/// (they have to match, or a live tick's candle bucket won't line up with
+/// the seeded history's bucket size). Defaults to 1D, closest to the
+/// original fixed "500 x 1-minute candles" behaviour.
+final selectedChartRangeProvider = StateProvider<ChartRange>((ref) => ChartRange.day1);
+
 /// Owns the WebSocket service lifecycle: rebuilt (old socket torn down via
-/// `ref.onDispose`, new one opened) whenever [selectedCoinProvider]
-/// changes, since [BinanceWebSocketService]'s symbol is fixed at
-/// construction.
+/// `ref.onDispose`, new one opened) whenever [selectedCoinProvider] or
+/// [selectedChartRangeProvider] changes, since [BinanceWebSocketService]'s
+/// symbol/interval are fixed at construction.
 final binanceWebSocketServiceProvider =
     Provider<BinanceWebSocketService>((ref) {
   final symbol = ref.watch(selectedCoinProvider).toLowerCase();
-  final service = BinanceWebSocketService(symbol: symbol, interval: '1m');
+  final interval = ref.watch(selectedChartRangeProvider).klineInterval;
+  final service = BinanceWebSocketService(symbol: symbol, interval: interval);
   service.start();
   ref.onDispose(service.dispose);
   return service;

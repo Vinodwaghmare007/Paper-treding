@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../data/entities/chart_range.dart';
 import '../../data/entities/supported_coin.dart';
 import '../../data/models/kline_tick.dart';
 import '../../data/sources/binance_websocket_service.dart';
@@ -35,6 +36,7 @@ class TickerScreen extends ConsumerWidget {
     });
 
     final selectedSymbol = ref.watch(selectedCoinProvider);
+    final selectedRange = ref.watch(selectedChartRangeProvider);
     final tickAsync = ref.watch(klineTickProvider);
     final wsService = ref.watch(binanceWebSocketServiceProvider);
     final restService = ref.watch(binanceRestServiceProvider);
@@ -60,28 +62,36 @@ class TickerScreen extends ConsumerWidget {
           // the active chart symbol rather than mislabeling another coin's
           // screen with Bitcoin whale activity.
           if (selectedSymbol == 'BTCUSDT') const WhaleBadge(),
+          const _ChartRangeSelector(),
           Expanded(
             child: Stack(
               children: [
                 TradingChartView(
-                  // Re-keys the chart's State on coin switch so it re-seeds
-                  // from scratch instead of showing the new symbol's ticks
-                  // layered onto the old symbol's candles.
-                  key: ValueKey(selectedSymbol),
+                  // Re-keys the chart's State on coin OR range switch so it
+                  // re-seeds from scratch instead of showing the new
+                  // symbol/interval's ticks layered onto old candles.
+                  key: ValueKey('$selectedSymbol-${selectedRange.name}'),
                   fetchSeedCandles: () => restService.fetchKlines(
                     symbol: selectedSymbol,
-                    interval: '1m',
-                    limit: 500,
+                    interval: selectedRange.klineInterval,
+                    limit: selectedRange.candleLimit,
                   ),
                   ticks: wsService.ticks,
-                  forecast: forecastAsync.valueOrNull,
+                  interval: selectedRange.klineInterval,
+                  // The AI forecast is always a fixed near-term (next ~15
+                  // minutes) projection regardless of chart zoom — showing
+                  // it on a zoomed-out 1W-5Y chart would be either
+                  // invisible or, worse, misplaced, so it's suppressed
+                  // outside the 1D range regardless of the toggle's state.
+                  forecast: selectedRange == ChartRange.day1 ? forecastAsync.valueOrNull : null,
                 ),
-                Positioned(
-                  top: 8,
-                  left: 8,
-                  right: 8,
-                  child: _ForecastToggle(forecastAsync: forecastAsync),
-                ),
+                if (selectedRange == ChartRange.day1)
+                  Positioned(
+                    top: 8,
+                    left: 8,
+                    right: 8,
+                    child: _ForecastToggle(forecastAsync: forecastAsync),
+                  ),
               ],
             ),
           ),
@@ -308,6 +318,66 @@ class _ConnectionBadge extends ConsumerWidget {
             const SizedBox(width: 6),
             Text(label, style: TextStyle(color: color, fontSize: 11)),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Row of range chips (1D/1W/30D/90D/1Y/5Y) — switching range re-seeds the
+/// chart at a coarser/finer kline interval (see chart_range.dart) rather
+/// than fetching literal years of 1-minute candles.
+class _ChartRangeSelector extends ConsumerWidget {
+  const _ChartRangeSelector();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final selected = ref.watch(selectedChartRangeProvider);
+
+    return Container(
+      width: double.infinity,
+      color: const Color(0xFF1E222D),
+      padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          for (final range in ChartRange.values)
+            _RangeChip(
+              range: range,
+              isSelected: range == selected,
+              onTap: () => ref.read(selectedChartRangeProvider.notifier).state = range,
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RangeChip extends StatelessWidget {
+  const _RangeChip({required this.range, required this.isSelected, required this.onTap});
+
+  final ChartRange range;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(6),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFF6FD3C7).withValues(alpha: 0.15) : null,
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Text(
+          range.label,
+          style: TextStyle(
+            color: isSelected ? const Color(0xFF6FD3C7) : Colors.white54,
+            fontSize: 12,
+            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400,
+          ),
         ),
       ),
     );
