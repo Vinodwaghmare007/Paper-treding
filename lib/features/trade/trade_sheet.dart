@@ -10,6 +10,7 @@ import '../../domain/usecases/execute_trade.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../auth/auth_providers.dart';
 import '../chart/price_source.dart';
+import '../connectivity/connectivity_providers.dart';
 import '../portfolio/portfolio_providers.dart';
 import '../settings/currency_providers.dart';
 import '../settings/price_text.dart';
@@ -142,6 +143,7 @@ class _TradeSheetState extends ConsumerState<TradeSheet> {
 
     final lockState = ref.watch(tradeLockProvider);
     final isLocked = _side == _Side.buy && lockState.isLocked;
+    final isOnline = ref.watch(isOnlineProvider);
 
     final currency = ref.watch(currencyPreferenceProvider);
     final rate = ref.watch(usdToInrRateProvider).valueOrNull;
@@ -151,6 +153,7 @@ class _TradeSheetState extends ConsumerState<TradeSheet> {
     final canAffordSell = holding != null && _quantity <= holding.totalQuantity;
     final canSubmit = !_submitting &&
         !isLocked &&
+        isOnline &&
         _quantity > 0 &&
         (_side == _Side.buy ? canAffordBuy : canAffordSell);
 
@@ -241,6 +244,29 @@ class _TradeSheetState extends ConsumerState<TradeSheet> {
             const SizedBox(height: 12),
             _LockNotice(lockState: lockState),
           ],
+          if (!isOnline) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEF5350).withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFFEF5350)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.cloud_off, color: Color(0xFFEF5350), size: 18),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      l10n.tradeSheetOfflineNotice,
+                      style: const TextStyle(color: Color(0xFFEF5350), fontSize: 12),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
           if (_errorText != null) ...[
             const SizedBox(height: 12),
             Text(_errorText!, style: const TextStyle(color: Color(0xFFEF5350))),
@@ -248,7 +274,7 @@ class _TradeSheetState extends ConsumerState<TradeSheet> {
           const SizedBox(height: 20),
           FilledButton(
             style: FilledButton.styleFrom(
-              backgroundColor: isLocked
+              backgroundColor: (isLocked || !isOnline)
                   ? Colors.white12
                   : (_side == _Side.buy
                       ? const Color(0xFF26A69A)
@@ -257,7 +283,9 @@ class _TradeSheetState extends ConsumerState<TradeSheet> {
             ),
             // While locked, the button stays tappable — tapping it opens the
             // hard-lock sheet — but never actually submits a trade. A truly
-            // disabled (onPressed: null) button couldn't do that.
+            // disabled (onPressed: null) button couldn't do that. Offline
+            // has no equivalent explainer sheet to open, so it just
+            // disables outright — the notice above already says why.
             onPressed: isLocked
                 ? () => showRevengeBlockerSheet(context)
                 : (canSubmit ? () => _submit(price, holding) : null),
@@ -272,7 +300,7 @@ class _TradeSheetState extends ConsumerState<TradeSheet> {
                     isLocked
                         ? l10n.tradeSheetLockedRemaining(_formatCountdown(lockState.remainingSeconds))
                         : (_side == _Side.buy ? l10n.tradeSheetConfirmBuy : l10n.tradeSheetConfirmSell),
-                    style: TextStyle(color: isLocked ? Colors.white38 : null),
+                    style: TextStyle(color: (isLocked || !isOnline) ? Colors.white38 : null),
                   ),
           ),
         ],

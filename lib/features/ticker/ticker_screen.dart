@@ -11,6 +11,9 @@ import '../../l10n/generated/app_localizations.dart';
 import '../chart/forecast_providers.dart';
 import '../chart/trading_chart_view.dart';
 import '../chart/whale_badge.dart';
+import '../coins/coin_catalog_providers.dart';
+import '../connectivity/connectivity_providers.dart';
+import '../connectivity/offline_banner.dart';
 import '../home/more_menu_button.dart';
 import '../settings/price_text.dart';
 import '../trade/high_frequency_banner.dart';
@@ -42,7 +45,9 @@ class TickerScreen extends ConsumerWidget {
     final tickAsync = ref.watch(klineTickProvider);
     final wsService = ref.watch(binanceWebSocketServiceProvider);
     final restService = ref.watch(binanceRestServiceProvider);
+    final appDatabase = ref.watch(appDatabaseProvider);
     final forecastAsync = ref.watch(forecastControllerProvider);
+    final isOnline = ref.watch(isOnlineProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -56,6 +61,8 @@ class TickerScreen extends ConsumerWidget {
       ),
       body: Column(
         children: [
+          if (!isOnline)
+            OfflineBanner(asOf: ref.watch(cachedSeedCandlesProvider).valueOrNull?.fetchedAt),
           const HighFrequencyBanner(),
           _PriceHeader(tickAsync: tickAsync),
           const _SentimentBadge(),
@@ -73,7 +80,9 @@ class TickerScreen extends ConsumerWidget {
                   // re-seeds from scratch instead of showing the new
                   // symbol/interval's ticks layered onto old candles.
                   key: ValueKey('$selectedSymbol-${selectedRange.name}'),
-                  fetchSeedCandles: () => restService.fetchKlines(
+                  fetchSeedCandles: () => fetchSeedCandlesWithCache(
+                    restService: restService,
+                    appDatabase: appDatabase,
                     symbol: selectedSymbol,
                     interval: selectedRange.klineInterval,
                     limit: selectedRange.candleLimit,
@@ -425,40 +434,109 @@ class _CoinPickerTitle extends ConsumerWidget {
   }
 
   void _openPicker(BuildContext context, WidgetRef ref, String selectedSymbol) {
-    final title = AppLocalizations.of(context)!.coinPickerTitle;
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: const Color(0xFF1E222D),
       isScrollControlled: true,
-      builder: (sheetContext) => SafeArea(
-        child: ListView(
-          shrinkWrap: true,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
-              child: Text(
-                title,
-                style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
-              ),
+      builder: (sheetContext) => _CoinPickerSheet(selectedSymbol: selectedSymbol),
+    );
+  }
+}
+
+/// The coin-picker bottom sheet's own widget (rather than an inline
+/// `builder:` closure) so it can hold local search-query state — with
+/// [supportedCoins] now 50+ entries (see coin_catalog_providers.dart), an
+/// unfiltered list is a lot of scrolling to find one coin.
+class _CoinPickerSheet extends ConsumerStatefulWidget {
+  const _CoinPickerSheet({required this.selectedSymbol});
+
+  final String selectedSymbol;
+
+  @override
+  ConsumerState<_CoinPickerSheet> createState() => _CoinPickerSheetState();
+}
+
+class _CoinPickerSheetState extends ConsumerState<_CoinPickerSheet> {
+  final _searchController = TextEditingController();
+  String _query = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final coins = ref.watch(supportedCoinsProvider).valueOrNull ?? supportedCoins;
+    final query = _query.trim().toLowerCase();
+    final filtered = query.isEmpty
+        ? coins
+        : coins
+            .where((c) =>
+                c.baseAsset.toLowerCase().contains(query) ||
+                c.displayName.toLowerCase().contains(query))
+            .toList(growable: false);
+
+    return SafeArea(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+            child: Text(
+              l10n.coinPickerTitle,
+              style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
             ),
-            for (final coin in supportedCoins)
-              ListTile(
-                leading: Icon(
-                  coin.symbol == selectedSymbol
-                      ? Icons.radio_button_checked
-                      : Icons.radio_button_unchecked,
-                  color: coin.symbol == selectedSymbol
-                      ? const Color(0xFF6FD3C7)
-                      : Colors.white38,
-                ),
-                title: Text('${coin.baseAsset} · ${coin.displayName}'),
-                onTap: () {
-                  ref.read(selectedCoinProvider.notifier).state = coin.symbol;
-                  Navigator.of(sheetContext).pop();
-                },
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+            child: TextField(
+              controller: _searchController,
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                hintText: l10n.coinSearchHint,
+                hintStyle: const TextStyle(color: Colors.white38),
+                prefixIcon: const Icon(Icons.search, color: Colors.white38),
+                isDense: true,
+                filled: true,
+                fillColor: const Color(0xFF131722),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
               ),
-          ],
-        ),
+              onChanged: (v) => setState(() => _query = v),
+            ),
+          ),
+          Flexible(
+            child: filtered.isEmpty
+                ? Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Text(l10n.coinSearchNoResults,
+                        style: const TextStyle(color: Colors.white38)),
+                  )
+                : ListView(
+                    shrinkWrap: true,
+                    children: [
+                      for (final coin in filtered)
+                        ListTile(
+                          leading: Icon(
+                            coin.symbol == widget.selectedSymbol
+                                ? Icons.radio_button_checked
+                                : Icons.radio_button_unchecked,
+                            color: coin.symbol == widget.selectedSymbol
+                                ? const Color(0xFF6FD3C7)
+                                : Colors.white38,
+                          ),
+                          title: Text('${coin.baseAsset} · ${coin.displayName}'),
+                          onTap: () {
+                            ref.read(selectedCoinProvider.notifier).state = coin.symbol;
+                            Navigator.of(context).pop();
+                          },
+                        ),
+                    ],
+                  ),
+          ),
+        ],
       ),
     );
   }

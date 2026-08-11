@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../l10n/generated/app_localizations.dart';
+import '../connectivity/connectivity_providers.dart';
+import '../connectivity/offline_banner.dart';
 import '../home/more_menu_button.dart';
 import '../settings/price_text.dart';
 import '../trade/trade_sheet.dart';
@@ -17,6 +19,7 @@ class PortfolioScreen extends ConsumerWidget {
     final accountAsync = ref.watch(accountStreamProvider);
     final valuations = ref.watch(positionValuationsProvider);
     final totalValue = ref.watch(totalAccountValueProvider);
+    final isOnline = ref.watch(isOnlineProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -28,6 +31,13 @@ class PortfolioScreen extends ConsumerWidget {
         data: (account) => ListView(
           padding: const EdgeInsets.all(16),
           children: [
+            // Firestore's own offline persistence is already what's
+            // serving `account` here when offline (see app_database.dart's
+            // doc comment) — this is purely the "tell the user" banner.
+            if (!isOnline) const Padding(
+              padding: EdgeInsets.only(bottom: 12),
+              child: OfflineBanner(),
+            ),
             _SummaryCard(
               totalValue: totalValue,
               virtualBalance: account.virtualBalance,

@@ -7,6 +7,7 @@ import 'package:share_plus/share_plus.dart';
 import '../../data/entities/supported_coin.dart';
 import '../../domain/usecases/dca_simulator.dart';
 import '../../l10n/generated/app_localizations.dart';
+import '../coins/coin_catalog_providers.dart';
 import '../settings/currency_providers.dart';
 import '../settings/price_text.dart';
 import 'dca_providers.dart';
@@ -149,6 +150,7 @@ class _InputsCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
     final inputs = ref.watch(dcaInputsProvider);
+    final coins = ref.watch(supportedCoinsProvider).valueOrNull ?? supportedCoins;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -165,7 +167,7 @@ class _InputsCard extends ConsumerWidget {
             style: const TextStyle(color: Colors.white),
             decoration: InputDecoration(labelText: l10n.coinFieldLabel, isDense: true),
             items: [
-              for (final coin in supportedCoins)
+              for (final coin in coins)
                 DropdownMenuItem(value: coin.symbol, child: Text('${coin.baseAsset} · ${coin.displayName}')),
             ],
             onChanged: (v) {

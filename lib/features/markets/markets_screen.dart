@@ -6,6 +6,7 @@ import '../../data/entities/supported_coin.dart';
 import '../../data/sources/coingecko_source.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../auth/auth_providers.dart';
+import '../coins/coin_catalog_providers.dart';
 import '../home/home_deep_link.dart';
 import '../settings/price_text.dart';
 import '../ticker/ticker_providers.dart';
@@ -13,9 +14,13 @@ import 'markets_providers.dart';
 
 enum _SortField { change, name, price }
 
-/// Sort state — local to this screen (not persisted, resets each visit).
+/// Sort/search state — local to this screen (not persisted, resets each
+/// visit). [_searchQueryProvider] exists because the curated coin list has
+/// grown past 50 entries (see coin_catalog_providers.dart) — a plain
+/// scroll was fine for 15, not for 50+.
 final _sortFieldProvider = StateProvider.autoDispose<_SortField>((ref) => _SortField.change);
 final _sortAscendingProvider = StateProvider.autoDispose<bool>((ref) => false);
+final _searchQueryProvider = StateProvider.autoDispose<String>((ref) => '');
 
 /// Live price + 24h change + sparkline for every curated coin (see
 /// supported_coin.dart for why this is a fixed list, not a live top-N
@@ -32,6 +37,8 @@ class MarketsScreen extends ConsumerWidget {
     final followedSymbols = ref.watch(followedSymbolsProvider);
     final sortField = ref.watch(_sortFieldProvider);
     final sortAscending = ref.watch(_sortAscendingProvider);
+    final searchQuery = ref.watch(_searchQueryProvider).trim().toLowerCase();
+    final allCoins = ref.watch(supportedCoinsProvider).valueOrNull ?? supportedCoins;
 
     int compare(SupportedCoin a, SupportedCoin b) {
       final dataA = marketData[a.symbol];
@@ -45,9 +52,16 @@ class MarketsScreen extends ConsumerWidget {
       return sortAscending ? result : -result;
     }
 
-    final followed = supportedCoins.where((c) => followedSymbols.contains(c.symbol)).toList()
+    final matching = searchQuery.isEmpty
+        ? allCoins
+        : allCoins
+            .where((c) =>
+                c.baseAsset.toLowerCase().contains(searchQuery) ||
+                c.displayName.toLowerCase().contains(searchQuery))
+            .toList(growable: false);
+    final followed = matching.where((c) => followedSymbols.contains(c.symbol)).toList()
       ..sort(compare);
-    final rest = supportedCoins.where((c) => !followedSymbols.contains(c.symbol)).toList()
+    final rest = matching.where((c) => !followedSymbols.contains(c.symbol)).toList()
       ..sort(compare);
     final coins = [...followed, ...rest];
 
@@ -71,25 +85,46 @@ class MarketsScreen extends ConsumerWidget {
                 style: const TextStyle(color: Color(0xFFFFC107), fontSize: 11),
               ),
             ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+            child: TextField(
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                hintText: l10n.coinSearchHint,
+                hintStyle: const TextStyle(color: Colors.white38),
+                prefixIcon: const Icon(Icons.search, color: Colors.white38),
+                isDense: true,
+                filled: true,
+                fillColor: const Color(0xFF1E222D),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              onChanged: (v) => ref.read(_searchQueryProvider.notifier).state = v,
+            ),
+          ),
           _SortHeader(sortField: sortField, sortAscending: sortAscending),
           Expanded(
             child: snapshotAsync.hasError && snapshotAsync.valueOrNull == null
                 ? Center(
                     child: Text(l10n.marketsLoadError, style: const TextStyle(color: Colors.white54)),
                   )
-                : ListView.separated(
-                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
-                    itemCount: coins.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 8),
-                    itemBuilder: (context, index) {
-                      final coin = coins[index];
-                      return _MarketTile(
-                        coin: coin,
-                        data: marketData[coin.symbol],
-                        isFollowed: followedSymbols.contains(coin.symbol),
-                      );
-                    },
-                  ),
+                : coins.isEmpty
+                    ? Center(
+                        child: Text(l10n.coinSearchNoResults,
+                            style: const TextStyle(color: Colors.white38)),
+                      )
+                    : ListView.separated(
+                        padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+                        itemCount: coins.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 8),
+                        itemBuilder: (context, index) {
+                          final coin = coins[index];
+                          return _MarketTile(
+                            coin: coin,
+                            data: marketData[coin.symbol],
+                            isFollowed: followedSymbols.contains(coin.symbol),
+                          );
+                        },
+                      ),
           ),
         ],
       ),

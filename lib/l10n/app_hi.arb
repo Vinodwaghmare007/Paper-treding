@@ -217,5 +217,10 @@
   "newsTitle": "क्रिप्टो समाचार",
   "newsEmpty": "अभी कोई हेडलाइन नहीं है।",
   "newsLoadError": "हेडलाइन लोड नहीं हो सकीं: {error}",
-  "newsLinkOpenError": "यह लिंक नहीं खुल सका।"
+  "newsLinkOpenError": "यह लिंक नहीं खुल सका।",
+  "coinSearchHint": "कॉइन खोजें",
+  "coinSearchNoResults": "आपकी खोज से कोई कॉइन मेल नहीं खाता।",
+  "offlineBannerMessage": "ऑफ़लाइन — {timestamp} का डेटा दिखाया जा रहा है",
+  "offlineBannerGeneric": "आप ऑफ़लाइन हैं — आपका अंतिम सिंक किया गया डेटा दिखाया जा रहा है।",
+  "tradeSheetOfflineNotice": "आप ऑफ़लाइन हैं। ट्रेड के लिए लाइव कीमत चाहिए — ऑनलाइन आने पर फिर से कोशिश करें।"
 }

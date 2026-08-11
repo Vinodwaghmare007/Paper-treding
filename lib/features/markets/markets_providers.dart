@@ -5,6 +5,8 @@ import '../../data/repositories/watchlist_repository.dart';
 import '../../data/sources/coingecko_source.dart';
 import '../../domain/entities/watchlist_entry.dart';
 import '../auth/auth_providers.dart';
+import '../coins/coin_catalog_providers.dart';
+import '../connectivity/connectivity_providers.dart';
 
 final watchlistRepositoryProvider = Provider<WatchlistRepository>((ref) {
   return WatchlistRepository(ref.watch(firebaseFirestoreProvider));
@@ -47,11 +49,36 @@ final coinGeckoSourceProvider = Provider<CoinGeckoSource>((ref) {
 /// [CoinMarketSnapshot] (not just a bare map) so the Markets screen can
 /// show a "stale" indicator on a failed refresh instead of silently
 /// serving old prices as current.
+///
+/// Scaling note (15 -> 50+ coins): this stays ONE request per 45s poll no
+/// matter how many ids are joined into `ids=...` — the coin count only
+/// changes that single response's size (a few KB more JSON), not the call
+/// frequency, so it doesn't move the needle on CoinGecko's free-tier rate
+/// limit. 50-ish ~15-char ids comma-joined is a few hundred characters,
+/// nowhere near a URL length limit either. No pagination/chunking needed;
+/// see coingecko_source.dart's fetchMarkets for where this is issued.
+///
+/// Cold-start reduction (Part B #8): on a metered connection, the very
+/// first fetch requests only the top [_coldStartCoinLimit] coins — full
+/// sparkline data for 50+ coins is real payload weight to force on a
+/// Tier-2/3 mobile-data connection before the Markets screen has even
+/// painted once. Every fetch after that first one requests the full list,
+/// so the rest arrives within one 45s poll cycle rather than never.
+const _coldStartCoinLimit = 15;
+
 final coinMarketSnapshotProvider = StreamProvider<CoinMarketSnapshot>((ref) async* {
   final source = ref.watch(coinGeckoSourceProvider);
-  final ids = [for (final c in supportedCoins) c.coingeckoId];
+  final coins = ref.watch(supportedCoinsProvider).valueOrNull ?? supportedCoins;
+  final isMetered = ref.watch(isOnMeteredConnectionProvider);
+  final fullIds = [for (final c in coins) c.coingeckoId];
+  final firstFetchIds = (isMetered && fullIds.length > _coldStartCoinLimit)
+      ? fullIds.take(_coldStartCoinLimit).toList(growable: false)
+      : fullIds;
 
+  var isFirstFetch = true;
   while (true) {
+    final ids = isFirstFetch ? firstFetchIds : fullIds;
+    isFirstFetch = false;
     try {
       yield await source.fetchMarkets(coingeckoIds: ids);
     } on CoinGeckoException {
@@ -69,9 +96,10 @@ final coinMarketSnapshotProvider = StreamProvider<CoinMarketSnapshot>((ref) asyn
 final coinMarketDataBySymbolProvider = Provider<Map<String, CoinMarketData>>((ref) {
   final snapshot = ref.watch(coinMarketSnapshotProvider).valueOrNull;
   if (snapshot == null) return const {};
+  final coins = ref.watch(supportedCoinsProvider).valueOrNull ?? supportedCoins;
   final byGeckoId = {for (final c in snapshot.coins) c.coingeckoId: c};
   return {
-    for (final coin in supportedCoins)
+    for (final coin in coins)
       if (byGeckoId[coin.coingeckoId] != null) coin.symbol: byGeckoId[coin.coingeckoId]!,
   };
 });

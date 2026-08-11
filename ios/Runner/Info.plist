@@ -45,5 +45,20 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<!-- Required for firebase_messaging (price alerts, notifications_service
+	     .dart) to receive a push while the app isn't in the foreground.
+	     Unlike camera/location, iOS notification permission itself has no
+	     Info.plist usage-description key at all — the system prompt text
+	     is fixed, and the actual permission request happens at runtime via
+	     UNUserNotificationCenter (see notifications_service.dart). This
+	     entry only unlocks background delivery, it doesn't request
+	     permission on its own. Also needs the "Push Notifications"
+	     capability + an aps-environment entitlement added in Xcode
+	     (Signing & Capabilities tab) — that's a project-file change Xcode
+	     itself generates and can't be hand-written correctly outside it. -->
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
 </dict>
 </plist>

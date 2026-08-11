@@ -81,10 +81,16 @@ class CoinGeckoSource {
   final Duration timeout;
   final Duration cacheTtl;
 
-  CoinMarketSnapshot? _cached;
+  // Keyed by the requested ids (joined, order-preserved) rather than a
+  // single slot — Part B #8's cold-start reduction calls this with a
+  // smaller id list on first launch, then the full list shortly after;
+  // a single unkeyed cache slot would otherwise serve one call's response
+  // back for the other's different id set.
+  final _cachedByIds = <String, CoinMarketSnapshot>{};
 
   Future<CoinMarketSnapshot> fetchMarkets({required List<String> coingeckoIds}) async {
-    final cached = _cached;
+    final cacheKey = coingeckoIds.join(',');
+    final cached = _cachedByIds[cacheKey];
     if (cached != null && DateTime.now().difference(cached.fetchedAt) < cacheTtl) {
       return cached;
     }
@@ -92,7 +98,7 @@ class CoinGeckoSource {
     try {
       final uri = Uri.parse('$baseUrl/coins/markets').replace(queryParameters: {
         'vs_currency': 'usd',
-        'ids': coingeckoIds.join(','),
+        'ids': cacheKey,
         'sparkline': 'true',
         'price_change_percentage': '24h',
       });
@@ -111,7 +117,7 @@ class CoinGeckoSource {
           .map((e) => CoinMarketData.fromJson(e as Map<String, dynamic>))
           .toList(growable: false);
       final snapshot = CoinMarketSnapshot(coins: coins, fetchedAt: DateTime.now(), isStale: false);
-      _cached = snapshot;
+      _cachedByIds[cacheKey] = snapshot;
       return snapshot;
     } catch (e) {
       debugPrint('[CoinGeckoSource] fetchMarkets failed: $e');

@@ -217,5 +217,10 @@
   "newsTitle": "क्रिप्टो बातम्या",
   "newsEmpty": "सध्या कोणत्याही हेडलाइन्स नाहीत.",
   "newsLoadError": "हेडलाइन्स लोड करता आल्या नाहीत: {error}",
-  "newsLinkOpenError": "ही लिंक उघडता आली नाही."
+  "newsLinkOpenError": "ही लिंक उघडता आली नाही.",
+  "coinSearchHint": "कॉइन शोधा",
+  "coinSearchNoResults": "तुमच्या शोधाशी जुळणारे कोणतेही कॉइन नाहीत.",
+  "offlineBannerMessage": "ऑफलाइन — {timestamp} चा डेटा दाखवत आहे",
+  "offlineBannerGeneric": "तुम्ही ऑफलाइन आहात — तुमचा शेवटचा सिंक केलेला डेटा दाखवत आहे.",
+  "tradeSheetOfflineNotice": "तुम्ही ऑफलाइन आहात. ट्रेडसाठी लाइव्ह किंमत आवश्यक आहे — पुन्हा ऑनलाइन आल्यावर प्रयत्न करा."
 }

@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/entities/chart_range.dart';
 import '../../data/models/kline_tick.dart';
 import '../../data/repositories/sentiment_repository.dart';
+import '../../data/sources/app_database.dart';
 import '../../data/sources/binance_rest_service.dart';
 import '../../data/sources/binance_websocket_service.dart';
 import '../../domain/entities/community_sentiment.dart';
@@ -40,6 +43,46 @@ final binanceRestServiceProvider = Provider<BinanceRestService>((ref) {
   final service = BinanceRestService();
   ref.onDispose(service.dispose);
   return service;
+});
+
+final appDatabaseProvider = Provider<AppDatabase>((ref) {
+  final db = AppDatabase();
+  ref.onDispose(db.close);
+  return db;
+});
+
+/// Fetches the chart's seed candles from Binance, caching a copy locally on
+/// success and falling back to that cache on failure (offline, timeout) —
+/// see app_database.dart's doc comment for why the live chart didn't have
+/// any persistent cache before this. A cache miss on top of a fetch
+/// failure (brand-new install, never been online for this symbol/interval)
+/// rethrows, same as before this existed, so TradingChartView's own error
+/// state still handles that case.
+Future<List<Candle>> fetchSeedCandlesWithCache({
+  required BinanceRestService restService,
+  required AppDatabase appDatabase,
+  required String symbol,
+  required String interval,
+  required int limit,
+}) async {
+  try {
+    final candles = await restService.fetchKlines(symbol: symbol, interval: interval, limit: limit);
+    unawaited(appDatabase.saveCandles(symbol, interval, candles));
+    return candles;
+  } on BinanceRestException {
+    final cached = await appDatabase.loadCandles(symbol, interval);
+    if (cached != null) return cached.candles;
+    rethrow;
+  }
+}
+
+/// The chart's local cache entry for the current coin/range combo — read
+/// only to power the offline banner's "as of [timestamp]" text, not part
+/// of the actual candle-fetch path (see [fetchSeedCandlesWithCache]).
+final cachedSeedCandlesProvider = FutureProvider.autoDispose<CachedCandles?>((ref) {
+  final symbol = ref.watch(selectedCoinProvider);
+  final interval = ref.watch(selectedChartRangeProvider).klineInterval;
+  return ref.watch(appDatabaseProvider).loadCandles(symbol, interval);
 });
 
 /// Live kline ticks (every ~250ms–2s from Binance while the market moves).

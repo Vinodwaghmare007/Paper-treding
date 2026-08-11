@@ -140,7 +140,94 @@ or ability to load a page against live Firestore here. Once the config is
 filled in, sanity-check it against a real earned certificate (Certs tab in
 the app → tap a certificate → the code shown there) before relying on it.
 
-## 8. What this sandbox could not verify for you
+## 8. App size (Phase G2 Part C)
+
+A manual audit (no Flutter SDK in this sandbox — see section 10) found:
+
+- **`cupertino_icons` removed from `pubspec.yaml`.** Zero `CupertinoIcons.*`
+  references anywhere in `lib/` — this app only ever uses Material icons.
+  A genuinely unused dependency, not just an unused *symbol* within a used
+  package.
+- **`assets/` is already lean**: `tradingview.html` (~10KB) and
+  `lightweight-charts.standalone.production.js` (~160KB, the open-source
+  "Lightweight Charts" library the TradingView-style chart bridge actually
+  needs — not the full TradingView widget, and not further trimmable
+  without breaking the chart). No unused/oversized images anywhere in the
+  repo.
+- **`android/app/build.gradle.kts` already has R8 minification +
+  `isShrinkResources` enabled** (from the original release-readiness
+  phase) — the biggest lever for app size is already pulled.
+- **Split delivery is already the default and needs no gradle change.**
+  `flutter build appbundle` produces an `.aab`; Play Console's Dynamic
+  Delivery splits that into per-device downloads (ABI, density, language)
+  automatically server-side. The `splits { abi { ... } }` gradle block
+  some guides mention is for a *different* artifact — a raw multi-APK
+  build via `flutter build apk --split-per-abi` — and would be the wrong
+  thing to add here since this app ships as an App Bundle.
+- Every dependency in `pubspec.yaml` besides `cupertino_icons` is actually
+  imported somewhere in `lib/` (checked via `grep -rl "package:<name>/"
+  lib/` per dependency) — no other unused Firebase modules or otherwise to
+  trim.
+
+**Run this yourself** — the one thing this sandbox genuinely cannot do:
+
+```bash
+flutter build appbundle --release --analyze-size
+```
+
+This prints an actual per-file/per-dependency size breakdown of the real
+built artifact. Everything above is a source-level audit, not a
+measurement — treat the `--analyze-size` output as the real numbers, and
+re-run it after any dependency changes to confirm they moved the needle
+the way you'd expect.
+
+## 9. iOS / TestFlight (Phase G2 Part D)
+
+The `ios/` project is the standard `flutter create` scaffold, essentially
+untouched since this app has been built and tested Android-first. Before
+it's TestFlight-ready:
+
+- **`ios/Runner/GoogleService-Info.plist` is missing** — the iOS
+  equivalent of `android/app/google-services.json`. Every `firebase_*`
+  package in `pubspec.yaml` needs it. Download it from Firebase Console →
+  Project settings → your iOS app (register one there first if you
+  haven't) and drop it into `ios/Runner/`.
+- **`Info.plist` updated with only what's actually needed**: a
+  `UIBackgroundModes` entry (`remote-notification`) so `firebase_messaging`
+  can deliver a price alert push while the app isn't in the foreground.
+  Note this is *not* a "usage description" string — unlike camera/location/
+  microphone, iOS notification permission has no Info.plist description
+  key at all; the system prompt's text is fixed, and the actual permission
+  request happens at runtime via `UNUserNotificationCenter` (see
+  `notifications_service.dart`). Background push additionally needs the
+  "Push Notifications" capability + `aps-environment` entitlement added in
+  Xcode's Signing & Capabilities tab — that's an Xcode-generated project
+  file change that can't be correctly hand-written outside Xcode itself.
+  No camera/photo-library/biometric permission strings were added, because
+  nothing in this codebase uses a camera, photo picker, or `local_auth` —
+  an unused permission description is itself a plausible App Store review
+  flag ("why does an educational trading app want camera access"), not
+  just dead configuration. Add the real string the day a feature that
+  actually needs it ships.
+- **App Store category**: use **Education**, matching the Play Store
+  listing's category (see `docs/PLAY_STORE_LISTING.md`) — same reasoning
+  as that doc: this is a paper-trading simulator, not a real brokerage,
+  and Apple's Finance category review requirements assume real money
+  movement. Every App Store screenshot needs the same "SIMULATED —
+  Educational only, no real money" framing already required for Play
+  Store screenshots; don't crop it out to make a screenshot look cleaner.
+- **Run `flutter build ios` and fix whatever it finds** — this sandbox has
+  no macOS/Xcode, so this has never actually been built. The most likely
+  real issue: `trading_chart_view.dart`'s `JavascriptChannel`/message-
+  passing to the embedded chart HTML is exercised constantly on Android in
+  this codebase's history but has never been run against iOS's WKWebView,
+  which `webview_flutter` uses under the hood on iOS. Test the chart
+  screen specifically (does it render, does tapping/zooming call back into
+  Dart correctly) before assuming parity with Android.
+- **Physical-device testing is required, not optional, for the offline
+  mode added in this same phase** — see section 10.
+
+## 10. What this sandbox could not verify for you
 
 No Android SDK, device, or emulator was available in the environment this
 was built in — the signing config and ProGuard rules were written and
@@ -148,3 +235,33 @@ reviewed carefully (cross-checked against each plugin's actual Android
 package names in the local pub cache, not guessed from memory), but
 **never actually built**. Treat step 4 above as mandatory, not optional,
 the first time you cut a release from this config.
+
+The same applies, more strongly, to this phase's additions:
+
+- **No Flutter/Dart SDK at all** in this sandbox — none of this phase's
+  Dart changes (Remote Config coin list, the combined-stream WebSocket
+  service, sqflite offline cache, connectivity-aware UI) have been run
+  through `flutter analyze`, `flutter test`, or a real build. They were
+  written carefully against this codebase's existing, already-verified
+  patterns (the combined-stream service mirrors `BinanceWebSocketService`
+  almost line-for-line; the sqflite cache mirrors the existing
+  `HistoricalDataCache`), and a unit test was written for the new
+  WebSocket service alongside the existing one's — but "written carefully"
+  is not the same as "passed a build."
+- **No macOS/Xcode** — `flutter build ios` has never run.
+- **No network access to Binance/CoinGecko/Wikipedia from this sandbox**
+  (blocked by the environment's egress proxy) — the 35 coins added to
+  `supported_coin.dart` beyond the original 15 were curated from general
+  knowledge of long-listed, high-liquidity Binance pairs, not verified
+  live against `/exchangeInfo`. Spot-check the full list before shipping;
+  see the TODO comment at the top of that file.
+- **Offline mode specifically must be tested by toggling airplane mode on
+  a real device**, not just by reasoning about the code — this was
+  explicitly called out as a requirement for this phase and genuinely
+  cannot be substituted with anything this sandbox can do. Check, at
+  minimum: the chart screen cold-opened while already offline (should show
+  cached candles + the offline banner, never a blank screen or spinner
+  that never resolves), a trade attempt while offline (should be disabled
+  with the explanatory notice, not silently fail after a tap), and the
+  portfolio/orders screens offline (should show last-synced data via
+  Firestore's own offline cache plus the generic offline banner).

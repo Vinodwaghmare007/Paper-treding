@@ -1280,5 +1280,36 @@
   "newsLinkOpenError": "Could not open this link.",
   "@newsLinkOpenError": {
     "description": "Snackbar shown if tapping a headline fails to open the external article link."
+  },
+
+  "coinSearchHint": "Search coins",
+  "@coinSearchHint": {
+    "description": "Placeholder text in the search box at the top of the coin-picker sheet and the Markets screen, now that the curated coin list has grown past 50 entries."
+  },
+
+  "coinSearchNoResults": "No coins match your search.",
+  "@coinSearchNoResults": {
+    "description": "Empty-state message shown when a coin search query matches nothing."
+  },
+
+  "offlineBannerMessage": "Offline — showing data from {timestamp}",
+  "@offlineBannerMessage": {
+    "description": "Persistent banner shown on the chart screen when the device is offline, naming exactly when the cached candle data being shown was last fetched. {timestamp} is a pre-formatted local date/time string.",
+    "placeholders": {
+      "timestamp": {
+        "type": "String",
+        "example": "2026-08-10 14:32"
+      }
+    }
+  },
+
+  "offlineBannerGeneric": "You're offline — showing your last synced data.",
+  "@offlineBannerGeneric": {
+    "description": "Persistent banner for screens backed by Firestore (portfolio, orders), which already caches its last-synced snapshot offline but doesn't expose an exact fetch timestamp the way the chart's own local cache does."
+  },
+
+  "tradeSheetOfflineNotice": "You're offline. Trades need a live price — try again once you're back online.",
+  "@tradeSheetOfflineNotice": {
+    "description": "Shown in the trade sheet in place of the Confirm Buy/Sell button while the device has no network connection — trading is disabled proactively rather than failing after a tap."
   }
 }

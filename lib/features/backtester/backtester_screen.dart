@@ -12,6 +12,7 @@ import '../../domain/usecases/risk_metrics_calculator.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../auth/auth_providers.dart';
 import '../certifications/certification_providers.dart';
+import '../coins/coin_catalog_providers.dart';
 import '../ticker/ticker_providers.dart';
 import 'equity_curve_chart.dart';
 
@@ -182,6 +183,7 @@ class _BacktesterScreenState extends ConsumerState<BacktesterScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final isRunning = _phase == _RunPhase.fetchingData || _phase == _RunPhase.running;
+    final coins = ref.watch(supportedCoinsProvider).valueOrNull ?? supportedCoins;
 
     return Scaffold(
       appBar: AppBar(
@@ -205,7 +207,7 @@ class _BacktesterScreenState extends ConsumerState<BacktesterScreen> {
                         style: const TextStyle(color: Colors.white),
                         decoration: InputDecoration(labelText: l10n.coinFieldLabel, isDense: true),
                         items: [
-                          for (final coin in supportedCoins)
+                          for (final coin in coins)
                             DropdownMenuItem(value: coin.symbol, child: Text(coin.baseAsset)),
                         ],
                         onChanged: isRunning ? null : (v) => setState(() => _symbol = v ?? _symbol),

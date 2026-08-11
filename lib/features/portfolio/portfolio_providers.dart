@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../data/sources/binance_combined_stream_service.dart';
 import '../../data/sources/first_trade_tracker.dart';
 import '../../domain/entities/cohort_median.dart';
 import '../../domain/entities/order.dart';
@@ -46,34 +47,44 @@ final orderHistoryStreamProvider = StreamProvider<List<Order>>((ref) {
   return ref.watch(tradingRepositoryProvider).watchOrders(uid);
 });
 
-/// Batch-polled last price (every 15s) for every held coin that ISN'T the
-/// one currently open on the chart — that one already gets a free, more
-/// frequent price from [klineTickProvider]'s live WebSocket tick. Cheap
-/// even for a large portfolio: one Binance REST call covers every distinct
-/// symbol. Starts empty and fills in after the first poll rather than
-/// blocking on it, so the portfolio screen never waits on this.
-final heldCoinPricesProvider = StreamProvider<Map<String, double>>((ref) async* {
-  final rest = ref.watch(binanceRestServiceProvider);
-  var lastPrices = const <String, double>{};
-  yield lastPrices;
+/// Every held coin that ISN'T the one currently open on the chart — that
+/// one already gets a free, more frequent price from [klineTickProvider]'s
+/// live WebSocket tick. Reactive (not polled): recomputes whenever the
+/// portfolio or the active chart symbol changes.
+final heldSymbolsProvider = Provider<Set<String>>((ref) {
+  final positions = ref.watch(portfolioStreamProvider).valueOrNull ?? const [];
+  final activeSymbol = ref.watch(selectedCoinProvider);
+  return {
+    for (final p in positions)
+      if (p.coinSymbol != activeSymbol) p.coinSymbol,
+  };
+});
 
-  await for (final _ in Stream<int>.periodic(const Duration(seconds: 15), (i) => i)) {
-    final positions = ref.read(portfolioStreamProvider).valueOrNull ?? const [];
-    final activeSymbol = ref.read(selectedCoinProvider);
-    final symbols = {
-      for (final p in positions)
-        if (p.coinSymbol != activeSymbol) p.coinSymbol,
-    }.toList(growable: false);
-    if (symbols.isEmpty) {
-      lastPrices = const {};
-    } else {
-      final fetched = await rest.fetchPrices(symbols: symbols);
-      // A failed poll (empty map) keeps the previous prices rather than
-      // blanking everything back to the avgBuyPrice fallback for one cycle.
-      if (fetched.isNotEmpty) lastPrices = fetched;
-    }
-    yield lastPrices;
-  }
+/// Owns the combined-stream WebSocket lifecycle for [heldSymbolsProvider] —
+/// rebuilt (old socket torn down, new one opened with the new symbol set)
+/// whenever a position is opened/closed or the active chart coin changes.
+/// Null with no connection at all when there's nothing to price yet (no
+/// holdings besides the active chart coin).
+final heldCoinPriceServiceProvider = Provider<BinanceCombinedStreamService?>((ref) {
+  final symbols = ref.watch(heldSymbolsProvider);
+  if (symbols.isEmpty) return null;
+  final service = BinanceCombinedStreamService(symbols: symbols);
+  service.start();
+  ref.onDispose(service.dispose);
+  return service;
+});
+
+/// Live last price for every held coin that isn't the active chart symbol —
+/// see heldSymbolsProvider. One Binance WebSocket connection covers every
+/// distinct held symbol via the combined-stream endpoint (see
+/// binance_combined_stream_service.dart), replacing what used to be a 15s
+/// REST poll with sub-second updates at the same one-connection cost.
+/// Starts empty and fills in as ticks arrive rather than blocking on the
+/// first one, so the portfolio screen never waits on this.
+final heldCoinPricesProvider = StreamProvider<Map<String, double>>((ref) {
+  final service = ref.watch(heldCoinPriceServiceProvider);
+  if (service == null) return Stream.value(const {});
+  return service.prices;
 });
 
 final executeTradeUseCaseProvider = Provider<ExecuteTradeUseCase>((ref) {

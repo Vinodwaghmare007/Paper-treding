@@ -5,6 +5,7 @@ import '../../data/entities/supported_coin.dart';
 import '../../domain/entities/price_alert.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../auth/auth_providers.dart';
+import '../coins/coin_catalog_providers.dart';
 import '../settings/price_text.dart';
 import 'alerts_providers.dart';
 
@@ -68,6 +69,7 @@ class _CreateAlertScreenState extends ConsumerState<CreateAlertScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final alertsAsync = ref.watch(alertsProvider);
+    final coins = ref.watch(supportedCoinsProvider).valueOrNull ?? supportedCoins;
 
     return Scaffold(
       appBar: AppBar(
@@ -78,6 +80,7 @@ class _CreateAlertScreenState extends ConsumerState<CreateAlertScreen> {
         padding: const EdgeInsets.all(16),
         children: [
           _CreateCard(
+            coins: coins,
             priceController: _priceController,
             symbol: _symbol,
             direction: _direction,
@@ -127,6 +130,7 @@ class _CreateAlertScreenState extends ConsumerState<CreateAlertScreen> {
 
 class _CreateCard extends StatelessWidget {
   const _CreateCard({
+    required this.coins,
     required this.priceController,
     required this.symbol,
     required this.direction,
@@ -137,6 +141,7 @@ class _CreateCard extends StatelessWidget {
     required this.onCreate,
   });
 
+  final List<SupportedCoin> coins;
   final TextEditingController priceController;
   final String symbol;
   final AlertDirection direction;
@@ -167,7 +172,7 @@ class _CreateCard extends StatelessWidget {
             style: const TextStyle(color: Colors.white),
             decoration: InputDecoration(labelText: l10n.coinFieldLabel, isDense: true),
             items: [
-              for (final coin in supportedCoins)
+              for (final coin in coins)
                 DropdownMenuItem(value: coin.symbol, child: Text('${coin.baseAsset} · ${coin.displayName}')),
             ],
             onChanged: (v) {
