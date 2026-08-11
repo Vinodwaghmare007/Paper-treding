@@ -17,6 +17,7 @@ extension UserAccountFirestoreMapping on UserAccount {
     }
     final lockedTs = data['buy_locked_until'];
     final createdAtTs = data['created_at'];
+    final proAccessUntilTs = data['pro_access_until'];
     return UserAccount(
       uid: doc.id,
       virtualBalance: (data['virtual_balance'] as num).toDouble(),
@@ -31,6 +32,11 @@ extension UserAccountFirestoreMapping on UserAccount {
       ),
       puzzleStreak: (data['puzzle_streak'] as num?)?.toInt() ?? 0,
       puzzleLastPlayedDate: data['puzzle_last_played_date'] as String?,
+      orgId: data['org_id'] as String?,
+      referralCode: data['referral_code'] as String?,
+      referredBy: data['referred_by'] as String?,
+      proDaysEarned: (data['pro_days_earned'] as num?)?.toInt() ?? 0,
+      proAccessUntil: proAccessUntilTs is Timestamp ? proAccessUntilTs.toDate().toUtc() : null,
     );
   }
 
@@ -47,6 +53,14 @@ extension UserAccountFirestoreMapping on UserAccount {
         'consecutive_losses': 0,
         'buy_locked_until': null,
         'created_at': FieldValue.serverTimestamp(),
+        // Growth phase fields — every one of these is only ever written
+        // later by a Cloud Function (see firestore.rules' isValidAccountUpdate
+        // forgery guards); the initial doc always starts them unset/zero.
+        'org_id': null,
+        'referral_code': null,
+        'referred_by': null,
+        'pro_days_earned': 0,
+        'pro_access_until': null,
       };
 }
 

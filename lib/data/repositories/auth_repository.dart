@@ -32,6 +32,29 @@ class AuthFailure implements Exception {
   }
 }
 
+/// Which kind of code a successfully-redeemed sign-up code turned out to
+/// be — a code's shape never reveals this up front (see
+/// functions/src/growth/codeGenerator.ts), so the caller only learns it
+/// from which callable actually accepted the code.
+enum RedeemedCodeKind { orgInvite, referral }
+
+/// Outcome of redeeming an optional referral/org-invite code entered at
+/// sign-up. Redemption failure never fails sign-up itself — by the time
+/// this runs the account already exists — so the UI surfaces this
+/// separately (e.g. a snackbar) instead of blocking on it.
+class InviteCodeRedemptionResult {
+  const InviteCodeRedemptionResult.success(RedeemedCodeKind kind)
+      : kind = kind,
+        errorMessage = null;
+  const InviteCodeRedemptionResult.failure(String message)
+      : kind = null,
+        errorMessage = message;
+
+  final RedeemedCodeKind? kind;
+  final String? errorMessage;
+  bool get isSuccess => kind != null;
+}
+
 /// Wraps Firebase Auth (email/password + Google) and bootstraps the
 /// Firestore `users/{uid}` document the first time an account is created,
 /// per the schema in [UserAccountFirestoreMapping.initialDoc].
@@ -60,9 +83,15 @@ class AuthRepository {
 
   User? get currentUser => _auth.currentUser;
 
-  Future<void> signUpWithEmail({
+  /// [inviteOrReferralCode] is optional and only ever consulted for a
+  /// brand-new account — a returning email already on this device that
+  /// hits the create-account path again (shouldn't normally happen, but
+  /// `created` guards it) never attempts redemption a second time, since
+  /// `referred_by` can only be set once server-side anyway.
+  Future<InviteCodeRedemptionResult?> signUpWithEmail({
     required String email,
     required String password,
+    String? inviteOrReferralCode,
   }) async {
     try {
       final credential = await _auth.createUserWithEmailAndPassword(
@@ -75,8 +104,60 @@ class AuthRepository {
       }
       final created = await _ensureUserDocument(uid);
       if (created) await _analytics.logSignUp(method: 'email');
+
+      final code = inviteOrReferralCode?.trim() ?? '';
+      if (created && code.isNotEmpty) {
+        return _redeemInviteOrReferralCode(code);
+      }
+      return null;
     } on FirebaseAuthException catch (e) {
       throw AuthFailure.fromFirebase(e);
+    }
+  }
+
+  /// Tries [code] as a B2B org invite code first, then as a consumer
+  /// referral code. The two share one alphabet by design (see
+  /// functions/src/growth/codeGenerator.ts) specifically so a code's shape
+  /// never leaks which kind it is — the client genuinely can't tell up
+  /// front which callable to call, so it tries the first and only falls
+  /// through to the second on a clean "code doesn't exist" (`not-found`),
+  /// never on a real error like "already used" or "org full."
+  Future<InviteCodeRedemptionResult> _redeemInviteOrReferralCode(
+    String code,
+  ) async {
+    try {
+      await _functions
+          .httpsCallable('redeemOrgInviteCode')
+          .call<Map<String, dynamic>>({
+        'code': code,
+        'displayName': _auth.currentUser?.email?.split('@').first ?? '',
+      });
+      await _analytics.logInviteCodeRedeemed(type: 'org_invite');
+      return const InviteCodeRedemptionResult.success(
+        RedeemedCodeKind.orgInvite,
+      );
+    } on FirebaseFunctionsException catch (e) {
+      if (e.code != 'not-found') {
+        return InviteCodeRedemptionResult.failure(
+          e.message ?? 'Could not apply that code.',
+        );
+      }
+      // Not a known org invite code — fall through and try it as a
+      // referral code.
+    }
+
+    try {
+      await _functions
+          .httpsCallable('redeemReferralCode')
+          .call<Map<String, dynamic>>({'code': code});
+      await _analytics.logInviteCodeRedeemed(type: 'referral');
+      return const InviteCodeRedemptionResult.success(
+        RedeemedCodeKind.referral,
+      );
+    } on FirebaseFunctionsException catch (e) {
+      return InviteCodeRedemptionResult.failure(
+        e.message ?? 'Could not apply that code.',
+      );
     }
   }
 

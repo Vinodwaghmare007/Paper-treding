@@ -31,6 +31,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _inviteCodeController = TextEditingController();
   _Mode _mode = _Mode.signIn;
   bool _submitting = false;
   String? _errorText;
@@ -39,6 +40,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _inviteCodeController.dispose();
     super.dispose();
   }
 
@@ -56,16 +58,34 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
           password: _passwordController.text,
         );
       } else {
-        await repo.signUpWithEmail(
+        final result = await repo.signUpWithEmail(
           email: _emailController.text.trim(),
           password: _passwordController.text,
+          inviteOrReferralCode: _inviteCodeController.text,
         );
+        _showRedemptionSnackBar(result);
       }
     } on AuthFailure catch (e) {
       if (mounted) setState(() => _errorText = e.message);
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
+  }
+
+  void _showRedemptionSnackBar(InviteCodeRedemptionResult? result) {
+    if (result == null || !mounted) return;
+    final l10n = AppLocalizations.of(context)!;
+    final message = switch (result) {
+      InviteCodeRedemptionResult(kind: RedeemedCodeKind.orgInvite) =>
+        l10n.signInInviteCodeAppliedOrg,
+      InviteCodeRedemptionResult(kind: RedeemedCodeKind.referral) =>
+        l10n.signInInviteCodeAppliedReferral,
+      InviteCodeRedemptionResult(errorMessage: final error?) =>
+        l10n.signInInviteCodeFailed(error),
+      _ => null,
+    };
+    if (message == null) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> _submitGoogle() async {
@@ -144,6 +164,17 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                     },
                     onFieldSubmitted: (_) => _submitEmailForm(),
                   ),
+                  if (isSignUp) ...[
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _inviteCodeController,
+                      textCapitalization: TextCapitalization.characters,
+                      decoration: InputDecoration(
+                        labelText: l10n.signInInviteCodeLabel,
+                        border: const OutlineInputBorder(),
+                      ),
+                    ),
+                  ],
                   if (_errorText != null) ...[
                     const SizedBox(height: 12),
                     Text(

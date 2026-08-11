@@ -60,4 +60,15 @@ class AnalyticsService {
   Future<void> logForecastViewed() {
     return _analytics.logEvent(name: 'forecast_viewed');
   }
+
+  /// A referral or org-invite code entered at sign-up was successfully
+  /// redeemed. [type] is `'org_invite'` or `'referral'` — see
+  /// AuthRepository._redeemInviteOrReferralCode, which tries both server
+  /// side since a code's shape doesn't reveal which kind it is.
+  Future<void> logInviteCodeRedeemed({required String type}) {
+    return _analytics.logEvent(
+      name: 'invite_code_redeemed',
+      parameters: {'type': type},
+    );
+  }
 }

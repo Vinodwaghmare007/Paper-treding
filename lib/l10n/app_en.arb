@@ -179,6 +179,31 @@
   "@signInPrivacyPolicy": {
     "description": "Link/button at the bottom of the sign-in screen that opens the privacy policy in a browser."
   },
+  "signInInviteCodeLabel": "Referral or invite code (optional)",
+  "@signInInviteCodeLabel": {
+    "description": "Optional text field on the sign-up form where a new user can paste either a consumer referral code (from a friend) or a B2B academy invite code (from their instructor) — the app tries both server-side, the field doesn't ask which kind it is."
+  },
+
+  "signInInviteCodeAppliedOrg": "Invite code applied — you've joined your academy.",
+  "@signInInviteCodeAppliedOrg": {
+    "description": "Snackbar shown after sign-up when the entered code was a valid B2B academy invite code."
+  },
+
+  "signInInviteCodeAppliedReferral": "Referral code applied — bonus days credited!",
+  "@signInInviteCodeAppliedReferral": {
+    "description": "Snackbar shown after sign-up when the entered code was a valid consumer referral code. 'Bonus days' refers to pro_days_earned/pro_access_until, which today is only a tracked counter/badge — see referral_screen.dart — so this message must not imply a working paid feature was unlocked."
+  },
+
+  "signInInviteCodeFailed": "Couldn't apply that code: {error}",
+  "@signInInviteCodeFailed": {
+    "description": "Snackbar shown after sign-up when the entered code could not be redeemed as either an org invite or a referral code. Sign-up itself still succeeds — this is a secondary, non-blocking notice.",
+    "placeholders": {
+      "error": {
+        "type": "String",
+        "example": "That referral code doesn't exist."
+      }
+    }
+  },
 
   "connectionLive": "LIVE",
   "@connectionLive": {
@@ -1311,5 +1336,108 @@
   "tradeSheetOfflineNotice": "You're offline. Trades need a live price — try again once you're back online.",
   "@tradeSheetOfflineNotice": {
     "description": "Shown in the trade sheet in place of the Confirm Buy/Sell button while the device has no network connection — trading is disabled proactively rather than failing after a tap."
+  },
+
+  "orgDashboardTitle": "Academy Dashboard",
+  "@orgDashboardTitle": {
+    "description": "Title of the B2B academy admin dashboard screen, shown only to users who administer at least one organization."
+  },
+
+  "orgDashboardSeatsLabel": "{used} / {limit} seats used",
+  "@orgDashboardSeatsLabel": {
+    "description": "Seat usage line on the org dashboard.",
+    "placeholders": {
+      "used": {
+        "type": "String"
+      },
+      "limit": {
+        "type": "String"
+      }
+    }
+  },
+
+  "orgDashboardLicenseLabel": "License: {type}",
+  "@orgDashboardLicenseLabel": {
+    "description": "Shows the org's license_type field (e.g. 'trial' or 'paid') as-is, not translated, since it's a raw enum value from Firestore.",
+    "placeholders": {
+      "type": {
+        "type": "String"
+      }
+    }
+  },
+
+  "orgDashboardGenerateCodeButton": "Generate invite code",
+  "@orgDashboardGenerateCodeButton": {
+    "description": "Button that calls the createOrgInviteCode Cloud Function to mint a new single-use student invite code."
+  },
+
+  "orgDashboardCodeGenerated": "Invite code: {code} (copied to clipboard)",
+  "@orgDashboardCodeGenerated": {
+    "description": "Snackbar confirming a new invite code was created and copied.",
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+
+  "orgDashboardGenerateCodeError": "Could not create an invite code: {error}",
+  "@orgDashboardGenerateCodeError": {
+    "description": "Snackbar shown when createOrgInviteCode fails.",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+
+  "orgDashboardSeatsFullNotice": "All seats are in use — students can't redeem new invite codes until a seat opens up.",
+  "@orgDashboardSeatsFullNotice": {
+    "description": "Shown instead of the generate-code button once seats_used reaches seat_limit."
+  },
+
+  "orgDashboardMembersTitle": "Enrolled students",
+  "@orgDashboardMembersTitle": {
+    "description": "Section heading above the list of org members."
+  },
+
+  "orgDashboardMembersEmpty": "No students have joined yet.",
+  "@orgDashboardMembersEmpty": {
+    "description": "Shown when the org has zero members."
+  },
+
+  "orgDashboardJoinedOn": "Joined {date}",
+  "@orgDashboardJoinedOn": {
+    "description": "Subtitle under each student's name showing their join date.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+
+  "orgDashboardAggregateTitle": "Cohort snapshot (anonymous)",
+  "@orgDashboardAggregateTitle": {
+    "description": "Heading for the anonymous aggregate-stats card."
+  },
+
+  "orgDashboardAggregateAvgDiscipline": "Average discipline score: {score}",
+  "@orgDashboardAggregateAvgDiscipline": {
+    "description": "The one anonymous aggregate metric shown — never traceable back to an individual student.",
+    "placeholders": {
+      "score": {
+        "type": "String"
+      }
+    }
+  },
+
+  "orgDashboardAggregateNotYetComputed": "Cohort stats update daily — check back once students have joined.",
+  "@orgDashboardAggregateNotYetComputed": {
+    "description": "Shown while aggregate_stats/data hasn't been computed yet (e.g. a brand-new org)."
+  },
+
+  "orgDashboardPrivacyNote": "Individual trade history is never visible here — only usernames, join dates, and an anonymous cohort average.",
+  "@orgDashboardPrivacyNote": {
+    "description": "Reassurance text on the org dashboard, since privacy for enrolled students is an explicit product requirement, not just an implementation detail."
   }
 }

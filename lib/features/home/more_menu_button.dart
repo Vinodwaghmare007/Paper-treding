@@ -9,13 +9,17 @@ import '../certifications/certificate_screen.dart';
 import '../chat/community_chat_screen.dart';
 import '../dca/dca_simulator_screen.dart';
 import '../markets/markets_screen.dart';
+import '../org/org_admin_dashboard.dart';
+import '../org/org_providers.dart';
 import '../puzzle/daily_puzzle_screen.dart';
+import '../referral/referral_screen.dart';
 import '../replay/market_replay_screen.dart';
 import '../settings/settings_screen.dart';
 import '../social/following_feed_screen.dart';
 import '../social/leaderboard_screen.dart';
 import '../social/profile_settings_screen.dart';
 import '../social/trader_profile_screen.dart';
+import '../tax/tax_education_screen.dart';
 import '../whatif/whatif_screen.dart';
 
 /// Single overflow entry point shown on the 4 primary tabs
@@ -72,6 +76,11 @@ class MoreMenuButton extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Only non-empty for the small number of accounts that administer a
+    // B2B academy org — everyone else never sees this entry at all, per
+    // adminOrgsProvider's doc comment.
+    final isOrgAdmin = ref.watch(adminOrgsProvider).valueOrNull?.isNotEmpty ?? false;
+
     return IconButton(
       icon: const Icon(Icons.menu),
       tooltip: 'More',
@@ -164,6 +173,24 @@ class MoreMenuButton extends ConsumerWidget {
                 title: const Text('Certifications'),
                 onTap: () => _openScreen(sheetContext, const CertificateScreen()),
               ),
+              ListTile(
+                leading: const Icon(Icons.card_giftcard),
+                title: const Text('Refer a Friend'),
+                onTap: () => _openScreen(sheetContext, const ReferralScreen()),
+              ),
+              ListTile(
+                leading: const Icon(Icons.receipt_long_outlined),
+                title: const Text('Crypto Tax in India'),
+                onTap: () => _openScreen(sheetContext, const TaxEducationScreen()),
+              ),
+              if (isOrgAdmin) ...[
+                const Divider(color: Colors.white24),
+                ListTile(
+                  leading: const Icon(Icons.school_outlined),
+                  title: const Text('Academy Dashboard'),
+                  onTap: () => _openScreen(sheetContext, const OrgAdminDashboard()),
+                ),
+              ],
               const Divider(color: Colors.white24),
               ListTile(
                 leading: const Icon(Icons.logout),

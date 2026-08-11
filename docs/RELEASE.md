@@ -142,7 +142,7 @@ the app → tap a certificate → the code shown there) before relying on it.
 
 ## 8. App size (Phase G2 Part C)
 
-A manual audit (no Flutter SDK in this sandbox — see section 10) found:
+A manual audit (no Flutter SDK in this sandbox — see section 11) found:
 
 - **`cupertino_icons` removed from `pubspec.yaml`.** Zero `CupertinoIcons.*`
   references anywhere in `lib/` — this app only ever uses Material icons.
@@ -225,9 +225,32 @@ it's TestFlight-ready:
   screen specifically (does it render, does tapping/zooming call back into
   Dart correctly) before assuming parity with Android.
 - **Physical-device testing is required, not optional, for the offline
-  mode added in this same phase** — see section 10.
+  mode added in this same phase** — see section 11.
 
-## 10. What this sandbox could not verify for you
+## 10. Growth phase hosting (B2B landing page + tax guide)
+
+Two more static pages join `privacy-policy.html` and `verify.html` on the
+same GitHub Pages setup from section 6 — no new hosting config needed,
+just the same `/docs` folder:
+
+- `docs/for-academies.html` — the B2B "For Academies" sales landing page.
+  Fill in `REPLACE_WITH_YOUR_ACADEMY_SALES_EMAIL` in its `<script>` block
+  before linking to it anywhere; the contact form is a `mailto:` link, not
+  a server-backed submission (deliberately lightweight — see section 11).
+- `docs/india-crypto-tax-guide.html` — the standalone SEO/AI-search page
+  for "India crypto tax" style queries, mirroring
+  `tax_education_screen.dart`'s in-app content. Have its tax-rule claims
+  reviewed before publishing (see section 11) — this is the one piece of
+  content on this list where being wrong has real consequences for a
+  reader, not just a broken link.
+
+Once GitHub Pages is enabled (section 6), these resolve at
+`https://vinodwaghmare007.github.io/Paper-treding/for-academies.html` and
+`https://vinodwaghmare007.github.io/Paper-treding/india-crypto-tax-guide.html`
+respectively — verify both actually load before pointing any real traffic
+at them.
+
+## 11. What this sandbox could not verify for you
 
 No Android SDK, device, or emulator was available in the environment this
 was built in — the signing config and ProGuard rules were written and
@@ -265,3 +288,37 @@ The same applies, more strongly, to this phase's additions:
   with the explanatory notice, not silently fail after a tap), and the
   portfolio/orders screens offline (should show last-synced data via
   Firestore's own offline cache plus the generic offline banner).
+
+This phase's Growth-phase additions (org/B2B licensing, referrals, tax
+education hub) carry the same "written carefully, never built" caveat as
+above, plus:
+
+- The `functions/src/growth/*.ts` additions (`orgs.ts`, `referrals.ts`,
+  `computeOrgAggregateStats.ts`) DID get run through `npx tsc --noEmit`
+  successfully in this sandbox (Node/npm/TypeScript are available here,
+  unlike Flutter) — that only proves they type-check, not that the
+  Firestore transaction logic behaves correctly against a real project.
+  Before relying on the atomic-seat-limit guarantee, exercise
+  `redeemOrgInviteCode` against the Firebase emulator with two concurrent
+  redemptions on an org with exactly one open seat, and confirm only one
+  succeeds.
+- India's crypto tax rules described in `tax_education_screen.dart` and
+  `docs/india-crypto-tax-guide.html` (the flat 30% tax under Section
+  115BBH, the 1% TDS under Section 194S) were written from general
+  training knowledge, not verified against a live, current-year
+  government source — no network access to check this from this sandbox.
+  Tax law can change; have this content reviewed against the current Income
+  Tax Act / CBDT guidance before it goes live, the same way the
+  translation content needs a native-speaker pass.
+- `docs/for-academies.html`'s contact form has a
+  `REPLACE_WITH_YOUR_ACADEMY_SALES_EMAIL` placeholder (same pattern as the
+  privacy policy's `REPLACE_WITH_YOUR_SUPPORT_EMAIL`) — it must be filled
+  in before this page is worth linking anywhere. The form itself is a
+  plain `mailto:` link, not a server-backed submission — deliberately kept
+  that lightweight per the "this is a sales tool, don't over-invest
+  engineering here" brief; swap it for a real form backend later if lead
+  volume justifies it.
+- `organizations/{orgId}` docs themselves are still provisioned manually
+  via the Admin SDK (no self-serve org creation flow exists, by design —
+  see `firestore_paths.dart`'s doc comment) — creating a real org for a
+  pilot academy is a manual step, not something this phase automated.

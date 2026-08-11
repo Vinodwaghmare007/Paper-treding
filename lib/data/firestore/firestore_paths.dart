@@ -155,4 +155,34 @@ class FirestorePaths {
 
   DocumentReference<Map<String, dynamic>> newTranslationReportRef() =>
       translationReports().doc();
+
+  // ------------------------------------------------------------------
+  // B2B academy licensing (Growth phase Part A). Orgs themselves are
+  // provisioned manually (Admin SDK, same as chat_rooms) — everything
+  // under one is written only by functions/src/growth/orgs.ts and
+  // computeOrgAggregateStats.ts. No client path exists for
+  // org_invite_codes — see firestore.rules, it's never client-readable.
+  // ------------------------------------------------------------------
+
+  CollectionReference<Map<String, dynamic>> organizations() =>
+      _firestore.collection('organizations');
+
+  DocumentReference<Map<String, dynamic>> organization(String orgId) =>
+      organizations().doc(orgId);
+
+  CollectionReference<Map<String, dynamic>> orgMembers(String orgId) =>
+      organization(orgId).collection('members');
+
+  DocumentReference<Map<String, dynamic>> orgAggregateStats(String orgId) =>
+      organization(orgId).collection('aggregate_stats').doc('data');
+
+  // ------------------------------------------------------------------
+  // Referral program (Growth phase Part B) — non-monetary Pro-access-days
+  // reward. No client path for referral_codes (never client-readable,
+  // see firestore.rules); referrals is the audit log
+  // referral_screen.dart queries for a user's own referral count.
+  // ------------------------------------------------------------------
+
+  CollectionReference<Map<String, dynamic>> referrals() =>
+      _firestore.collection('referrals');
 }

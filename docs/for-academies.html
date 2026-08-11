@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>For Trading Academies — Crypto Paper Trader</title>
+<meta name="description" content="Give your students a risk-free crypto paper-trading simulator, with a private cohort dashboard for instructors — no real money, ever." />
+<style>
+  :root { color-scheme: light dark; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 32px 20px 80px;
+    line-height: 1.6;
+    color: #1a1f27;
+    background: #ffffff;
+  }
+  @media (prefers-color-scheme: dark) {
+    body { color: #e6e8eb; background: #131722; }
+    a { color: #6fd3c7; }
+    .banner, .card { background: #1e222d; border-color: #2a2f3a; }
+    input, textarea { background: #1e222d; color: #e6e8eb; border-color: #2a2f3a; }
+  }
+  h1 { font-size: 1.8rem; }
+  h2 { font-size: 1.2rem; margin-top: 2em; }
+  .tagline { color: #767f8c; font-size: 1.05rem; }
+  .banner {
+    background: #f0fdfa;
+    border: 1px solid #b6e6dd;
+    border-radius: 10px;
+    padding: 14px 18px;
+    font-weight: 600;
+    margin: 20px 0;
+  }
+  .card {
+    background: #f7f9fa;
+    border: 1px solid #e2e6ea;
+    border-radius: 10px;
+    padding: 18px 20px;
+    margin: 12px 0;
+  }
+  ul { padding-left: 1.3em; }
+  label { display: block; font-weight: 600; margin: 14px 0 4px; }
+  input, textarea {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 10px 12px;
+    border: 1px solid #d7dce1;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-family: inherit;
+  }
+  button {
+    margin-top: 18px;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    background: #26a69a;
+    color: #ffffff;
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+
+<h1>Crypto Paper Trader for Trading Academies</h1>
+<p class="tagline">Give every student a real feel for crypto markets —
+without a single rupee of real risk.</p>
+
+<div class="banner">
+  100% simulated. No real money, no real exchange connection, ever — for
+  you or for any student.
+</div>
+
+<h2>Why academies use it</h2>
+<ul>
+  <li><strong>A safe first market.</strong> Students place real-time
+    buy/sell orders against live crypto prices, track a live P&amp;L, and
+    feel the emotional pull of a losing streak — all with a simulated
+    balance that resets risk to zero.</li>
+  <li><strong>Built-in discipline tools.</strong> A revenge-trading
+    lock, backtesting, a market replay mode, and a discipline score turn
+    "paper trading" into a structured curriculum, not just a free-play
+    sandbox.</li>
+  <li><strong>A cohort view for instructors — without watching over
+    anyone's shoulder.</strong> Your admin dashboard shows who's enrolled
+    and an anonymous, class-wide average discipline score. It never shows
+    an individual student's trade history, balance, or orders — that stays
+    private to the student, the same as it would for any other user of the
+    app.</li>
+</ul>
+
+<h2>How licensing works</h2>
+<div class="card">
+  <ol>
+    <li>We set your academy up with a seat-based license (trial or paid).</li>
+    <li>You generate a short invite code from your admin dashboard — one
+      per batch of students, single-use.</li>
+    <li>Each student enters the code once, during sign-up, to join your
+      cohort and consume a seat.</li>
+    <li>You see enrollment and an anonymous class average. Nothing more.</li>
+  </ol>
+</div>
+
+<h2>Get in touch</h2>
+<p>Tell us a bit about your academy and we'll follow up about a trial.
+This form opens your email client — nothing is submitted to a server on
+this page.</p>
+
+<form id="academy-contact-form" onsubmit="return false;">
+  <label for="academy-name">Academy name</label>
+  <input id="academy-name" name="academy-name" type="text" required />
+
+  <label for="contact-name">Your name</label>
+  <input id="contact-name" name="contact-name" type="text" required />
+
+  <label for="contact-email">Email</label>
+  <input id="contact-email" name="contact-email" type="email" required />
+
+  <label for="student-count">Approximate number of students</label>
+  <input id="student-count" name="student-count" type="text" />
+
+  <label for="message">Anything else we should know?</label>
+  <textarea id="message" name="message" rows="4"></textarea>
+
+  <button type="button" onclick="submitAcademyInquiry()">Email us</button>
+</form>
+
+<script>
+  function submitAcademyInquiry() {
+    var academy = document.getElementById('academy-name').value.trim();
+    var name = document.getElementById('contact-name').value.trim();
+    var email = document.getElementById('contact-email').value.trim();
+    var students = document.getElementById('student-count').value.trim();
+    var message = document.getElementById('message').value.trim();
+
+    if (!academy || !name || !email) {
+      alert('Please fill in academy name, your name, and email.');
+      return;
+    }
+
+    var subject = 'Academy inquiry: ' + academy;
+    var body =
+      'Academy name: ' + academy + '\n' +
+      'Contact name: ' + name + '\n' +
+      'Contact email: ' + email + '\n' +
+      'Approximate students: ' + students + '\n\n' +
+      message;
+
+    // REPLACE_WITH_YOUR_ACADEMY_SALES_EMAIL below before publishing.
+    window.location.href =
+      'mailto:REPLACE_WITH_YOUR_ACADEMY_SALES_EMAIL' +
+      '?subject=' + encodeURIComponent(subject) +
+      '&body=' + encodeURIComponent(body);
+  }
+</script>
+
+<p style="margin-top:48px; color:#767f8c; font-size:0.9em;">
+  Crypto Paper Trader is an educational simulator. See our
+  <a href="privacy-policy.html">privacy policy</a> for details on what data
+  the app collects.
+</p>
+
+</body>
+</html>

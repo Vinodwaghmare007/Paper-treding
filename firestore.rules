@@ -8,6 +8,8 @@ rules_version = '2';
 // Trader Profiles (Phase 8): .../profile_settings, .../profile_stats,
 //   .../public_activity, .../following, .../orders/{id}/rationale,
 //   public_leaderboard
+// Growth phase: organizations/{orgId} (+ members, aggregate_stats),
+//   org_invite_codes, referral_codes, referrals
 // ============================================================================
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -65,7 +67,19 @@ service cloud.firestore {
         // recordBacktestCompletion.ts (Admin SDK, bypasses rules) — same
         // forgery guard as the skill_level/puzzle fields above, so a
         // client can't fake its way toward the backtester_master cert.
-        && request.resource.data.get('backtest_run_count', null) == resource.data.get('backtest_run_count', null);
+        && request.resource.data.get('backtest_run_count', null) == resource.data.get('backtest_run_count', null)
+        // Growth phase (B2B org membership + referrals): org_id is only
+        // ever set by redeemOrgInviteCode; referral_code only by
+        // generateReferralCode; referred_by/pro_days_earned/
+        // pro_access_until only by redeemReferralCode — all three
+        // Cloud Functions, all Admin SDK, all bypass these rules. Same
+        // forgery-guard shape as every field above: a client's update
+        // can't touch any of these regardless of what else it changes.
+        && request.resource.data.get('org_id', null) == resource.data.get('org_id', null)
+        && request.resource.data.get('referral_code', null) == resource.data.get('referral_code', null)
+        && request.resource.data.get('referred_by', null) == resource.data.get('referred_by', null)
+        && request.resource.data.get('pro_days_earned', null) == resource.data.get('pro_days_earned', null)
+        && request.resource.data.get('pro_access_until', null) == resource.data.get('pro_access_until', null);
     }
 
     function isValidPosition() {
@@ -94,7 +108,12 @@ service cloud.firestore {
         && request.resource.data.starting_balance == 100000
         && request.resource.data.consecutive_losses == 0
         && request.resource.data.buy_locked_until == null
-        && request.resource.data.created_at == request.time;
+        && request.resource.data.created_at == request.time
+        && request.resource.data.org_id == null
+        && request.resource.data.referral_code == null
+        && request.resource.data.referred_by == null
+        && request.resource.data.pro_days_earned == 0
+        && request.resource.data.pro_access_until == null;
       allow update: if isOwner(userId) && isValidAccountUpdate();
       allow delete: if false;
 
@@ -372,6 +391,79 @@ service cloud.firestore {
     // docs — see that file for the compute-side reasoning.
     match /public_leaderboard/{window} {
       allow read: if true;
+      allow write: if false;
+    }
+
+    // ------------------------------------------------------------------
+    // B2B academy licensing (Growth phase Part A). Orgs are provisioned
+    // manually by a developer via the Admin SDK — same as chat_rooms
+    // above, this is a sales-negotiated relationship, not something an
+    // end user can create through the app. Everything under an org is
+    // Cloud-Function-written (functions/src/growth/orgs.ts) so seat counts
+    // stay atomic and a client can't forge membership or admin status.
+    // ------------------------------------------------------------------
+
+    match /organizations/{orgId} {
+      // Readable only by that org's own admins (checked as a plain field
+      // membership test against the doc a query would return — Firestore
+      // rules evaluate this per-candidate-document for a query the same
+      // way as a direct get()). Students never read the org doc itself;
+      // all they have is their own users/{uid}.org_id.
+      allow read: if isSignedIn() && request.auth.uid in resource.data.admin_user_ids;
+      allow write: if false;
+
+      // Username + joined date only — see redeemOrgInviteCode.ts for why
+      // this is a dedicated doc written at redemption time rather than a
+      // query over `users` filtered by org_id: it lets the admin dashboard
+      // show exactly "who's enrolled" without ever needing read access
+      // into a student's actual account/orders/trade history, respecting
+      // the "no individual trade data exposed to the org" requirement.
+      match /members/{memberId} {
+        allow read: if isSignedIn()
+          && request.auth.uid in get(/databases/$(database)/documents/organizations/$(orgId)).data.admin_user_ids;
+        allow write: if false;
+      }
+
+      // Anonymous, org-wide average (e.g. avg discipline score) computed
+      // daily by functions/src/growth/computeOrgAggregateStats.ts —
+      // deliberately never a per-student breakdown, so an academy can show
+      // outcomes without any individual student's stats being exposed,
+      // regardless of that student's own public/private profile choice.
+      match /aggregate_stats/data {
+        allow read: if isSignedIn()
+          && request.auth.uid in get(/databases/$(database)/documents/organizations/$(orgId)).data.admin_user_ids;
+        allow write: if false;
+      }
+    }
+
+    // Invite-code lookup, keyed by the code itself for O(1) redemption —
+    // never client-readable; redeemOrgInviteCode.ts (Admin SDK) is the
+    // only thing that ever looks one up, and createOrgInviteCode.ts is the
+    // only thing that ever creates one. An admin sees a freshly-created
+    // code directly in that callable's response, not via a Firestore read.
+    match /org_invite_codes/{code} {
+      allow read, write: if false;
+    }
+
+    // ------------------------------------------------------------------
+    // Referral program (Growth phase Part B) — non-monetary (Pro-access
+    // days only, never cash/tradeable value). generateReferralCode.ts /
+    // redeemReferralCode.ts (both Admin SDK) own every write here.
+    // ------------------------------------------------------------------
+
+    // Lookup collection, same reasoning as org_invite_codes above — a
+    // client redeeming a code never reads this directly, the callable
+    // does the code->uid resolution server-side.
+    match /referral_codes/{code} {
+      allow read, write: if false;
+    }
+
+    // Audit log powering referral_screen.dart's "N successful referrals"
+    // count (a client-side `.where('referrer_id', '==', myUid)` query) —
+    // readable only by the referrer it's about, never the referred user's
+    // side of the record and never anyone else's.
+    match /referrals/{referralId} {
+      allow read: if isSignedIn() && resource.data.referrer_id == request.auth.uid;
       allow write: if false;
     }
   }
