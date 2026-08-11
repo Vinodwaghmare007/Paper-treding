@@ -185,4 +185,14 @@ class FirestorePaths {
 
   CollectionReference<Map<String, dynamic>> referrals() =>
       _firestore.collection('referrals');
+
+  // ------------------------------------------------------------------
+  // News feed (RSS aggregation) — written only by
+  // functions/src/news/aggregateNews.ts on a schedule. The app only ever
+  // reads this collection; it never talks to an RSS feed directly (see
+  // news_feed_source.dart).
+  // ------------------------------------------------------------------
+
+  CollectionReference<Map<String, dynamic>> newsItems() =>
+      _firestore.collection('news_items');
 }

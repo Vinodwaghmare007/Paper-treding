@@ -21,11 +21,13 @@
     "test:leaderboard": "ts-node test/computeLeaderboard.test.ts",
     "test:trade-rationale": "firebase emulators:exec --only firestore --project demo-test \"ts-node test/addTradeRationale.test.ts\"",
     "test:trader-profile": "firebase emulators:exec --only firestore --project demo-test \"ts-node test/traderProfile.test.ts\"",
-    "test:price-alerts": "ts-node test/checkPriceAlerts.test.ts"
+    "test:price-alerts": "ts-node test/checkPriceAlerts.test.ts",
+    "test:news": "ts-node test/news.test.ts"
   },
   "dependencies": {
     "firebase-admin": "^12.7.0",
-    "firebase-functions": "^6.1.0"
+    "firebase-functions": "^6.1.0",
+    "rss-parser": "^3.13.0"
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "^5.0.1",

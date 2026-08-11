@@ -1294,7 +1294,7 @@
 
   "newsLoadError": "Failed to load headlines: {error}",
   "@newsLoadError": {
-    "description": "Fallback error shown if the news feed fails to load with a non-CryptoNewsException error. {error} is a raw technical error string.",
+    "description": "Shown as a full-screen error if the first page of the news feed fails to load from Firestore. {error} is a raw technical error string.",
     "placeholders": {
       "error": {
         "type": "String"
@@ -1305,6 +1305,61 @@
   "newsLinkOpenError": "Could not open this link.",
   "@newsLinkOpenError": {
     "description": "Snackbar shown if tapping a headline fails to open the external article link."
+  },
+
+  "newsRelativeJustNow": "Just now",
+  "@newsRelativeJustNow": {
+    "description": "Relative-time label on a news card for an item published less than a minute ago."
+  },
+
+  "newsRelativeMinutesAgo": "{minutes}m ago",
+  "@newsRelativeMinutesAgo": {
+    "description": "Relative-time label on a news card for an item published less than an hour ago. Keep very short (fits a small card subtitle) — an abbreviated unit like 'm' is intentional, not a fallback.",
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+
+  "newsRelativeHoursAgo": "{hours}h ago",
+  "@newsRelativeHoursAgo": {
+    "description": "Relative-time label on a news card for an item published less than a day ago. Same short-abbreviation intent as newsRelativeMinutesAgo.",
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+
+  "newsRelativeDaysAgo": "{days}d ago",
+  "@newsRelativeDaysAgo": {
+    "description": "Relative-time label on a news card for an item published a day or more ago. Same short-abbreviation intent as newsRelativeMinutesAgo.",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+
+  "newsLoadingMore": "Loading more…",
+  "@newsLoadingMore": {
+    "description": "Small loading row at the bottom of the news list while the next page is being fetched (infinite scroll)."
+  },
+
+  "newsLoadMoreError": "Couldn't load more: {error}",
+  "@newsLoadMoreError": {
+    "description": "Shown at the bottom of the news list, in place of the loading row, when fetching the next page fails — the already-loaded headlines above it stay visible; this is not a full-screen error.",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+
+  "newsRetry": "Retry",
+  "@newsRetry": {
+    "description": "Button label that retries a failed 'load more' page fetch on the news screen."
   },
 
   "coinSearchHint": "Search coins",

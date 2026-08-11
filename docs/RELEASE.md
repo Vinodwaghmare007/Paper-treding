@@ -322,3 +322,49 @@ above, plus:
   via the Admin SDK (no self-serve org creation flow exists, by design —
   see `firestore_paths.dart`'s doc comment) — creating a real org for a
   pilot academy is a manual step, not something this phase automated.
+
+The News Feed's RSS-aggregation rewrite (replacing the old CryptoPanic
+client, `functions/src/news/*.ts`) has the strongest version of the "never
+run against the real thing" caveat of anything in this app so far:
+
+- **All 4 RSS URLs in `DEFAULT_RSS_SOURCES`
+  (`functions/src/news/rssSources.ts` and its Flutter mirror,
+  `lib/data/entities/rss_source.dart`) are unverified.** This sandbox has
+  no outbound network access at all — not even to CoinDesk/CoinTelegraph/
+  Decrypt/The Block's public feed URLs, confirmed by a direct `curl`
+  through the environment's egress proxy (`CONNECT tunnel failed,
+  response 403`) and by `WebFetch` (`EGRESS_BLOCKED`). Feed URLs change
+  without notice — before relying on this, hit each of the 4 URLs
+  directly (browser or `curl`) and confirm each still returns valid RSS/
+  Atom XML. `aggregateAllFeeds`'s per-source try/catch means a dead URL
+  degrades to "that source silently contributes zero items" rather than
+  breaking anything — which is exactly why a dead feed can go unnoticed
+  for a long time unless someone actually checks.
+- **`functions/src/news/*.ts` DID run against real logic, just not a real
+  feed.** `npm run test:news` (24 assertions) passed in this sandbox,
+  including proof that `<content:encoded>`'s full article body never
+  reaches the stored summary, using a saved sample RSS XML string — not a
+  live response. `npx tsc --noEmit` also passed. Neither exercises the
+  actual scheduled function's Firestore writes or the Remote Config
+  read path (`fetchRssSourceConfigs`) against a real project.
+- **The Firestore-write and prune logic in `aggregateNews.ts`
+  (`writeNewsItems`, `pruneOldNewsItems`) has no emulator test** — the
+  spec's explicit test scope was RSS parsing + dedupe (both covered
+  above), not the Firestore side. Before the first real deploy, run
+  `firebase emulators:start` and manually trigger
+  `aggregateAllFeeds()` (or wait for a scheduled run) against a project
+  with a couple of stale `news_items` docs seeded past the 14-day cutoff,
+  and confirm they're actually deleted.
+- **`rss_sources_json` / `getRemoteConfig().getTemplate()`** (the
+  backend's server-side Remote Config read, mirroring the Flutter client
+  SDK's read of the exact same parameter) has never run against a real
+  Firebase project either — confirm a template with no
+  `rss_sources_json` parameter published yet correctly falls back to
+  `DEFAULT_RSS_SOURCES` rather than throwing, and that publishing a valid
+  JSON array in the console is picked up on the next scheduled run.
+- **Deploy note**: `aggregateCryptoNews` needs `firebase deploy --only
+  functions:aggregateCryptoNews` (or a full functions deploy) like any
+  other scheduled function in this codebase — it runs every 25 minutes
+  once deployed, no separate Cloud Scheduler setup needed (the
+  `onSchedule` trigger provisions that itself, same as
+  `aggregateCommunitySentiment`/`computeCohortMedians`).

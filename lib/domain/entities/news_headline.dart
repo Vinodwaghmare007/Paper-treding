@@ -1,18 +1,40 @@
-/// A single crypto news headline. Deliberately holds only what's needed to
-/// list and open the source article — never the article body, to stay
-/// clear of republishing/copyright issues (see crypto_news_source.dart).
+/// One row of `news_items/{itemId}`, written server-side by
+/// functions/src/news/aggregateNews.ts from a polled RSS/Atom feed.
+///
+/// Deliberately holds only a headline, a short (server-truncated)
+/// [summary], and enough to attribute + link out to the original article
+/// — never the full article body. [id] is the deterministic SHA-256 hash
+/// of [sourceUrl] the backend uses as the doc ID (see
+/// computeNewsItemId in newsParsing.ts) — not meaningful client-side
+/// beyond being a stable Flutter list key.
 class NewsHeadline {
   const NewsHeadline({
     required this.id,
-    required this.title,
+    required this.headline,
+    required this.summary,
     required this.sourceName,
+    required this.sourceUrl,
     required this.publishedAt,
-    required this.url,
+    required this.fetchedAt,
   });
 
   final String id;
-  final String title;
+  final String headline;
+  final String summary;
   final String sourceName;
+  final Uri sourceUrl;
   final DateTime publishedAt;
-  final Uri url;
+  final DateTime fetchedAt;
+
+  factory NewsHeadline.fromMap(String id, Map<String, dynamic> map) {
+    return NewsHeadline(
+      id: id,
+      headline: map['headline'] as String? ?? '(untitled)',
+      summary: map['summary'] as String? ?? '',
+      sourceName: map['source_name'] as String? ?? 'Unknown source',
+      sourceUrl: Uri.parse(map['source_url'] as String),
+      publishedAt: (map['published_at'] as dynamic).toDate() as DateTime,
+      fetchedAt: (map['fetched_at'] as dynamic).toDate() as DateTime,
+    );
+  }
 }

@@ -31,3 +31,4 @@ export { checkPriceAlerts } from "./alerts/checkPriceAlerts";
 export { createOrgInviteCode, redeemOrgInviteCode } from "./growth/orgs";
 export { computeOrgAggregateStats } from "./growth/computeOrgAggregateStats";
 export { generateReferralCode, redeemReferralCode } from "./growth/referrals";
+export { aggregateCryptoNews } from "./news/aggregateNews";
