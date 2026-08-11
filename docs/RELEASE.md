@@ -323,45 +323,62 @@ above, plus:
   see `firestore_paths.dart`'s doc comment) — creating a real org for a
   pilot academy is a manual step, not something this phase automated.
 
-The News Feed's RSS-aggregation rewrite (replacing the old CryptoPanic
-client, `functions/src/news/*.ts`) has the strongest version of the "never
-run against the real thing" caveat of anything in this app so far:
+The News Feed's provider-based rewrite (`functions/src/news/*.ts`, second
+rewrite of this feature — first CryptoPanic client-side, then RSS
+aggregation, now this) is built around a `NewsProvider` interface
+specifically so the active data source can change without touching
+storage/dedupe/pruning/display at all. Which provider is actually active
+today, and why, needs to be understood before this is deployed:
 
-- **All 4 RSS URLs in `DEFAULT_RSS_SOURCES`
-  (`functions/src/news/rssSources.ts` and its Flutter mirror,
-  `lib/data/entities/rss_source.dart`) are unverified.** This sandbox has
-  no outbound network access at all — not even to CoinDesk/CoinTelegraph/
-  Decrypt/The Block's public feed URLs, confirmed by a direct `curl`
-  through the environment's egress proxy (`CONNECT tunnel failed,
-  response 403`) and by `WebFetch` (`EGRESS_BLOCKED`). Feed URLs change
-  without notice — before relying on this, hit each of the 4 URLs
-  directly (browser or `curl`) and confirm each still returns valid RSS/
-  Atom XML. `aggregateAllFeeds`'s per-source try/catch means a dead URL
-  degrades to "that source silently contributes zero items" rather than
-  breaking anything — which is exactly why a dead feed can go unnoticed
-  for a long time unless someone actually checks.
-- **`functions/src/news/*.ts` DID run against real logic, just not a real
-  feed.** `npm run test:news` (24 assertions) passed in this sandbox,
-  including proof that `<content:encoded>`'s full article body never
-  reaches the stored summary, using a saved sample RSS XML string — not a
-  live response. `npx tsc --noEmit` also passed. Neither exercises the
-  actual scheduled function's Firestore writes or the Remote Config
-  read path (`fetchRssSourceConfigs`) against a real project.
-- **The Firestore-write and prune logic in `aggregateNews.ts`
-  (`writeNewsItems`, `pruneOldNewsItems`) has no emulator test** — the
-  spec's explicit test scope was RSS parsing + dedupe (both covered
-  above), not the Firestore side. Before the first real deploy, run
-  `firebase emulators:start` and manually trigger
-  `aggregateAllFeeds()` (or wait for a scheduled run) against a project
-  with a couple of stale `news_items` docs seeded past the 14-day cutoff,
-  and confirm they're actually deleted.
-- **`rss_sources_json` / `getRemoteConfig().getTemplate()`** (the
-  backend's server-side Remote Config read, mirroring the Flutter client
-  SDK's read of the exact same parameter) has never run against a real
-  Firebase project either — confirm a template with no
-  `rss_sources_json` parameter published yet correctly falls back to
-  `DEFAULT_RSS_SOURCES` rather than throwing, and that publishing a valid
-  JSON array in the console is picked up on the next scheduled run.
+- **CoinGecko's News endpoint could not be verified — at all — and is NOT
+  the active provider.** This sandbox has zero outbound network access,
+  confirmed by both a direct `curl` through the environment's egress proxy
+  (`CONNECT tunnel failed, response 403`) and `WebFetch` (`EGRESS_BLOCKED`)
+  against both `api.coingecko.com` and `docs.coingecko.com`. Unlike the
+  earlier RSS phase (where the *URLs* were unverified but RSS itself is a
+  well-understood, stable format), here the endpoint's very *existence* on
+  CoinGecko's public API, its required plan tier, its auth method, and its
+  response schema are all unconfirmed — this app's own existing CoinGecko
+  usage (`coingecko_source.dart`) only ever calls `/coins/markets`, with no
+  API key at all, so "reuses existing API key/infra" does not actually
+  hold for a News endpoint either. `coinGeckoNewsProvider.ts` is a
+  complete, real implementation (not a stub) written from a best-effort
+  guess at the schema, and its own doc comment repeats this warning in
+  full — **do not switch `aggregateNews.ts`'s `activeProvider` to it
+  without confirming the endpoint against CoinGecko's live docs first.**
+- **CryptoPanic is what's actually deployed**, per the spec's own explicit
+  fallback instruction for exactly this situation. `cryptoPanicNewsProvider.ts`
+  is built against the same `/api/v1/posts/` schema this codebase's
+  original (now-retired) client-side CryptoPanic integration used — also
+  never exercised against a live response, but at least a schema this
+  project has reasoned through more than once, not a fresh guess. Confirm
+  it against a real API call before the first production deploy.
+- **New prerequisite this phase adds: a `CRYPTOPANIC_API_TOKEN` secret.**
+  `aggregateNews.ts` reads it via `defineSecret` (Secret Manager), not an
+  env var or `functions.config()` — before deploying, run:
+  `firebase functions:secrets:set CRYPTOPANIC_API_TOKEN` (get a free token
+  from cryptopanic.com's API settings) and grant the Cloud Functions
+  service account access if prompted. Moving this server-side (rather than
+  the old client-side `--dart-define`) also means the token no longer
+  ships inside the app binary.
+- **`npm run test:news` (25 assertions) and `npx tsc --noEmit` both passed**
+  in this sandbox — dedupe (`computeNewsItemId`), truncation
+  (`truncateSummary`, including the exact 150-char boundary), item mapping
+  (`buildNewsItem`), and both providers' response parsing (`parseResponse`,
+  against saved sample JSON, not live calls — CoinGecko's sample is
+  necessarily built from the same unverified guessed schema, so a passing
+  test there proves the parser is internally consistent, not that it's
+  correct). None of this exercises `aggregateNews.ts`'s actual Firestore
+  writes/prune or the failure-alert bookkeeping (`news_pipeline_status`)
+  against a real project or the Firebase emulator.
+- **The consecutive-failure alert is log-based, not wired to anything
+  yet.** `recordNewsRunFailure` writes to `news_pipeline_status/state` and
+  logs a line prefixed `ALERT:` once 3 runs in a row fail. That line does
+  nothing on its own — in Google Cloud Console, create a Logging
+  log-based metric matching that exact string (Logging → Log-based
+  Metrics), then an Alerting policy on that metric, so a silently-broken
+  news feed actually reaches someone instead of just sitting in Cloud
+  Logging unread.
 - **Deploy note**: `aggregateCryptoNews` needs `firebase deploy --only
   functions:aggregateCryptoNews` (or a full functions deploy) like any
   other scheduled function in this codebase — it runs every 25 minutes

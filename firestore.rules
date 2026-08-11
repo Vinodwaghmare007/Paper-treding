@@ -10,7 +10,7 @@ rules_version = '2';
 //   public_leaderboard
 // Growth phase: organizations/{orgId} (+ members, aggregate_stats),
 //   org_invite_codes, referral_codes, referrals
-// News feed (RSS aggregation): news_items
+// News feed (provider-based aggregation): news_items, news_pipeline_status
 // ============================================================================
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -469,17 +469,26 @@ service cloud.firestore {
     }
 
     // ------------------------------------------------------------------
-    // News feed (RSS aggregation) — written only by
+    // News feed (provider-based aggregation) — written only by
     // functions/src/news/aggregateNews.ts on a schedule. Headlines and
     // short truncated summaries only, never full article text (enforced
-    // server-side, see newsParsing.ts) — public, non-personalized
+    // server-side, see newsItems.ts) — public, non-personalized
     // content, so no auth is required to read it, matching
     // public_sentiment/public_market_weather above.
+    //
+    // news_pipeline_status is purely an internal operational doc
+    // (consecutive-failure tracking for aggregateNews.ts's log-based
+    // alert, see docs/RELEASE.md) — never read by the client, never
+    // meant to be.
     // ------------------------------------------------------------------
 
     match /news_items/{itemId} {
       allow read: if true;
       allow write: if false;
+    }
+
+    match /news_pipeline_status/{document} {
+      allow read, write: if false;
     }
   }
 }

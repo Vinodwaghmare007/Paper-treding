@@ -23,7 +23,7 @@ class NewsFeedPage {
 
 /// Reads the server-aggregated news feed from `news_items`, most recent
 /// first, paginated. This is the ONLY thing the app does for news — it
-/// never talks to an RSS feed directly, so parsing/dedup/copyright-safety
+/// never calls a news provider directly, so fetch/dedup/copyright-safety
 /// logic lives in exactly one place (functions/src/news/aggregateNews.ts),
 /// not duplicated client-side.
 class NewsFeedSource {

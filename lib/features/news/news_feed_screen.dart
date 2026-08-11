@@ -8,9 +8,9 @@ import '../home/more_menu_button.dart';
 import 'news_providers.dart';
 import 'relative_time.dart';
 
-/// Headlines aggregated server-side from a handful of crypto RSS feeds
-/// (see functions/src/news/aggregateNews.ts) — this screen only ever
-/// reads `news_items` from Firestore, never fetches RSS itself. Tapping a
+/// Headlines aggregated server-side via a swappable NewsProvider (see
+/// functions/src/news/aggregateNews.ts) — this screen only ever reads
+/// `news_items` from Firestore, never calls a news API itself. Tapping a
 /// card opens the original article externally (an in-app browser tab,
 /// not a page rendered inside this app) — that link-out is what keeps
 /// this feature clear of republishing/copyright concerns, since only a

@@ -50,8 +50,8 @@ class NewsFeedState {
 /// Owns the news feed's pagination — [build] loads the first page,
 /// [loadMore] appends the next one (driven by news_feed_screen.dart's
 /// scroll listener), [refresh] re-queries from the top (pull-to-refresh).
-/// Every one of these is a fresh Firestore query, never a client-side RSS
-/// fetch — see news_feed_source.dart's doc comment.
+/// Every one of these is a fresh Firestore query, never a client-side news
+/// API call — see news_feed_source.dart's doc comment.
 class NewsFeedController extends AsyncNotifier<NewsFeedState> {
   @override
   Future<NewsFeedState> build() async {

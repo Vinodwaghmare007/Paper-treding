@@ -56,10 +56,10 @@ a device/TalkBack).
 
 - [x] **Audited every `launchUrl`/hardcoded URL in `lib/`.** The only
       user-facing external navigation is `news_feed_screen.dart` opening
-      whatever `source_url` the backend's RSS aggregation wrote onto a
-      `news_items` doc, in an in-app browser tab — that's the original
-      publisher's own page (CoinDesk, CoinTelegraph, Decrypt, The Block),
-      not an affiliate/referral link.
+      whatever `source_url` the backend's news aggregation (CryptoPanic,
+      see docs/RELEASE.md) wrote onto a `news_items` doc, in an in-app
+      browser tab — that's the original publisher's own page, not an
+      affiliate/referral link.
       `forecast_api_source.dart`'s URLs are just the backend's own API base
       URL (a build-time config value, never shown to the user). No
       exchange sign-up/referral links, no "trade real crypto" prompts,

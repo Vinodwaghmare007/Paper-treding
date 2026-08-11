@@ -1,11 +1,12 @@
 /// One row of `news_items/{itemId}`, written server-side by
-/// functions/src/news/aggregateNews.ts from a polled RSS/Atom feed.
+/// functions/src/news/aggregateNews.ts from a polled crypto news provider
+/// (see functions/src/news/newsProvider.ts).
 ///
 /// Deliberately holds only a headline, a short (server-truncated)
 /// [summary], and enough to attribute + link out to the original article
 /// — never the full article body. [id] is the deterministic SHA-256 hash
 /// of [sourceUrl] the backend uses as the doc ID (see
-/// computeNewsItemId in newsParsing.ts) — not meaningful client-side
+/// computeNewsItemId in newsItems.ts) — not meaningful client-side
 /// beyond being a stable Flutter list key.
 class NewsHeadline {
   const NewsHeadline({
