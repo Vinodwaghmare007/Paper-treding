@@ -119,13 +119,13 @@ class TickerScreen extends ConsumerWidget {
 /// Separate green Buy / red Sell buttons, replacing what used to be a
 /// single neutral "Trade" FAB — color-coded intent recognition is the
 /// convention every real trading app (Zerodha, Groww, Binance) already
-/// uses, and it saves the one extra tap of picking a side inside the
-/// sheet first. Compact `FloatingActionButton.extended` pair rather than
-/// two full-width buttons, since this bottom-right corner already
-/// competes with the SIMULATED footer and the 4-tab bottom nav for
-/// space. Each still opens the same [TradeSheet] — the segmented control
-/// in there is untouched, just pre-selected to whichever side was
-/// tapped, so switching sides mid-sheet still works exactly as before.
+/// uses. Compact `FloatingActionButton.extended` pair rather than two
+/// full-width buttons, since this bottom-right corner already competes
+/// with the SIMULATED footer and the 4-tab bottom nav for space. Each
+/// opens the same [TradeSheet] but with `lockSide: true` — tapping a
+/// specific color-coded button already is the side choice, so the sheet
+/// commits to it (no segmented control re-asking "buy or sell?" a second
+/// time) rather than just seeding a still-switchable default.
 class _BuySellFabs extends StatelessWidget {
   const _BuySellFabs({required this.symbol, required this.currentPrice});
 
@@ -146,6 +146,7 @@ class _BuySellFabs extends StatelessWidget {
             coinSymbol: symbol,
             currentPrice: currentPrice,
             initialSide: TradeSide.sell,
+            lockSide: true,
           ),
           icon: const Icon(Icons.arrow_downward),
           label: Text(l10n.tradeSheetSell),
@@ -159,6 +160,7 @@ class _BuySellFabs extends StatelessWidget {
             coinSymbol: symbol,
             currentPrice: currentPrice,
             initialSide: TradeSide.buy,
+            lockSide: true,
           ),
           icon: const Icon(Icons.arrow_upward),
           label: Text(l10n.tradeSheetBuy),

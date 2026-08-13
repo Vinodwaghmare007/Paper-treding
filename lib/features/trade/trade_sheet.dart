@@ -24,13 +24,20 @@ enum TradeSide { buy, sell }
 
 /// Opens the Buy/Sell bottom sheet for [coinSymbol]. [currentPrice] seeds
 /// the estimate before the sheet's own live price watch takes over.
-/// [initialSide] controls which segment is selected when the sheet opens —
-/// the segmented control inside still lets the user switch either way.
+/// [initialSide] controls which side the sheet opens on. By default
+/// ([lockSide] false) a segmented control still lets the user switch
+/// sides — for entry points where the side is ambiguous (tapping a
+/// portfolio holding, Market Replay's single trade button). Pass
+/// [lockSide] true when the caller already represents a specific,
+/// deliberate choice (e.g. ticker_screen.dart's separate green Buy / red
+/// Sell buttons) — the sheet then commits to [initialSide] with no way to
+/// switch, so tapping Sell doesn't just re-ask "buy or sell?" a second time.
 Future<void> showTradeSheet(
   BuildContext context, {
   required String coinSymbol,
   required double currentPrice,
   TradeSide initialSide = TradeSide.buy,
+  bool lockSide = false,
 }) {
   return showModalBottomSheet<void>(
     context: context,
@@ -43,6 +50,7 @@ Future<void> showTradeSheet(
       coinSymbol: coinSymbol,
       seedPrice: currentPrice,
       initialSide: initialSide,
+      lockSide: lockSide,
     ),
   );
 }
@@ -53,11 +61,13 @@ class TradeSheet extends ConsumerStatefulWidget {
     required this.coinSymbol,
     required this.seedPrice,
     this.initialSide = TradeSide.buy,
+    this.lockSide = false,
   });
 
   final String coinSymbol;
   final double seedPrice;
   final TradeSide initialSide;
+  final bool lockSide;
 
   @override
   ConsumerState<TradeSheet> createState() => _TradeSheetState();
@@ -212,17 +222,43 @@ class _TradeSheetState extends ConsumerState<TradeSheet> {
             style: const TextStyle(color: Colors.white54, fontSize: 13),
           ),
           const SizedBox(height: 16),
-          SegmentedButton<TradeSide>(
-            segments: [
-              ButtonSegment(value: TradeSide.buy, label: Text(l10n.tradeSheetBuy)),
-              ButtonSegment(value: TradeSide.sell, label: Text(l10n.tradeSheetSell)),
-            ],
-            selected: {_side},
-            onSelectionChanged: (selection) => setState(() {
-              _side = selection.first;
-              _errorText = null;
-            }),
-          ),
+          if (widget.lockSide)
+            // The side was already a deliberate choice (a dedicated Buy or
+            // Sell button, not a generic "trade" entry point) — show which
+            // one, but don't offer a picker that re-asks the same question.
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              decoration: BoxDecoration(
+                color: (_side == TradeSide.buy
+                        ? const Color(0xFF26A69A)
+                        : const Color(0xFFEF5350))
+                    .withValues(alpha: 0.16),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                _side == TradeSide.buy ? l10n.tradeSheetBuy : l10n.tradeSheetSell,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: _side == TradeSide.buy
+                      ? const Color(0xFF26A69A)
+                      : const Color(0xFFEF5350),
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            )
+          else
+            SegmentedButton<TradeSide>(
+              segments: [
+                ButtonSegment(value: TradeSide.buy, label: Text(l10n.tradeSheetBuy)),
+                ButtonSegment(value: TradeSide.sell, label: Text(l10n.tradeSheetSell)),
+              ],
+              selected: {_side},
+              onSelectionChanged: (selection) => setState(() {
+                _side = selection.first;
+                _errorText = null;
+              }),
+            ),
           const SizedBox(height: 16),
           TextField(
             controller: _quantityController,
