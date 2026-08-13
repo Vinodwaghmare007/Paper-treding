@@ -1,27 +1,28 @@
 import { NewsProvider, NewsProviderItem } from "./newsProvider";
 
 /**
- * The ACTIVE default provider — see aggregateNews.ts. CoinGecko's News
- * endpoint could not be verified from this sandbox (no outbound network
- * access at all — see coinGeckoNewsProvider.ts's doc comment for the full
- * account), which is exactly the condition under which the spec calls for
- * falling back to CryptoPanic's free tier.
+ * NOT the active provider (see aggregateNews.ts — RssNewsProvider is).
+ * CryptoPanic was tried first as the fallback when CoinGecko's News
+ * endpoint couldn't be verified, but turned out itself to require a paid
+ * plan: live screenshots of their v2 API docs and account UI (checked
+ * during this project's own setup, not just read from documentation)
+ * show every plan tier — Developer/Growth/Enterprise — gated behind "Get
+ * PLUS", with no free API-key generation found under Profile, Account,
+ * or Settings. This isn't the "unverified, might be free" state the
+ * other providers are in — it's confirmed not free.
  *
- * This is also not freshly guessed: this exact `/api/v1/posts/` shape
- * (`results[].title`, `.url`, `.published_at`, `.source.title`/
- * `.source.domain`) is the same schema this codebase's own prior
- * client-side CryptoPanic integration was built against earlier in this
- * project's history — still not exercised against a live response (same
- * network constraint), but at least a schema this project has reasoned
- * through once already rather than a fresh guess. Confirm it against a
- * real API call before the first production deploy, same as any other
- * unverified integration in this codebase (see docs/RELEASE.md).
+ * Kept in the codebase (rather than deleted) in case a paid CryptoPanic
+ * plan is ever worth it later: this exact `/api/API_PLAN/v2/posts/`
+ * shape needs updating first (see the URL below), since it was written
+ * against CryptoPanic's older v1 endpoint before their v2 restructuring
+ * was discovered — the v2 response schema has NOT been confirmed either,
+ * so treat this implementation as unverified on top of being non-free
+ * today.
  *
- * Moving this server-side (rather than the old client-side Dart
- * implementation) is also a small security improvement: the
- * `auth_token` now lives in a Secret Manager secret
- * (CRYPTOPANIC_API_TOKEN, see aggregateNews.ts) and is never shipped
- * inside the app binary.
+ * The `auth_token`-via-Secret-Manager pattern here (rather than a
+ * client-side `--dart-define` the way the app's very first CryptoPanic
+ * integration worked) is still the right approach if this is ever
+ * revived: the token never ships inside the app binary either way.
  */
 export class CryptoPanicNewsProvider implements NewsProvider {
   readonly name = "cryptopanic";

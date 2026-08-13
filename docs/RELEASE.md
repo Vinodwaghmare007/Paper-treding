@@ -323,54 +323,57 @@ above, plus:
   see `firestore_paths.dart`'s doc comment) — creating a real org for a
   pilot academy is a manual step, not something this phase automated.
 
-The News Feed's provider-based rewrite (`functions/src/news/*.ts`, second
-rewrite of this feature — first CryptoPanic client-side, then RSS
-aggregation, now this) is built around a `NewsProvider` interface
-specifically so the active data source can change without touching
-storage/dedupe/pruning/display at all. Which provider is actually active
-today, and why, needs to be understood before this is deployed:
+The News Feed has now been rewritten three times: client-side CryptoPanic,
+then RSS aggregation, then a `NewsProvider`-interface rewrite defaulting to
+CryptoPanic server-side, and now back to RSS as the active provider — each
+swap driven by something only discoverable by actually trying to use the
+data source, not by reading about it in advance. The `NewsProvider`
+interface (`functions/src/news/newsProvider.ts`) is what made every one of
+those swaps a one-line change in `aggregateNews.ts` rather than a rewrite.
+Where things actually stand:
 
-- **CoinGecko's News endpoint could not be verified — at all — and is NOT
-  the active provider.** This sandbox has zero outbound network access,
-  confirmed by both a direct `curl` through the environment's egress proxy
-  (`CONNECT tunnel failed, response 403`) and `WebFetch` (`EGRESS_BLOCKED`)
-  against both `api.coingecko.com` and `docs.coingecko.com`. Unlike the
-  earlier RSS phase (where the *URLs* were unverified but RSS itself is a
-  well-understood, stable format), here the endpoint's very *existence* on
-  CoinGecko's public API, its required plan tier, its auth method, and its
-  response schema are all unconfirmed — this app's own existing CoinGecko
-  usage (`coingecko_source.dart`) only ever calls `/coins/markets`, with no
-  API key at all, so "reuses existing API key/infra" does not actually
-  hold for a News endpoint either. `coinGeckoNewsProvider.ts` is a
-  complete, real implementation (not a stub) written from a best-effort
-  guess at the schema, and its own doc comment repeats this warning in
-  full — **do not switch `aggregateNews.ts`'s `activeProvider` to it
-  without confirming the endpoint against CoinGecko's live docs first.**
-- **CryptoPanic is what's actually deployed**, per the spec's own explicit
-  fallback instruction for exactly this situation. `cryptoPanicNewsProvider.ts`
-  is built against the same `/api/v1/posts/` schema this codebase's
-  original (now-retired) client-side CryptoPanic integration used — also
-  never exercised against a live response, but at least a schema this
-  project has reasoned through more than once, not a fresh guess. Confirm
-  it against a real API call before the first production deploy.
-- **New prerequisite this phase adds: a `CRYPTOPANIC_API_TOKEN` secret.**
-  `aggregateNews.ts` reads it via `defineSecret` (Secret Manager), not an
-  env var or `functions.config()` — before deploying, run:
-  `firebase functions:secrets:set CRYPTOPANIC_API_TOKEN` (get a free token
-  from cryptopanic.com's API settings) and grant the Cloud Functions
-  service account access if prompted. Moving this server-side (rather than
-  the old client-side `--dart-define`) also means the token no longer
-  ships inside the app binary.
-- **`npm run test:news` (25 assertions) and `npx tsc --noEmit` both passed**
-  in this sandbox — dedupe (`computeNewsItemId`), truncation
-  (`truncateSummary`, including the exact 150-char boundary), item mapping
-  (`buildNewsItem`), and both providers' response parsing (`parseResponse`,
-  against saved sample JSON, not live calls — CoinGecko's sample is
-  necessarily built from the same unverified guessed schema, so a passing
-  test there proves the parser is internally consistent, not that it's
-  correct). None of this exercises `aggregateNews.ts`'s actual Firestore
-  writes/prune or the failure-alert bookkeeping (`news_pipeline_status`)
-  against a real project or the Firebase emulator.
+- **RSS (`rssNewsProvider.ts`) is the active provider — genuinely free, no
+  account or API key of any kind.** It polls CoinDesk/CoinTelegraph/
+  Decrypt/The Block directly. The 4 feed URLs themselves are still
+  unverified from this sandbox (zero outbound network access — confirmed
+  via `curl`, `CONNECT tunnel failed, response 403`, and `WebFetch`,
+  `EGRESS_BLOCKED`) — feed URLs change without notice, so check each one
+  resolves before relying on this. A dead individual feed degrades
+  gracefully (that source just contributes zero items); if literally
+  every configured feed fails, `fetchLatestNews()` throws so the
+  consecutive-failure alert below can actually catch it.
+- **CryptoPanic (`cryptoPanicNewsProvider.ts`) is NOT active — confirmed
+  not free, not just unverified.** Live screenshots of CryptoPanic's own
+  account UI and v2 API docs (checked directly, not assumed) show every
+  plan tier — Developer/Growth/Enterprise — gated behind "Get PLUS," with
+  no free API-key generation found under Profile, Account, or Settings.
+  Kept in the codebase in case a paid plan is ever worth it later, but its
+  URL was written against CryptoPanic's older v1 shape before this v2
+  restructuring was discovered (`/api/API_PLAN/v2/posts/...`, not
+  `/api/v1/posts/...`) — it needs both a URL fix and a real schema check
+  against the new version before it could work at all, paid or not.
+- **CoinGecko (`coinGeckoNewsProvider.ts`) is NOT active — still fully
+  unverified.** This sandbox never got network access to check whether
+  CoinGecko's public API even has a News endpoint, let alone its plan
+  tier or schema. This app's own existing CoinGecko usage
+  (`coingecko_source.dart`) only ever calls `/coins/markets` with no API
+  key, so there was never any "existing key/infra" to reuse for a News
+  endpoint either.
+- **No secret/API key is required to deploy the active configuration.**
+  The `CRYPTOPANIC_API_TOKEN` Secret Manager secret this doc previously
+  called a deploy prerequisite is no longer needed — RSS has no
+  credential of any kind. If CryptoPanic is ever revived, that secret
+  requirement comes back with it.
+- **`npm run test:news` (31 assertions) and `npx tsc --noEmit` both
+  passed** in this sandbox — dedupe (`computeNewsItemId`), truncation
+  (`truncateSummary`, including the exact 150-char boundary), item
+  mapping (`buildNewsItem`), RSS parsing against a saved sample feed
+  (including the explicit proof that `<content:encoded>`'s full article
+  text never reaches the stored summary), and all three providers'
+  response parsing against saved sample data, not live calls. None of
+  this exercises `aggregateNews.ts`'s actual Firestore writes/prune or
+  the failure-alert bookkeeping (`news_pipeline_status`) against a real
+  project or the Firebase emulator.
 - **The consecutive-failure alert is log-based, not wired to anything
   yet.** `recordNewsRunFailure` writes to `news_pipeline_status/state` and
   logs a line prefixed `ALERT:` once 3 runs in a row fail. That line does

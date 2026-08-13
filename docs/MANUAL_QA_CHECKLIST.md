@@ -56,8 +56,8 @@ a device/TalkBack).
 
 - [x] **Audited every `launchUrl`/hardcoded URL in `lib/`.** The only
       user-facing external navigation is `news_feed_screen.dart` opening
-      whatever `source_url` the backend's news aggregation (CryptoPanic,
-      see docs/RELEASE.md) wrote onto a `news_items` doc, in an in-app
+      whatever `source_url` the backend's RSS aggregation (see
+      docs/RELEASE.md) wrote onto a `news_items` doc, in an in-app
       browser tab — that's the original publisher's own page, not an
       affiliate/referral link.
       `forecast_api_source.dart`'s URLs are just the backend's own API base

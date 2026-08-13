@@ -1,11 +1,10 @@
-import { defineSecret } from "firebase-functions/params";
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import { Timestamp } from "firebase-admin/firestore";
 
 import { db } from "../lib/admin";
-import { CryptoPanicNewsProvider } from "./cryptoPanicNewsProvider";
 import { buildNewsItem, computeNewsItemId, NewsItemData } from "./newsItems";
 import { NewsProvider } from "./newsProvider";
+import { RssNewsProvider } from "./rssNewsProvider";
 
 const FIRESTORE_BATCH_LIMIT = 500;
 const NEWS_RETENTION_DAYS = 14;
@@ -119,24 +118,22 @@ async function recordNewsRunFailure(now: Timestamp, errorMessage: string): Promi
   return consecutiveFailures;
 }
 
-const cryptoPanicApiToken = defineSecret("CRYPTOPANIC_API_TOKEN");
-
 export const aggregateCryptoNews = onSchedule(
-  { schedule: "every 25 minutes", timeZone: "UTC", secrets: [cryptoPanicApiToken] },
+  { schedule: "every 25 minutes", timeZone: "UTC" },
   async () => {
     const now = Timestamp.now();
 
-    // ACTIVE PROVIDER — CryptoPanic, not CoinGecko. See
-    // coinGeckoNewsProvider.ts's doc comment: this sandbox had no
-    // outbound network access to verify CoinGecko's News endpoint
-    // exists, what plan it requires, or its response schema, which is
-    // exactly the condition under which the spec calls for falling back
-    // to CryptoPanic's free tier. Swapping back requires no changes
-    // below this line beyond constructing a CoinGeckoNewsProvider
-    // instead — that's the entire point of the NewsProvider interface.
-    const provider: NewsProvider = new CryptoPanicNewsProvider({
-      authToken: cryptoPanicApiToken.value(),
-    });
+    // ACTIVE PROVIDER — RSS, the only one of the three confirmed
+    // genuinely free. CoinGecko's News endpoint was never confirmed to
+    // exist (coinGeckoNewsProvider.ts). CryptoPanic's API turned out to
+    // require a paid plan (cryptoPanicNewsProvider.ts) — confirmed live,
+    // not just unverified: every plan tier on their v2 docs sits behind
+    // "Get PLUS", with no free API-key path found anywhere in the
+    // account UI. No secret/API key is needed for this provider at all.
+    // Swapping providers again requires no changes below this line
+    // beyond constructing a different one — that's the entire point of
+    // the NewsProvider interface.
+    const provider: NewsProvider = new RssNewsProvider();
 
     try {
       const { written, pruned } = await fetchAndStoreNews(provider, { now });

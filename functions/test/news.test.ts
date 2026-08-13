@@ -10,6 +10,7 @@ import { CoinGeckoNewsProvider } from "../src/news/coinGeckoNewsProvider";
 import { CryptoPanicNewsProvider } from "../src/news/cryptoPanicNewsProvider";
 import { buildNewsItem, computeNewsItemId, truncateSummary } from "../src/news/newsItems";
 import { NewsProviderItem } from "../src/news/newsProvider";
+import { RssNewsProvider } from "../src/news/rssNewsProvider";
 
 function item(overrides: Partial<NewsProviderItem> = {}): NewsProviderItem {
   return {
@@ -202,4 +203,91 @@ test("CoinGeckoNewsProvider.parseResponse (best-effort, unverified schema)", asy
     assert.deepEqual(CoinGeckoNewsProvider.parseResponse({}), []);
     assert.deepEqual(CoinGeckoNewsProvider.parseResponse({ data: "not an array" }), []);
   });
+});
+
+// The ACTIVE provider (see aggregateNews.ts) — genuinely free, no API key.
+const SAMPLE_RSS_FEED = `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <title>Sample Crypto Feed</title>
+    <link>https://example.com</link>
+    <description>A saved sample feed used only for tests.</description>
+    <item>
+      <title>Bitcoin breaks past key resistance level</title>
+      <link>https://example.com/articles/bitcoin-resistance</link>
+      <guid>https://example.com/articles/bitcoin-resistance</guid>
+      <pubDate>Mon, 10 Aug 2026 09:30:00 GMT</pubDate>
+      <description>Bitcoin rallied past a closely-watched resistance level on Monday, extending its weekly gain.</description>
+      <content:encoded><![CDATA[<p>Bitcoin rallied past a closely-watched resistance level on Monday, extending its weekly gain. This is the full, much longer article body that must NEVER be shown in the app -- it goes on for several more paragraphs describing market conditions, analyst commentary, historical context, and other copyrighted reporting that only the description field should ever surface to end users.</p>]]></content:encoded>
+    </item>
+    <item>
+      <title>Regulators eye new stablecoin rules</title>
+      <link>https://example.com/articles/stablecoin-rules</link>
+      <guid>https://example.com/articles/stablecoin-rules</guid>
+      <pubDate>Mon, 10 Aug 2026 08:00:00 GMT</pubDate>
+      <description>Lawmakers proposed &amp; discussed a new framework for stablecoin issuers on Monday.</description>
+    </item>
+    <item>
+      <title>No link here, should be skipped</title>
+      <pubDate>Mon, 10 Aug 2026 07:00:00 GMT</pubDate>
+      <description>Missing a link entirely.</description>
+    </item>
+  </channel>
+</rss>`;
+
+test("RssNewsProvider", async (t) => {
+  await t.test("parseFeedXml extracts title, link, and pubDate", async () => {
+    const items = await RssNewsProvider.parseFeedXml(SAMPLE_RSS_FEED);
+    assert.equal(items.length, 3);
+    assert.equal(items[0].title, "Bitcoin breaks past key resistance level");
+    assert.equal(items[0].link, "https://example.com/articles/bitcoin-resistance");
+    assert.ok(items[0].pubDate);
+  });
+
+  await t.test(
+    "toProviderItem NEVER surfaces content:encoded's full article body, even when a feed includes it",
+    async () => {
+      const items = await RssNewsProvider.parseFeedXml(SAMPLE_RSS_FEED);
+      const built = RssNewsProvider.toProviderItem(items[0], "Sample Source");
+
+      assert.ok(built);
+      assert.ok(!built!.summary.includes("goes on for several more paragraphs"));
+      assert.ok(!built!.summary.includes("full, much longer article body"));
+      assert.ok(built!.summary.startsWith("Bitcoin rallied past"));
+    },
+  );
+
+  await t.test("toProviderItem carries the source name through", async () => {
+    const items = await RssNewsProvider.parseFeedXml(SAMPLE_RSS_FEED);
+    const built = RssNewsProvider.toProviderItem(items[1], "Sample Source");
+    assert.ok(built);
+    assert.equal(built!.sourceName, "Sample Source");
+    assert.ok(built!.summary.includes("& discussed"));
+  });
+
+  await t.test("toProviderItem skips an item missing a link", async () => {
+    const items = await RssNewsProvider.parseFeedXml(SAMPLE_RSS_FEED);
+    const built = RssNewsProvider.toProviderItem(items[2], "Sample Source");
+    assert.equal(built, null);
+  });
+
+  await t.test(
+    "fetchLatestNews throws only when every configured source fails (checked via a fake fetch)",
+    async () => {
+      const originalFetch = global.fetch;
+      global.fetch = (async () =>
+        new Response("not found", { status: 404 })) as typeof fetch;
+      try {
+        const provider = new RssNewsProvider({
+          sources: [
+            { name: "Dead Source A", url: "https://example.com/a.xml" },
+            { name: "Dead Source B", url: "https://example.com/b.xml" },
+          ],
+        });
+        await assert.rejects(() => provider.fetchLatestNews());
+      } finally {
+        global.fetch = originalFetch;
+      }
+    },
+  );
 });
