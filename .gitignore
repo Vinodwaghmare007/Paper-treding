@@ -54,3 +54,8 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Per-developer deployed Forecast API URL (set via buildapk.bat option 6) -
+# not a secret, but a local deployment detail that shouldn't force a commit
+# every time someone redeploys the backend to a different host/URL.
+/forecast_url.txt

@@ -7,14 +7,27 @@ REM  Requires: Flutter SDK on PATH, Android SDK/platform-tools installed
 REM  (flutter doctor should show no blocking issues for Android).
 REM
 REM  This script only builds/installs the APK on YOUR machine - nothing
-REM  here talks to any server. There is currently no live backend hosted
-REM  anywhere for this app (see the chat reply for details), so debug
-REM  builds will use whatever Firebase project you've wired up locally
-REM  via android/app/google-services.json.
+REM  here talks to any server on its own, other than whatever Firebase
+REM  project you've wired up locally via android/app/google-services.json.
+REM
+REM  AI Forecast backend: that feature calls a separate Python service
+REM  (backend/), which is NOT part of Firebase and must be deployed on its
+REM  own (see backend/Dockerfile's deploy notes for Railway/Render). Once
+REM  deployed, use option 6 below to save its URL to forecast_url.txt
+REM  (gitignored, per-machine) - every build/run option then bakes it in
+REM  automatically via --dart-define. Until you do that, AI Forecast will
+REM  always show "timed out" since it has nowhere real to call.
 REM ============================================================================
 
 setlocal enabledelayedexpansion
 cd /d "%~dp0"
+
+set FORECAST_URL=
+if exist "forecast_url.txt" (
+    set /p FORECAST_URL=<forecast_url.txt
+)
+set FORECAST_DEFINE=
+if not "%FORECAST_URL%"=="" set FORECAST_DEFINE=--dart-define=FORECAST_API_BASE_URL=%FORECAST_URL%
 
 where flutter >nul 2>nul
 if errorlevel 1 (
@@ -27,15 +40,21 @@ if errorlevel 1 (
 echo.
 echo ============================================
 echo  Crypto Paper Trader - APK Build
+if "%FORECAST_URL%"=="" (
+    echo  AI Forecast backend URL: NOT SET - see option 6
+) else (
+    echo  AI Forecast backend URL: %FORECAST_URL%
+)
 echo ============================================
 echo  1. Debug APK   (fast, unsigned, for testing on your own device)
 echo  2. Release APK (optimized, needs android\key.properties - see docs\RELEASE.md)
 echo  3. Debug APK + install on connected device/emulator (adb install)
 echo  4. Just run "flutter doctor" (check your setup)
 echo  5. Live debug session (flutter run) - hot reload, NO rebuild per change
+echo  6. Set/update the deployed AI Forecast backend URL
 echo  0. Exit
 echo ============================================
-set /p choice="Choose an option (0-5): "
+set /p choice="Choose an option (0-6): "
 
 if "%choice%"=="0" exit /b 0
 if "%choice%"=="4" goto doctor
@@ -43,10 +62,30 @@ if "%choice%"=="1" goto debug
 if "%choice%"=="2" goto release
 if "%choice%"=="3" goto debug_install
 if "%choice%"=="5" goto live_debug
+if "%choice%"=="6" goto set_forecast_url
 
 echo Invalid choice.
 pause
 exit /b 1
+
+:set_forecast_url
+echo.
+echo Paste the deployed backend's public URL from Railway/Render's dashboard
+echo ^(e.g. https://your-service.onrender.com - no trailing slash^).
+echo Leave blank to clear it ^(reverts to the emulator-only default^).
+set /p neturl="Forecast backend URL: "
+if "%neturl%"=="" (
+    if exist "forecast_url.txt" del "forecast_url.txt"
+    echo.
+    echo Cleared. Builds will use the emulator-only default again.
+) else (
+    >forecast_url.txt echo %neturl%
+    echo.
+    echo Saved to forecast_url.txt. This file is gitignored - it stays local to
+    echo this machine and every build below will now use it automatically.
+)
+pause
+exit /b 0
 
 :doctor
 call flutter doctor -v
@@ -63,7 +102,7 @@ echo   - Press "q" to quit
 echo   This needs a device connected over USB with USB debugging on
 echo   (or an emulator already running) - check "adb devices" if it hangs.
 echo.
-call flutter run
+call flutter run %FORECAST_DEFINE%
 pause
 exit /b 0
 
@@ -82,7 +121,7 @@ exit /b 0
 call :prepare
 echo.
 echo [2/2] Building DEBUG APK...
-call flutter build apk --debug
+call flutter build apk --debug %FORECAST_DEFINE%
 if errorlevel 1 (
     echo [ERROR] Build failed - see the error above.
     pause
@@ -98,7 +137,7 @@ exit /b 0
 call :prepare
 echo.
 echo [2/2] Building and installing DEBUG APK on a connected device/emulator...
-call flutter install --debug
+call flutter install --debug %FORECAST_DEFINE%
 if errorlevel 1 (
     echo [ERROR] Build/install failed - is a device connected? Check "adb devices".
     pause
@@ -122,7 +161,7 @@ if not exist "android\key.properties" (
 )
 echo.
 echo [2/2] Building RELEASE APK...
-call flutter build apk --release
+call flutter build apk --release %FORECAST_DEFINE%
 if errorlevel 1 (
     echo [ERROR] Build failed - see the error above.
     pause
