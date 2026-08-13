@@ -57,6 +57,17 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
+        // flutter_local_notifications (18.x) requires core library
+        // desugaring — without this, Gradle fails at
+        // :app:checkDebugAarMetadata with "requires core library
+        // desugaring to be enabled for :app" before compilation even
+        // starts. The desugar_jdk_libs version below is the commonly
+        // documented minimum for recent flutter_local_notifications
+        // releases; this sandbox has no Android SDK/Gradle to verify it
+        // against a real build (see docs/RELEASE.md) — if Gradle still
+        // complains about the desugaring library version specifically,
+        // bump the version below to whatever it asks for.
+        isCoreLibraryDesugaringEnabled = true
     }
 
     kotlinOptions {
@@ -113,6 +124,10 @@ android {
             )
         }
     }
+}
+
+dependencies {
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
 }
 
 flutter {

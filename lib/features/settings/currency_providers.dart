@@ -4,6 +4,16 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../data/sources/currency_converter.dart';
 
+// Re-exported so every screen that imports this file for AppCurrency/
+// formatCurrency/etc. can also write `ExchangeRate` (e.g. as a field type)
+// without a second import of data/sources/currency_converter.dart directly
+// — Dart imports aren't transitive, so without this `export`, a file that
+// only imports currency_providers.dart and references the ExchangeRate
+// type by name fails to compile ("Type 'ExchangeRate' not found"), exactly
+// as dca_simulator_screen.dart and dca_share_card.dart did before this was
+// added.
+export '../../data/sources/currency_converter.dart' show ExchangeRate;
+
 /// The two display currencies this app supports. USD is the "native"
 /// currency everywhere internally (Binance quotes, Firestore balances,
 /// order prices are all USD) — INR is purely a display-time conversion,
