@@ -48,6 +48,7 @@ table, not a synonym, even if the synonym is individually "more correct."
 | Drawdown | Drawdown | ड्रॉडाउन (loanword) | ड्रॉडाउन (loanword) | டிராடவுன் (loanword) | డ్రాడౌన్ (loanword) | ಡ್ರಾಡೌನ್ (loanword) |
 | Simulated / paper trading | Simulated / Paper trading | पेपर ट्रेडिंग (आभासी, असली पैसा नहीं) | पेपर ट्रेडिंग (आभासी, खरे पैसे नाहीत) | பேப்பர் டிரேடிங் (மெய்நிகர், உண்மையான பணம் இல்லை) | పేపర్ ట్రేడింగ్ (వర్చువల్, నిజమైన డబ్బు కాదు) | ಪೇಪರ್ ಟ್ರೇಡಿಂಗ್ (ವರ್ಚುವಲ್, ನಿಜವಾದ ಹಣವಲ್ಲ) |
 | Leverage | Leverage | लीवरेज (loanword) | लिव्हरेज (loanword) | லீவரேஜ் (loanword) | లివరేజ్ (loanword) | ಲಿವರೇಜ್ (loanword) |
+| Short (short-selling) | Short | शॉर्ट (loanword) | शॉर्ट (loanword) | ஷார்ட் (loanword) | షార్ట్ (loanword) | ಶಾರ್ಟ್ (loanword) |
 | Order | Order | ऑर्डर (loanword) | ऑर्डर (loanword) | ஆர்டர் (loanword) | ఆర్డర్ (loanword) | ಆರ್ಡರ್ (loanword) |
 | Watchlist | Watchlist | वॉचलिस्ट (loanword) | वॉचलिस्ट (loanword) | கண்காணிப்பு பட்டியல் | పరిశీలన జాబితా | ವೀಕ್ಷಣಾ ಪಟ್ಟಿ |
 | Alert | Alert | अलर्ट (loanword) | अलर्ट (loanword) | எச்சரிக்கை | హెచ్చరిక | ಎಚ್ಚರಿಕೆ |

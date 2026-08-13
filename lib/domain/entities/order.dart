@@ -17,8 +17,11 @@ extension OrderTypeCode on OrderType {
 
 /// A single executed paper-trading order.
 ///
-/// Pure domain entity — no Firestore types. `realizedPnl` is only ever set
-/// on SELL orders; BUY orders leave it null.
+/// Pure domain entity — no Firestore types. `realizedPnl` is set whenever
+/// this order closed or reduced an existing position — a SELL closing a
+/// long, or (short-selling) a BUY covering a short. It's left null on
+/// orders that open or add to a position: a BUY opening/adding to a long,
+/// or a SELL opening/adding to a short.
 class Order {
   const Order({
     required this.id,

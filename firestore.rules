@@ -85,7 +85,11 @@ service cloud.firestore {
 
     function isValidPosition() {
       let data = request.resource.data;
-      return data.total_quantity is number && data.total_quantity > 0
+      // total_quantity is signed: positive = long, negative = short (see
+      // TradeMath's doc comment in trade_math.dart for the full model). A
+      // position doc is deleted, never written at exactly zero, when a
+      // trade fully closes/covers it — hence != 0 rather than > 0.
+      return data.total_quantity is number && data.total_quantity != 0
         && data.avg_buy_price is number && data.avg_buy_price >= 0;
     }
 

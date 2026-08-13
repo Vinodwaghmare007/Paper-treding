@@ -18,14 +18,16 @@ export const updateSkillLevelOnOrder = onDocumentCreated(
   "users/{userId}/orders/{orderId}",
   async (event) => {
     const order = event.data?.data();
-    // Only SELL orders count as a "completed trade" — an open BUY isn't a
-    // closed round-trip yet.
-    if (!order || order.order_type !== "SELL") return;
+    // A "completed trade" is one that closed or reduced a position —
+    // realized_pnl is set on exactly those orders (a SELL closing a long,
+    // or a BUY covering a short). An order that opens/adds to a position
+    // isn't a closed round-trip yet, regardless of its order_type.
+    if (!order || order.realized_pnl == null) return;
 
     const userId = event.params.userId;
     const completedTradesSnap = await db
       .collection(`users/${userId}/orders`)
-      .where("order_type", "==", "SELL")
+      .where("realized_pnl", "!=", null)
       .count()
       .get();
 

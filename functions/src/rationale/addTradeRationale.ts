@@ -48,14 +48,14 @@ export async function addTradeRationaleForUser(
   }
   const order = orderSnap.data()!;
 
-  // "Closed trade" in this schema means a SELL — see
-  // updateSkillLevelOnOrder.ts's identical convention ("Only SELL orders
-  // count as a 'completed trade'"). An open BUY position has nothing to
-  // be retrospective about yet.
-  if (order.order_type !== "SELL") {
+  // "Closed trade" in this schema means realized_pnl is set — a SELL that
+  // closed a long, or (short-selling) a BUY that covered a short. See
+  // updateSkillLevelOnOrder.ts's identical convention. An order that
+  // opened/added to a position has nothing to be retrospective about yet.
+  if (order.realized_pnl == null) {
     throw new HttpsError(
       "failed-precondition",
-      "A rationale can only be added to a closed (SELL) trade, not an open position.",
+      "A rationale can only be added to a closed trade, not an open position.",
     );
   }
 

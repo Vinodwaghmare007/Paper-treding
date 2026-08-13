@@ -10,7 +10,8 @@ import { isPublicProfile } from "../lib/profileVisibility";
  * event shapes exist, matching what's actually verifiable from this
  * app's own server-side data:
  *
- *   - "trade": a closed (SELL) order — symbol, side, and win/loss/
+ *   - "trade": a closed/covered order (realized_pnl set — a SELL closing
+ *     a long, or a BUY covering a short) — symbol, side, and win/loss/
  *     breakeven outcome only. No forward guidance, no price target.
  *   - "rationale": a Trade Rationale was posted on a specific closed
  *     trade (Phase 8 Part C) — references the trade, not its text, so
@@ -45,15 +46,15 @@ export async function recordTradeActivity(
   userId: string,
   order: Record<string, unknown> | undefined,
 ): Promise<void> {
-  if (!order || order.order_type !== "SELL") return;
+  if (!order || order.realized_pnl == null) return;
 
-  const pnl = (order.realized_pnl as number | undefined) ?? 0;
+  const pnl = order.realized_pnl as number;
   const outcome = pnl > 0 ? "profit" : pnl < 0 ? "loss" : "breakeven";
 
   await writeActivity(userId, {
     type: "trade",
     coin_symbol: order.coin_symbol,
-    order_type: "SELL",
+    order_type: order.order_type,
     outcome,
   });
 }

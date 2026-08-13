@@ -136,14 +136,28 @@ test("publicActivity", async (t) => {
     assert.equal(activity.outcome, "loss");
   });
 
-  await t.test("recordTradeActivity ignores a BUY order", async () => {
+  await t.test("recordTradeActivity ignores an order that opened/added a position (no realized_pnl)", async () => {
     const uid = `activity-buy-${Date.now()}`;
     await db.doc(`users/${uid}/profile_settings/data`).set({ is_public: true, display_name: "x" });
 
-    await recordTradeActivity(uid, { order_type: "BUY", coin_symbol: "BTCUSDT" });
+    await recordTradeActivity(uid, { order_type: "BUY", coin_symbol: "BTCUSDT", realized_pnl: null });
 
     const activitySnap = await db.collection(`users/${uid}/public_activity`).get();
     assert.equal(activitySnap.size, 0);
+  });
+
+  await t.test("recordTradeActivity records a short-covering BUY the same as a closing SELL", async () => {
+    const uid = `activity-cover-${Date.now()}`;
+    await db.doc(`users/${uid}/profile_settings/data`).set({ is_public: true, display_name: "x" });
+
+    await recordTradeActivity(uid, { order_type: "BUY", coin_symbol: "BTCUSDT", realized_pnl: 12 });
+
+    const activitySnap = await db.collection(`users/${uid}/public_activity`).get();
+    assert.equal(activitySnap.size, 1);
+    const activity = activitySnap.docs[0].data();
+    assert.equal(activity.type, "trade");
+    assert.equal(activity.order_type, "BUY");
+    assert.equal(activity.outcome, "profit");
   });
 
   await t.test("recordRationaleActivity looks up the order's coin_symbol", async () => {

@@ -23,9 +23,9 @@ void main() {
         orderId: 'order-1',
       );
 
-      expect(outcome.updatedPosition.coinSymbol, 'BTCUSDT');
-      expect(outcome.updatedPosition.totalQuantity, 0.1);
-      expect(outcome.updatedPosition.avgBuyPrice, 60000);
+      expect(outcome.updatedPosition!.coinSymbol, 'BTCUSDT');
+      expect(outcome.updatedPosition!.totalQuantity, 0.1);
+      expect(outcome.updatedPosition!.avgBuyPrice, 60000);
       expect(outcome.updatedAccount.virtualBalance, 100000 - 6000);
       expect(outcome.order.orderType, OrderType.buy);
     });
@@ -42,8 +42,8 @@ void main() {
         orderId: 'order-2',
       );
 
-      expect(outcome.updatedPosition.totalQuantity, 2);
-      expect(outcome.updatedPosition.avgBuyPrice, 55000);
+      expect(outcome.updatedPosition!.totalQuantity, 2);
+      expect(outcome.updatedPosition!.avgBuyPrice, 55000);
     });
 
     test('throws InsufficientBalanceException over budget', () {
@@ -192,7 +192,129 @@ void main() {
         now: now,
         orderId: 'order-5g',
       );
-      expect(outcome.updatedPosition.avgBuyPrice, closeTo(50 / 3, 1e-9));
+      expect(outcome.updatedPosition!.avgBuyPrice, closeTo(50 / 3, 1e-9));
+    });
+  });
+
+  group('TradeMath.applyBuy — covering a short', () {
+    const shortHolding = PortfolioPosition(
+        coinSymbol: 'BTCUSDT', totalQuantity: -1, avgBuyPrice: 60000);
+
+    test('covers part of a short and books realized P&L', () {
+      final outcome = TradeMath.applyBuy(
+        account: freshAccount,
+        existingPosition: shortHolding,
+        coinSymbol: 'BTCUSDT',
+        price: 50000, // bought back cheaper than the short's entry -> profit
+        quantity: 0.5,
+        now: now,
+        orderId: 'order-short-1',
+      );
+
+      expect(outcome.order.orderType, OrderType.buy);
+      expect(outcome.order.realizedPnl, 5000); // (60000-50000)*0.5
+      expect(outcome.updatedAccount.virtualBalance, 100000 - 25000);
+      expect(outcome.updatedPosition!.totalQuantity, -0.5);
+      expect(outcome.updatedPosition!.avgBuyPrice, 60000);
+    });
+
+    test('fully covering a short returns a null updatedPosition', () {
+      final outcome = TradeMath.applyBuy(
+        account: freshAccount,
+        existingPosition: shortHolding,
+        coinSymbol: 'BTCUSDT',
+        price: 50000,
+        quantity: 1,
+        now: now,
+        orderId: 'order-short-2',
+      );
+      expect(outcome.updatedPosition, isNull);
+    });
+
+    test('a losing short cover (bought back higher than entry) increments consecutive_losses', () {
+      final outcome = TradeMath.applyBuy(
+        account: const UserAccount(uid: uid, virtualBalance: 100000, consecutiveLosses: 1),
+        existingPosition: shortHolding,
+        coinSymbol: 'BTCUSDT',
+        price: 70000, // above the short's entry -> loss
+        quantity: 1,
+        now: now,
+        orderId: 'order-short-3',
+      );
+      expect(outcome.order.realizedPnl, lessThan(0));
+      expect(outcome.updatedAccount.consecutiveLosses, 2);
+    });
+
+    test('throws InvalidTradeException when the buy would flip a short past zero into a long', () {
+      // Design choice: a single order never crosses a position through
+      // zero — cover fully first, then buy separately.
+      expect(
+        () => TradeMath.applyBuy(
+          account: freshAccount,
+          existingPosition: shortHolding,
+          coinSymbol: 'BTCUSDT',
+          price: 50000,
+          quantity: 1.5,
+          now: now,
+          orderId: 'order-short-4',
+        ),
+        throwsA(isA<InvalidTradeException>()),
+      );
+    });
+
+    test('covering a short is never blocked by the buy-lock', () {
+      final lockedAccount = UserAccount(
+        uid: uid,
+        virtualBalance: 100000,
+        consecutiveLosses: 3,
+        buyLockedUntil: now.add(const Duration(minutes: 5)),
+      );
+      final outcome = TradeMath.applyBuy(
+        account: lockedAccount,
+        existingPosition: shortHolding,
+        coinSymbol: 'BTCUSDT',
+        price: 50000,
+        quantity: 1,
+        now: now,
+        orderId: 'order-short-5',
+      );
+      expect(outcome.updatedPosition, isNull);
+    });
+
+    test('opening/adding to a long is still blocked by the buy-lock (unaffected by the short carve-out)', () {
+      final lockedAccount = UserAccount(
+        uid: uid,
+        virtualBalance: 100000,
+        consecutiveLosses: 3,
+        buyLockedUntil: now.add(const Duration(minutes: 5)),
+      );
+      expect(
+        () => TradeMath.applyBuy(
+          account: lockedAccount,
+          existingPosition: null,
+          coinSymbol: 'BTCUSDT',
+          price: 50000,
+          quantity: 1,
+          now: now,
+          orderId: 'order-short-6',
+        ),
+        throwsA(isA<TradingLockedException>()),
+      );
+    });
+
+    test('covering a short still throws InsufficientBalanceException if the buy-back cost exceeds balance', () {
+      expect(
+        () => TradeMath.applyBuy(
+          account: const UserAccount(uid: uid, virtualBalance: 100, consecutiveLosses: 0),
+          existingPosition: shortHolding,
+          coinSymbol: 'BTCUSDT',
+          price: 50000,
+          quantity: 1,
+          now: now,
+          orderId: 'order-short-7',
+        ),
+        throwsA(isA<InsufficientBalanceException>()),
+      );
     });
   });
 
@@ -390,6 +512,77 @@ void main() {
       );
 
       expect(outcome.updatedAccount.consecutiveLosses, 0);
+    });
+  });
+
+  group('TradeMath.applySell — opening/adding to a short', () {
+    test('opens a fresh short with no realized P&L, credits proceeds', () {
+      final outcome = TradeMath.applySell(
+        account: freshAccount,
+        existingPosition: null,
+        coinSymbol: 'BTCUSDT',
+        price: 60000,
+        quantity: 0.5,
+        now: now,
+        orderId: 'order-short-open-1',
+      );
+
+      expect(outcome.order.realizedPnl, isNull);
+      expect(outcome.updatedAccount.virtualBalance, 100000 + 30000);
+      expect(outcome.updatedPosition!.totalQuantity, -0.5);
+      expect(outcome.updatedPosition!.avgBuyPrice, 60000);
+    });
+
+    test('adds to an existing short with a weighted-average entry price', () {
+      const existingShort = PortfolioPosition(
+          coinSymbol: 'BTCUSDT', totalQuantity: -1, avgBuyPrice: 50000);
+      final outcome = TradeMath.applySell(
+        account: freshAccount,
+        existingPosition: existingShort,
+        coinSymbol: 'BTCUSDT',
+        price: 60000,
+        quantity: 1,
+        now: now,
+        orderId: 'order-short-open-2',
+      );
+
+      expect(outcome.updatedPosition!.totalQuantity, -2);
+      expect(outcome.updatedPosition!.avgBuyPrice, 55000); // (50000+60000)/2
+      expect(outcome.order.realizedPnl, isNull);
+    });
+
+    test('opening a short is never blocked by the buy-lock (the lock only ever gates BUYs)', () {
+      final lockedAccount = UserAccount(
+        uid: uid,
+        virtualBalance: 100000,
+        consecutiveLosses: 3,
+        buyLockedUntil: now.add(const Duration(minutes: 5)),
+      );
+      final outcome = TradeMath.applySell(
+        account: lockedAccount,
+        existingPosition: null,
+        coinSymbol: 'BTCUSDT',
+        price: 60000,
+        quantity: 0.5,
+        now: now,
+        orderId: 'order-short-open-3',
+      );
+      expect(outcome.updatedPosition!.totalQuantity, -0.5);
+    });
+
+    test('throws InsufficientBalanceException when opening a short would exceed the collateral check', () {
+      expect(
+        () => TradeMath.applySell(
+          account: const UserAccount(uid: uid, virtualBalance: 100, consecutiveLosses: 0),
+          existingPosition: null,
+          coinSymbol: 'BTCUSDT',
+          price: 60000,
+          quantity: 1,
+          now: now,
+          orderId: 'order-short-open-4',
+        ),
+        throwsA(isA<InsufficientBalanceException>()),
+      );
     });
   });
 }

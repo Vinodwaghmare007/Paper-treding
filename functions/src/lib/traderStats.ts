@@ -65,16 +65,22 @@ function clamp01(value: number): number {
  * wins/win_rate_pct — matches trade_math_test.dart's "breakeven P&L not
  * counted as loss".
  *
- * Holding time per SELL is approximated as (this SELL's timestamp − the
- * most recent prior BUY of the same symbol). This app tracks positions by
- * weighted-average price, not per-lot FIFO, so there's no single
- * "purchase time" for a partially-filled position — this is a
- * documented, reasonable proxy, not an exact per-unit holding time.
+ * Holding time per closed trade is approximated as (this order's
+ * timestamp − the most recent prior order on the same symbol that opened
+ * or added to a position, i.e. had realized_pnl == null). This app tracks
+ * positions by weighted-average price, not per-lot FIFO, so there's no
+ * single "purchase time" for a partially-filled position — this is a
+ * documented, reasonable proxy, not an exact per-unit holding time. It's
+ * symmetric across long and short: an opening trade is a BUY for a long or
+ * a SELL for a short, and either can be the "last open" a later closing
+ * order (a SELL closing a long, or a BUY covering a short) is measured
+ * against — orderType itself no longer decides open-vs-close, only
+ * whether realizedPnl is set does.
  */
 export function computeTraderStats(orders: TraderOrderInput[]): TraderStats {
   const sorted = [...orders].sort((a, b) => a.timestampMs - b.timestampMs);
 
-  const lastBuyMsBySymbol = new Map<string, number>();
+  const lastOpenMsBySymbol = new Map<string, number>();
   let consecutiveLosses = 0;
   let revengeLockTriggers = 0;
   let wins = 0;
@@ -86,13 +92,13 @@ export function computeTraderStats(orders: TraderOrderInput[]): TraderStats {
   for (const order of sorted) {
     lastTradeAtMs = order.timestampMs;
 
-    if (order.orderType === "BUY") {
-      lastBuyMsBySymbol.set(order.coinSymbol, order.timestampMs);
+    if (order.realizedPnl == null) {
+      lastOpenMsBySymbol.set(order.coinSymbol, order.timestampMs);
       continue;
     }
 
     totalClosedTrades += 1;
-    const pnl = order.realizedPnl ?? 0;
+    const pnl = order.realizedPnl;
     if (pnl > 0) {
       wins += 1;
       consecutiveLosses = 0;
@@ -105,9 +111,9 @@ export function computeTraderStats(orders: TraderOrderInput[]): TraderStats {
       }
     }
 
-    const lastBuyMs = lastBuyMsBySymbol.get(order.coinSymbol);
-    if (lastBuyMs !== undefined) {
-      holdingMinutesSum += (order.timestampMs - lastBuyMs) / 60000;
+    const lastOpenMs = lastOpenMsBySymbol.get(order.coinSymbol);
+    if (lastOpenMs !== undefined) {
+      holdingMinutesSum += (order.timestampMs - lastOpenMs) / 60000;
       holdingSamples += 1;
     }
   }

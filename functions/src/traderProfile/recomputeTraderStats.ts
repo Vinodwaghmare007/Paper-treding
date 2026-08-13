@@ -49,7 +49,8 @@ export async function recomputeStatsForUser(userId: string): Promise<void> {
 }
 
 /**
- * On-demand recompute right after a closed (SELL) trade — "significant
+ * On-demand recompute right after a closed/covered trade (realized_pnl
+ * set — a SELL closing a long, or a BUY covering a short) — "significant
  * trade activity," per the spec. Gated on the profile already being
  * public so a private account's trading never pays for work nobody will
  * ever read; syncProfileVisibility.ts handles the moment a profile
@@ -59,7 +60,7 @@ export const recomputeTraderStatsOnOrder = onDocumentCreated(
   "users/{userId}/orders/{orderId}",
   async (event) => {
     const order = event.data?.data();
-    if (!order || order.order_type !== "SELL") return;
+    if (!order || order.realized_pnl == null) return;
 
     const userId = event.params.userId;
     if (!(await isPublicProfile(userId))) return;

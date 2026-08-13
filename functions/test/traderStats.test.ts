@@ -128,6 +128,20 @@ test("computeTraderStats", async (t) => {
     assert.ok(stats.disciplineScore < 75, `expected a quick-flip-sized score, got ${stats.disciplineScore}`);
   });
 
+  await t.test("a short (opening SELL, closing/covering BUY) counts and measures holding time symmetrically", () => {
+    const orders: TraderOrderInput[] = [
+      order("SELL", 0), // opens a short — no realizedPnl
+      order("BUY", 60 * MINUTE, { realizedPnl: 20 }), // covers it at a profit
+    ];
+    const stats = computeTraderStats(orders);
+
+    assert.equal(stats.totalTrades, 1);
+    assert.equal(stats.winRatePct, 100);
+    // Holding time measured against the opening SELL, same proxy as the
+    // long case measuring against an opening BUY.
+    assert.ok(stats.disciplineScore > 65, `expected a long-hold-sized score, got ${stats.disciplineScore}`);
+  });
+
   await t.test("lastTradeAtMs is the latest order timestamp regardless of input order", () => {
     const stats = computeTraderStats([
       order("SELL", 5 * MINUTE, { realizedPnl: 1 }),

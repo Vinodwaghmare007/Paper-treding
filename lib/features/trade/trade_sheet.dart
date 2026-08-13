@@ -153,8 +153,12 @@ class _TradeSheetState extends ConsumerState<TradeSheet> {
         .cast<PortfolioPosition?>()
         .firstWhere((p) => p?.coinSymbol == widget.coinSymbol, orElse: () => null);
 
+    // The buy-lock only ever blocks opening/adding to a long — covering an
+    // existing short is risk-reducing and stays exempt, mirroring
+    // TradeMath.applyBuy's identical carve-out.
+    final isCoveringShort = holding != null && holding.isShort;
     final lockState = ref.watch(tradeLockProvider);
-    final isLocked = _side == TradeSide.buy && lockState.isLocked;
+    final isLocked = _side == TradeSide.buy && lockState.isLocked && !isCoveringShort;
     final isOnline = ref.watch(isOnlineProvider);
 
     final currency = ref.watch(currencyPreferenceProvider);
@@ -162,7 +166,13 @@ class _TradeSheetState extends ConsumerState<TradeSheet> {
 
     final total = price * _quantity;
     final canAffordBuy = account != null && total <= account.virtualBalance;
-    final canAffordSell = holding != null && _quantity <= holding.totalQuantity;
+    // A long holding: Sell can only close up to what's held (no
+    // same-order flip to short — see TradeMath's doc comment). Flat or
+    // already-short: Sell opens/adds to a short, gated by the same
+    // balance-based collateral check as a buy.
+    final canAffordSell = (holding != null && holding.isLong)
+        ? _quantity <= holding.totalQuantity
+        : (account != null && total <= account.virtualBalance);
     final canSubmit = !_submitting &&
         !isLocked &&
         isOnline &&
@@ -222,12 +232,17 @@ class _TradeSheetState extends ConsumerState<TradeSheet> {
               labelText: l10n.tradeSheetQuantityLabel,
               suffixText: widget.coinSymbol.replaceAll('USDT', ''),
               border: const OutlineInputBorder(),
-              helperText: holding != null
-                  ? l10n.tradeSheetHoldingSummary(
-                      holding.totalQuantity.toString(),
-                      formatCurrency(holding.avgBuyPrice, currency, rate),
-                    )
-                  : l10n.tradeSheetNoHoldingsYet,
+              helperText: holding == null
+                  ? l10n.tradeSheetNoHoldingsYet
+                  : holding.isShort
+                      ? l10n.tradeSheetShortSummary(
+                          (-holding.totalQuantity).toString(),
+                          formatCurrency(holding.avgBuyPrice, currency, rate),
+                        )
+                      : l10n.tradeSheetHoldingSummary(
+                          holding.totalQuantity.toString(),
+                          formatCurrency(holding.avgBuyPrice, currency, rate),
+                        ),
               helperStyle: const TextStyle(color: Colors.white38),
             ),
             onChanged: (_) => setState(() {}),

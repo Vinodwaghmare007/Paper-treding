@@ -33,8 +33,10 @@ class ExecuteTradeUseCase {
   final DateTime Function() _now;
 
   /// Buys [quantity] of [coinSymbol] at [price]. Deducts the cost from the
-  /// virtual balance and folds the fill into the position's weighted-average
-  /// buy price. Rejected while a revenge-trade lock is active.
+  /// virtual balance. If the existing position is flat or long, this
+  /// opens/adds to the long (rejected while a revenge-trade lock is
+  /// active); if it's short, this covers/reduces the short instead (never
+  /// blocked by the lock) and books realized P&L.
   Future<Order> buy({
     required String coinSymbol,
     required double price,
@@ -73,8 +75,13 @@ class ExecuteTradeUseCase {
         orderId: orderRef.id,
       );
 
+      if (outcome.updatedPosition == null) {
+        // A BUY that fully covered a short.
+        transaction.delete(positionRef);
+      } else {
+        transaction.set(positionRef, outcome.updatedPosition!.toMap());
+      }
       transaction
-        ..set(positionRef, outcome.updatedPosition.toMap())
         ..update(userRef, outcome.updatedAccount.toUpdateMap())
         ..set(orderRef, outcome.order.toMap());
 
@@ -82,11 +89,11 @@ class ExecuteTradeUseCase {
     });
   }
 
-  /// Sells [quantity] of [coinSymbol] at [price]. Requires holding at least
-  /// [quantity]; realized P&L is booked against the position's average buy
-  /// price and proceeds are credited to the virtual balance. Updates the
-  /// revenge-blocker loss streak and, if it reaches the limit, arms a new
-  /// buy lock.
+  /// Sells [quantity] of [coinSymbol] at [price]. If the existing position
+  /// is a long, this closes/reduces it (requires holding at least
+  /// [quantity]) and books realized P&L. Otherwise it opens or adds to a
+  /// short. Updates the revenge-blocker loss streak on a losing close and,
+  /// if it reaches the limit, arms a new buy lock.
   Future<Order> sell({
     required String coinSymbol,
     required double price,

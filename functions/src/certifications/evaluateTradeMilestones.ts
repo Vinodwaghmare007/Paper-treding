@@ -12,11 +12,14 @@ export async function evaluateTradeMilestonesForOrder(
   userId: string,
   order: Record<string, unknown> | undefined,
 ): Promise<void> {
-  if (!order || order.order_type !== "SELL") return;
+  // A "completed trade" is one that closed or reduced a position —
+  // realized_pnl is set on exactly those orders (a SELL closing a long, or
+  // a BUY covering a short), regardless of order_type.
+  if (!order || order.realized_pnl == null) return;
 
   const completedTradesSnap = await db
     .collection(`users/${userId}/orders`)
-    .where("order_type", "==", "SELL")
+    .where("realized_pnl", "!=", null)
     .count()
     .get();
 

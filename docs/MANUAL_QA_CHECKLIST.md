@@ -159,3 +159,16 @@ a device/TalkBack).
       backgrounding) right after tapping Confirm, then relaunch — confirm
       the account ends up in a consistent state (either the trade fully
       happened or it didn't; no partial state).
+- [x] **Short-selling** — `TradeMath` now supports opening a short via Sell
+      with no existing holding (or an existing short), and covering it via
+      Buy; covered by `trade_math_test.dart`'s short-selling groups
+      (open/add/cover/full-cover/flip-rejected/lock-exemption/collateral).
+  - [ ] **Manual check**: on a device, Sell with no holding of a coin,
+        confirm a short position opens (SHORT badge on the Portfolio tab,
+        quantity shown positive). Then Buy back less than the short —
+        confirm it's a partial cover with realized P&L shown, not a new
+        long. Then Buy back the rest — confirm the position disappears
+        rather than showing a stray 0-quantity row. Trigger 3 losing
+        covers in a row and confirm the buy-lock arms (from the loss), but
+        that a 4th *covering* Buy on a fresh short still goes through
+        while locked (only opening/adding to a long should be blocked).

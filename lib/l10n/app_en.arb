@@ -326,6 +326,21 @@
     }
   },
 
+  "tradeSheetShortSummary": "Short: {quantity} @ avg {avgPrice}",
+  "@tradeSheetShortSummary": {
+    "description": "Helper text under the quantity field showing the user's current short position in this coin (quantity shown as a positive number — the short's sign is conveyed by the word 'Short', not a minus sign) and the average price the short was opened at. {quantity} is a plain number (already locale-formatted by the caller); {avgPrice} is a pre-formatted currency string.",
+    "placeholders": {
+      "quantity": {
+        "type": "String",
+        "example": "0.0231"
+      },
+      "avgPrice": {
+        "type": "String",
+        "example": "$64,120.00"
+      }
+    }
+  },
+
   "tradeSheetEstimatedTotal": "Estimated total",
   "@tradeSheetEstimatedTotal": {
     "description": "Label for the row showing quantity × price, in the trade sheet."
@@ -406,6 +421,11 @@
   "portfolioNoOpenPositions": "No open positions yet. Trade from the chart screen.",
   "@portfolioNoOpenPositions": {
     "description": "Empty-state message on the Portfolio tab when the user holds no coins at all."
+  },
+
+  "portfolioShortBadge": "SHORT",
+  "@portfolioShortBadge": {
+    "description": "Small badge/label shown on a holding tile in the Portfolio tab when the position is short (negative quantity), so it reads clearly even without noticing the minus sign on the quantity."
   },
 
   "orderHistoryTitle": "Order History",

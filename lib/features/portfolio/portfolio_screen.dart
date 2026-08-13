@@ -170,22 +170,51 @@ class _HoldingTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final position = valuation.position;
     final pnl = valuation.unrealizedPnl;
     final pnlColor = pnl >= 0 ? const Color(0xFF26A69A) : const Color(0xFFEF5350);
+    // Shown as a positive number either way — the short/long distinction
+    // is conveyed by the SHORT badge, not a minus sign in the quantity.
+    final displayQuantity =
+        position.isShort ? -position.totalQuantity : position.totalQuantity;
     return Card(
       color: const Color(0xFF1E222D),
       margin: const EdgeInsets.only(bottom: 10),
       child: ListTile(
         onTap: onTap,
-        title: Text(
-          valuation.position.coinSymbol,
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+        title: Row(
+          children: [
+            Text(
+              position.coinSymbol,
+              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+            ),
+            if (position.isShort) ...[
+              const SizedBox(width: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEF5350).withValues(alpha: 0.16),
+                  borderRadius: BorderRadius.circular(4),
+                  border: Border.all(color: const Color(0xFFEF5350)),
+                ),
+                child: Text(
+                  l10n.portfolioShortBadge,
+                  style: const TextStyle(
+                    color: Color(0xFFEF5350),
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ],
         ),
         subtitle: Row(
           children: [
-            Text('Qty ${valuation.position.totalQuantity}  ·  Avg ',
+            Text('Qty $displayQuantity  ·  Avg ',
                 style: const TextStyle(color: Colors.white54, fontSize: 12)),
-            PriceText(valuation.position.avgBuyPrice,
+            PriceText(position.avgBuyPrice,
                 style: const TextStyle(color: Colors.white54, fontSize: 12)),
             const Text('  ·  Now ', style: TextStyle(color: Colors.white54, fontSize: 12)),
             PriceText(valuation.currentPrice,

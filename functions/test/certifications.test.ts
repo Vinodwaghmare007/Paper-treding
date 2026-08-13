@@ -41,31 +41,49 @@ test("awardCertificationIfNeeded", async (t) => {
 });
 
 test("evaluateTradeMilestonesForOrder", async (t) => {
-  await t.test("does nothing for a BUY order", async () => {
-    const uid = `trade-milestone-buy-${Date.now()}`;
-    await evaluateTradeMilestonesForOrder(uid, { order_type: "BUY" });
+  await t.test("does nothing for an order that opened/added a position (no realized_pnl)", async () => {
+    const uid = `trade-milestone-open-${Date.now()}`;
+    await evaluateTradeMilestonesForOrder(uid, { order_type: "BUY", realized_pnl: null });
     const certDoc = await db.doc(`users/${uid}/certifications/50_disciplined_trades`).get();
     assert.equal(certDoc.exists, false);
   });
 
-  await t.test("awards the cert once 50 SELL orders exist", async () => {
+  await t.test("awards the cert once 50 closed trades exist", async () => {
     const uid = `trade-milestone-sell-${Date.now()}`;
     const batch = db.batch();
     for (let i = 0; i < 49; i++) {
-      batch.set(db.doc(`users/${uid}/orders/order-${i}`), { order_type: "SELL" });
+      batch.set(db.doc(`users/${uid}/orders/order-${i}`), { order_type: "SELL", realized_pnl: 1 });
     }
     await batch.commit();
 
     // The 49th completed trade shouldn't award anything yet.
-    await evaluateTradeMilestonesForOrder(uid, { order_type: "SELL" });
+    await evaluateTradeMilestonesForOrder(uid, { order_type: "SELL", realized_pnl: 1 });
     assert.equal(
       (await db.doc(`users/${uid}/certifications/50_disciplined_trades`).get()).exists,
       false,
     );
 
     // The 50th order pushes the count() query result to 50.
-    await db.doc(`users/${uid}/orders/order-49`).set({ order_type: "SELL" });
-    await evaluateTradeMilestonesForOrder(uid, { order_type: "SELL" });
+    await db.doc(`users/${uid}/orders/order-49`).set({ order_type: "SELL", realized_pnl: 1 });
+    await evaluateTradeMilestonesForOrder(uid, { order_type: "SELL", realized_pnl: 1 });
+    assert.equal(
+      (await db.doc(`users/${uid}/certifications/50_disciplined_trades`).get()).exists,
+      true,
+    );
+  });
+
+  await t.test("counts a short-covering BUY (realized_pnl set) the same as a closing SELL", async () => {
+    const uid = `trade-milestone-cover-${Date.now()}`;
+    const batch = db.batch();
+    for (let i = 0; i < 49; i++) {
+      batch.set(db.doc(`users/${uid}/orders/order-${i}`), { order_type: "SELL", realized_pnl: 1 });
+    }
+    await batch.commit();
+
+    // The 50th trade is a BUY that covered a short, not a SELL — should
+    // still push the count to 50 and award the cert.
+    await db.doc(`users/${uid}/orders/order-49`).set({ order_type: "BUY", realized_pnl: 5 });
+    await evaluateTradeMilestonesForOrder(uid, { order_type: "BUY", realized_pnl: 5 });
     assert.equal(
       (await db.doc(`users/${uid}/certifications/50_disciplined_trades`).get()).exists,
       true,
