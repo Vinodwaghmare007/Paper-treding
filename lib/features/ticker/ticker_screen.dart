@@ -109,17 +109,61 @@ class TickerScreen extends ConsumerWidget {
         ],
       ),
       floatingActionButton: tickAsync.maybeWhen(
-        data: (tick) => FloatingActionButton.extended(
-          onPressed: () => showTradeSheet(
-            context,
-            coinSymbol: tick.symbol,
-            currentPrice: tick.candle.close,
-          ),
-          icon: const Icon(Icons.swap_vert),
-          label: Text(AppLocalizations.of(context)!.tradeFabLabel),
-        ),
+        data: (tick) => _BuySellFabs(symbol: tick.symbol, currentPrice: tick.candle.close),
         orElse: () => null,
       ),
+    );
+  }
+}
+
+/// Separate green Buy / red Sell buttons, replacing what used to be a
+/// single neutral "Trade" FAB — color-coded intent recognition is the
+/// convention every real trading app (Zerodha, Groww, Binance) already
+/// uses, and it saves the one extra tap of picking a side inside the
+/// sheet first. Compact `FloatingActionButton.extended` pair rather than
+/// two full-width buttons, since this bottom-right corner already
+/// competes with the SIMULATED footer and the 4-tab bottom nav for
+/// space. Each still opens the same [TradeSheet] — the segmented control
+/// in there is untouched, just pre-selected to whichever side was
+/// tapped, so switching sides mid-sheet still works exactly as before.
+class _BuySellFabs extends StatelessWidget {
+  const _BuySellFabs({required this.symbol, required this.currentPrice});
+
+  final String symbol;
+  final double currentPrice;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        FloatingActionButton.extended(
+          heroTag: 'fab-sell',
+          backgroundColor: const Color(0xFFEF5350),
+          onPressed: () => showTradeSheet(
+            context,
+            coinSymbol: symbol,
+            currentPrice: currentPrice,
+            initialSide: TradeSide.sell,
+          ),
+          icon: const Icon(Icons.arrow_downward),
+          label: Text(l10n.tradeSheetSell),
+        ),
+        const SizedBox(width: 12),
+        FloatingActionButton.extended(
+          heroTag: 'fab-buy',
+          backgroundColor: const Color(0xFF26A69A),
+          onPressed: () => showTradeSheet(
+            context,
+            coinSymbol: symbol,
+            currentPrice: currentPrice,
+            initialSide: TradeSide.buy,
+          ),
+          icon: const Icon(Icons.arrow_upward),
+          label: Text(l10n.tradeSheetBuy),
+        ),
+      ],
     );
   }
 }

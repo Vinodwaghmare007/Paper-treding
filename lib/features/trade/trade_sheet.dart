@@ -17,14 +17,20 @@ import '../settings/price_text.dart';
 import 'revenge_blocker_sheet.dart';
 import 'trade_lock_provider.dart';
 
-enum _Side { buy, sell }
+/// Public so callers (e.g. ticker_screen.dart's separate Buy/Sell FABs) can
+/// open the sheet pre-selected to a side, instead of always landing on Buy
+/// and making the user pick.
+enum TradeSide { buy, sell }
 
 /// Opens the Buy/Sell bottom sheet for [coinSymbol]. [currentPrice] seeds
 /// the estimate before the sheet's own live price watch takes over.
+/// [initialSide] controls which segment is selected when the sheet opens —
+/// the segmented control inside still lets the user switch either way.
 Future<void> showTradeSheet(
   BuildContext context, {
   required String coinSymbol,
   required double currentPrice,
+  TradeSide initialSide = TradeSide.buy,
 }) {
   return showModalBottomSheet<void>(
     context: context,
@@ -33,7 +39,11 @@ Future<void> showTradeSheet(
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
     ),
-    builder: (_) => TradeSheet(coinSymbol: coinSymbol, seedPrice: currentPrice),
+    builder: (_) => TradeSheet(
+      coinSymbol: coinSymbol,
+      seedPrice: currentPrice,
+      initialSide: initialSide,
+    ),
   );
 }
 
@@ -42,10 +52,12 @@ class TradeSheet extends ConsumerStatefulWidget {
     super.key,
     required this.coinSymbol,
     required this.seedPrice,
+    this.initialSide = TradeSide.buy,
   });
 
   final String coinSymbol;
   final double seedPrice;
+  final TradeSide initialSide;
 
   @override
   ConsumerState<TradeSheet> createState() => _TradeSheetState();
@@ -53,7 +65,7 @@ class TradeSheet extends ConsumerStatefulWidget {
 
 class _TradeSheetState extends ConsumerState<TradeSheet> {
   final _quantityController = TextEditingController();
-  _Side _side = _Side.buy;
+  late TradeSide _side = widget.initialSide;
   bool _submitting = false;
   String? _errorText;
 
@@ -79,7 +91,7 @@ class _TradeSheetState extends ConsumerState<TradeSheet> {
 
     final engine = ref.read(executeTradeUseCaseProvider);
     try {
-      final order = _side == _Side.buy
+      final order = _side == TradeSide.buy
           ? await engine.buy(
               coinSymbol: widget.coinSymbol, price: price, quantity: quantity)
           : await engine.sell(
@@ -142,7 +154,7 @@ class _TradeSheetState extends ConsumerState<TradeSheet> {
         .firstWhere((p) => p?.coinSymbol == widget.coinSymbol, orElse: () => null);
 
     final lockState = ref.watch(tradeLockProvider);
-    final isLocked = _side == _Side.buy && lockState.isLocked;
+    final isLocked = _side == TradeSide.buy && lockState.isLocked;
     final isOnline = ref.watch(isOnlineProvider);
 
     final currency = ref.watch(currencyPreferenceProvider);
@@ -155,7 +167,7 @@ class _TradeSheetState extends ConsumerState<TradeSheet> {
         !isLocked &&
         isOnline &&
         _quantity > 0 &&
-        (_side == _Side.buy ? canAffordBuy : canAffordSell);
+        (_side == TradeSide.buy ? canAffordBuy : canAffordSell);
 
     return Padding(
       padding: EdgeInsets.only(
@@ -190,10 +202,10 @@ class _TradeSheetState extends ConsumerState<TradeSheet> {
             style: const TextStyle(color: Colors.white54, fontSize: 13),
           ),
           const SizedBox(height: 16),
-          SegmentedButton<_Side>(
+          SegmentedButton<TradeSide>(
             segments: [
-              ButtonSegment(value: _Side.buy, label: Text(l10n.tradeSheetBuy)),
-              ButtonSegment(value: _Side.sell, label: Text(l10n.tradeSheetSell)),
+              ButtonSegment(value: TradeSide.buy, label: Text(l10n.tradeSheetBuy)),
+              ButtonSegment(value: TradeSide.sell, label: Text(l10n.tradeSheetSell)),
             ],
             selected: {_side},
             onSelectionChanged: (selection) => setState(() {
@@ -276,7 +288,7 @@ class _TradeSheetState extends ConsumerState<TradeSheet> {
             style: FilledButton.styleFrom(
               backgroundColor: (isLocked || !isOnline)
                   ? Colors.white12
-                  : (_side == _Side.buy
+                  : (_side == TradeSide.buy
                       ? const Color(0xFF26A69A)
                       : const Color(0xFFEF5350)),
               minimumSize: const Size.fromHeight(48),
@@ -299,7 +311,7 @@ class _TradeSheetState extends ConsumerState<TradeSheet> {
                 : Text(
                     isLocked
                         ? l10n.tradeSheetLockedRemaining(_formatCountdown(lockState.remainingSeconds))
-                        : (_side == _Side.buy ? l10n.tradeSheetConfirmBuy : l10n.tradeSheetConfirmSell),
+                        : (_side == TradeSide.buy ? l10n.tradeSheetConfirmBuy : l10n.tradeSheetConfirmSell),
                     style: TextStyle(color: (isLocked || !isOnline) ? Colors.white38 : null),
                   ),
           ),
