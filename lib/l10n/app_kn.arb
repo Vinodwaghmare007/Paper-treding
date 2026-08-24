@@ -249,5 +249,27 @@
   "orgDashboardAggregateTitle": "ಗುಂಪು ಸ್ನ್ಯಾಪ್‌ಶಾಟ್ (ಅನಾಮಧೇಯ)",
   "orgDashboardAggregateAvgDiscipline": "ಸರಾಸರಿ ಶಿಸ್ತು ಸ್ಕೋರ್: {score}",
   "orgDashboardAggregateNotYetComputed": "ಗುಂಪು ಅಂಕಿಅಂಶಗಳು ಪ್ರತಿದಿನ ನವೀಕರಿಸಲಾಗುತ್ತದೆ — ವಿದ್ಯಾರ್ಥಿಗಳು ಸೇರಿದ ನಂತರ ಮತ್ತೆ ಪರಿಶೀಲಿಸಿ.",
-  "orgDashboardPrivacyNote": "ಯಾವುದೇ ವಿದ್ಯಾರ್ಥಿಯ ವೈಯಕ್ತಿಕ ಟ್ರೇಡ್ ಇತಿಹಾಸ ಇಲ್ಲಿ ಎಂದಿಗೂ ಕಾಣಿಸುವುದಿಲ್ಲ — ಬಳಕೆದಾರಹೆಸರು, ಸೇರಿದ ದಿನಾಂಕ, ಮತ್ತು ಒಂದು ಅನಾಮಧೇಯ ಗುಂಪು ಸರಾಸರಿ ಮಾತ್ರ."
+  "orgDashboardPrivacyNote": "ಯಾವುದೇ ವಿದ್ಯಾರ್ಥಿಯ ವೈಯಕ್ತಿಕ ಟ್ರೇಡ್ ಇತಿಹಾಸ ಇಲ್ಲಿ ಎಂದಿಗೂ ಕಾಣಿಸುವುದಿಲ್ಲ — ಬಳಕೆದಾರಹೆಸರು, ಸೇರಿದ ದಿನಾಂಕ, ಮತ್ತು ಒಂದು ಅನಾಮಧೇಯ ಗುಂಪು ಸರಾಸರಿ ಮಾತ್ರ.",
+
+  "conditionalOrderSheetTitle": "ಸ್ಟಾಪ್-ಲಾಸ್ / ಟಾರ್ಗೆಟ್ — {coinSymbol}",
+  "conditionalOrderStopLossLabel": "ಸ್ಟಾಪ್-ಲಾಸ್",
+  "conditionalOrderTakeProfitLabel": "ಟಾರ್ಗೆಟ್",
+  "conditionalOrderTriggerPriceLabel": "ಟ್ರಿಗ್ಗರ್ ಬೆಲೆ",
+  "conditionalOrderStopLossHelper": "ಬೆಲೆ ಈ ಮಟ್ಟಕ್ಕೆ ಇಳಿದರೆ ಸ್ವಯಂಚಾಲಿತವಾಗಿ ಮಾರಾಟವಾಗುತ್ತದೆ, ಆ್ಯಪ್ ಮುಚ್ಚಿದ್ದರೂ ಸಹ.",
+  "conditionalOrderTakeProfitHelper": "ಬೆಲೆ ಈ ಮಟ್ಟಕ್ಕೆ ಏರಿದರೆ ಸ್ವಯಂಚಾಲಿತವಾಗಿ ಮಾರಾಟವಾಗುತ್ತದೆ, ಆ್ಯಪ್ ಮುಚ್ಚಿದ್ದರೂ ಸಹ.",
+  "conditionalOrderHoldingQuantity": "ನಿಮ್ಮ ಬಳಿ {quantity} ಇದೆ",
+  "conditionalOrderEnterPrice": "ಶೂನ್ಯಕ್ಕಿಂತ ಹೆಚ್ಚಿನ ಟ್ರಿಗ್ಗರ್ ಬೆಲೆಯನ್ನು ನಮೂದಿಸಿ.",
+  "conditionalOrderStopLossBelowMarket": "ಸ್ಟಾಪ್-ಲಾಸ್ ಪ್ರಸ್ತುತ ಬೆಲೆಗಿಂತ ಕಡಿಮೆ ಇರಬೇಕು.",
+  "conditionalOrderTakeProfitAboveMarket": "ಟಾರ್ಗೆಟ್ ಪ್ರಸ್ತುತ ಬೆಲೆಗಿಂತ ಹೆಚ್ಚಿರಬೇಕು.",
+  "conditionalOrderInvalidQuantity": "ಶೂನ್ಯ ಮತ್ತು ನಿಮ್ಮ ಹೋಲ್ಡಿಂಗ್ ನಡುವಿನ ಪ್ರಮಾಣವನ್ನು ನಮೂದಿಸಿ.",
+  "conditionalOrderStopLossSet": "ಸ್ಟಾಪ್-ಲಾಸ್ ಸೆಟ್ ಆಗಿದೆ.",
+  "conditionalOrderTakeProfitSet": "ಟಾರ್ಗೆಟ್ ಸೆಟ್ ಆಗಿದೆ.",
+  "conditionalOrderSubmitError": "ಈ ಆರ್ಡರ್ ಅನ್ನು ಸೆಟ್ ಮಾಡಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ — ನಿಮ್ಮ ಸಂಪರ್ಕವನ್ನು ಪರಿಶೀಲಿಸಿ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.",
+  "conditionalOrderSetStopLoss": "ಸ್ಟಾಪ್-ಲಾಸ್ ಸೆಟ್ ಮಾಡಿ",
+  "conditionalOrderSetTakeProfit": "ಟಾರ್ಗೆಟ್ ಸೆಟ್ ಮಾಡಿ",
+  "conditionalOrderCancel": "ರದ್ದುಮಾಡಿ",
+  "conditionalOrderDisclaimer": "ಪ್ರತಿ ನಿಮಿಷ ಲೈವ್ ಬೆಲೆಗಳ ವಿರುದ್ಧ ಪರಿಶೀಲಿಸಲಾಗುತ್ತದೆ — ಎಕ್ಸಿಕ್ಯೂಷನ್ ಬೆಲೆ ನಿಮ್ಮ ಟ್ರಿಗ್ಗರ್ ಬೆಲೆಗಿಂತ ಸ್ವಲ್ಪ ಭಿನ್ನವಾಗಿರಬಹುದು. ಸಿಮ್ಯುಲೇಟೆಡ್ ಮಾತ್ರ, ನಿಜವಾದ ಹಣವಲ್ಲ.",
+  "portfolioSetStopLossTakeProfit": "ಸ್ಟಾಪ್-ಲಾಸ್ / ಟಾರ್ಗೆಟ್ ಸೆಟ್ ಮಾಡಿ",
+  "portfolioActiveStopLoss": "SL {price}",
+  "portfolioActiveTakeProfit": "ಟಾರ್ಗೆಟ್ {price}"
 }

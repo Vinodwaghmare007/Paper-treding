@@ -144,6 +144,21 @@ class FirestorePaths {
       fcmTokens(uid).doc(token);
 
   // ------------------------------------------------------------------
+  // Stop-loss / take-profit conditional orders — see
+  // functions/src/trading/checkConditionalOrders.ts for how is_active/
+  // triggered_at/last_checked_price get flipped server-side.
+  // ------------------------------------------------------------------
+
+  CollectionReference<Map<String, dynamic>> conditionalOrders(String uid) =>
+      user(uid).collection('conditional_orders');
+
+  DocumentReference<Map<String, dynamic>> newConditionalOrderRef(String uid) =>
+      conditionalOrders(uid).doc();
+
+  DocumentReference<Map<String, dynamic>> conditionalOrderDoc(String uid, String orderId) =>
+      conditionalOrders(uid).doc(orderId);
+
+  // ------------------------------------------------------------------
   // Translation quality feedback (i18n Part D) — flat top-level
   // collection, same shape as reports() above. See
   // docs/translation_glossary.md for how these feed back into fixing a

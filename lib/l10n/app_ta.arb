@@ -249,5 +249,27 @@
   "orgDashboardAggregateTitle": "குழு சுருக்கம் (அநாமதேயம்)",
   "orgDashboardAggregateAvgDiscipline": "சராசரி ஒழுக்க மதிப்பெண்: {score}",
   "orgDashboardAggregateNotYetComputed": "குழு புள்ளிவிவரங்கள் தினமும் புதுப்பிக்கப்படும் — மாணவர்கள் சேர்ந்த பிறகு மீண்டும் சரிபார்க்கவும்.",
-  "orgDashboardPrivacyNote": "எந்த மாணவரின் தனிப்பட்ட வர்த்தக வரலாறும் இங்கு காட்டப்படாது — பயனர்பெயர், சேர்ந்த தேதி, மற்றும் ஒரு அநாமதேய குழு சராசரி மட்டுமே."
+  "orgDashboardPrivacyNote": "எந்த மாணவரின் தனிப்பட்ட வர்த்தக வரலாறும் இங்கு காட்டப்படாது — பயனர்பெயர், சேர்ந்த தேதி, மற்றும் ஒரு அநாமதேய குழு சராசரி மட்டுமே.",
+
+  "conditionalOrderSheetTitle": "ஸ்டாப்-லாஸ் / டார்கெட் — {coinSymbol}",
+  "conditionalOrderStopLossLabel": "ஸ்டாப்-லாஸ்",
+  "conditionalOrderTakeProfitLabel": "டார்கெட்",
+  "conditionalOrderTriggerPriceLabel": "ட்ரிகர் விலை",
+  "conditionalOrderStopLossHelper": "விலை இந்த நிலைக்கு குறைந்தால் தானாகவே விற்கப்படும், ஆப் மூடப்பட்டிருந்தாலும் கூட.",
+  "conditionalOrderTakeProfitHelper": "விலை இந்த நிலைக்கு உயர்ந்தால் தானாகவே விற்கப்படும், ஆப் மூடப்பட்டிருந்தாலும் கூட.",
+  "conditionalOrderHoldingQuantity": "உங்களிடம் {quantity} உள்ளது",
+  "conditionalOrderEnterPrice": "பூஜ்ஜியத்தை விட அதிகமான ட்ரிகர் விலையை உள்ளிடவும்.",
+  "conditionalOrderStopLossBelowMarket": "ஸ்டாப்-லாஸ் தற்போதைய விலையை விட குறைவாக இருக்க வேண்டும்.",
+  "conditionalOrderTakeProfitAboveMarket": "டார்கெட் தற்போதைய விலையை விட அதிகமாக இருக்க வேண்டும்.",
+  "conditionalOrderInvalidQuantity": "பூஜ்ஜியத்திற்கும் உங்கள் வைத்திருக்கும் அளவிற்கும் இடையே ஒரு அளவை உள்ளிடவும்.",
+  "conditionalOrderStopLossSet": "ஸ்டாப்-லாஸ் அமைக்கப்பட்டது.",
+  "conditionalOrderTakeProfitSet": "டார்கெட் அமைக்கப்பட்டது.",
+  "conditionalOrderSubmitError": "இந்த ஆர்டரை அமைக்க முடியவில்லை — உங்கள் இணைப்பை சரிபார்த்து மீண்டும் முயற்சிக்கவும்.",
+  "conditionalOrderSetStopLoss": "ஸ்டாப்-லாஸ் அமைக்கவும்",
+  "conditionalOrderSetTakeProfit": "டார்கெட் அமைக்கவும்",
+  "conditionalOrderCancel": "ரத்து செய்",
+  "conditionalOrderDisclaimer": "ஒவ்வொரு நிமிடமும் நேரடி விலைகளுக்கு எதிராக சரிபார்க்கப்படுகிறது — செயல்படுத்தும் விலை உங்கள் ட்ரிகர் விலையிலிருந்து சற்று வேறுபடலாம். மெய்நிகர் மட்டுமே, உண்மையான பணம் இல்லை.",
+  "portfolioSetStopLossTakeProfit": "ஸ்டாப்-லாஸ் / டார்கெட் அமைக்கவும்",
+  "portfolioActiveStopLoss": "SL {price}",
+  "portfolioActiveTakeProfit": "டார்கெட் {price}"
 }

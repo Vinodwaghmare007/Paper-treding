@@ -249,5 +249,27 @@
   "orgDashboardAggregateTitle": "समूह स्नैपशॉट (गुमनाम)",
   "orgDashboardAggregateAvgDiscipline": "औसत अनुशासन स्कोर: {score}",
   "orgDashboardAggregateNotYetComputed": "समूह आँकड़े रोज़ अपडेट होते हैं — छात्रों के शामिल होने के बाद फिर देखें।",
-  "orgDashboardPrivacyNote": "यहाँ किसी भी छात्र का व्यक्तिगत ट्रेड इतिहास कभी नहीं दिखाया जाता — केवल उपयोगकर्ता नाम, शामिल होने की तारीख, और एक गुमनाम समूह औसत।"
+  "orgDashboardPrivacyNote": "यहाँ किसी भी छात्र का व्यक्तिगत ट्रेड इतिहास कभी नहीं दिखाया जाता — केवल उपयोगकर्ता नाम, शामिल होने की तारीख, और एक गुमनाम समूह औसत।",
+
+  "conditionalOrderSheetTitle": "स्टॉप-लॉस / टार्गेट — {coinSymbol}",
+  "conditionalOrderStopLossLabel": "स्टॉप-लॉस",
+  "conditionalOrderTakeProfitLabel": "टार्गेट",
+  "conditionalOrderTriggerPriceLabel": "ट्रिगर कीमत",
+  "conditionalOrderStopLossHelper": "कीमत इस स्तर तक गिरने पर अपने आप बिक जाएगा, भले ही ऐप बंद हो।",
+  "conditionalOrderTakeProfitHelper": "कीमत इस स्तर तक बढ़ने पर अपने आप बिक जाएगा, भले ही ऐप बंद हो।",
+  "conditionalOrderHoldingQuantity": "आपके पास {quantity} है",
+  "conditionalOrderEnterPrice": "शून्य से अधिक ट्रिगर कीमत दर्ज करें।",
+  "conditionalOrderStopLossBelowMarket": "स्टॉप-लॉस मौजूदा कीमत से कम होना चाहिए।",
+  "conditionalOrderTakeProfitAboveMarket": "टार्गेट मौजूदा कीमत से अधिक होना चाहिए।",
+  "conditionalOrderInvalidQuantity": "शून्य और आपकी होल्डिंग के बीच मात्रा दर्ज करें।",
+  "conditionalOrderStopLossSet": "स्टॉप-लॉस सेट हो गया।",
+  "conditionalOrderTakeProfitSet": "टार्गेट सेट हो गया।",
+  "conditionalOrderSubmitError": "यह ऑर्डर सेट नहीं हो सका — अपना कनेक्शन जांचें और फिर से कोशिश करें।",
+  "conditionalOrderSetStopLoss": "स्टॉप-लॉस सेट करें",
+  "conditionalOrderSetTakeProfit": "टार्गेट सेट करें",
+  "conditionalOrderCancel": "रद्द करें",
+  "conditionalOrderDisclaimer": "हर मिनट लाइव कीमतों के विरुद्ध जांचा जाता है — निष्पादन कीमत आपकी ट्रिगर कीमत से थोड़ी अलग हो सकती है। केवल सिम्युलेटेड, कोई असली पैसा नहीं।",
+  "portfolioSetStopLossTakeProfit": "स्टॉप-लॉस / टार्गेट सेट करें",
+  "portfolioActiveStopLoss": "SL {price}",
+  "portfolioActiveTakeProfit": "टार्गेट {price}"
 }

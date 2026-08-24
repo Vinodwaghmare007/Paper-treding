@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../domain/entities/conditional_order.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../connectivity/connectivity_providers.dart';
 import '../connectivity/offline_banner.dart';
 import '../home/more_menu_button.dart';
+import '../settings/currency_providers.dart';
 import '../settings/price_text.dart';
+import '../trade/conditional_order_providers.dart';
+import '../trade/set_stop_loss_take_profit_sheet.dart';
 import '../trade/trade_sheet.dart';
 import 'portfolio_providers.dart';
 import 'portfolio_twin_card.dart';
@@ -162,14 +166,14 @@ class _StatColumn extends StatelessWidget {
   }
 }
 
-class _HoldingTile extends StatelessWidget {
+class _HoldingTile extends ConsumerWidget {
   const _HoldingTile({required this.valuation, required this.onTap});
 
   final PositionValuation valuation;
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
     final position = valuation.position;
     final pnl = valuation.unrealizedPnl;
@@ -178,65 +182,133 @@ class _HoldingTile extends StatelessWidget {
     // is conveyed by the SHORT badge, not a minus sign in the quantity.
     final displayQuantity =
         position.isShort ? -position.totalQuantity : position.totalQuantity;
+    // Stop-loss/take-profit is v1-scoped to LONG positions only — see
+    // TradeMath's short-selling doc comment and checkConditionalOrders.ts,
+    // which only ever ports the long-closing branch server-side.
+    final activeOrders = position.isLong
+        ? ref.watch(activeConditionalOrdersForSymbolProvider(position.coinSymbol))
+        : const <ConditionalOrder>[];
+    final currency = ref.watch(currencyPreferenceProvider);
+    final rate = ref.watch(usdToInrRateProvider).valueOrNull;
+
     return Card(
       color: const Color(0xFF1E222D),
       margin: const EdgeInsets.only(bottom: 10),
-      child: ListTile(
-        onTap: onTap,
-        title: Row(
-          children: [
-            Text(
-              position.coinSymbol,
-              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
-            ),
-            if (position.isShort) ...[
-              const SizedBox(width: 6),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFEF5350).withValues(alpha: 0.16),
-                  borderRadius: BorderRadius.circular(4),
-                  border: Border.all(color: const Color(0xFFEF5350)),
+      child: Column(
+        children: [
+          ListTile(
+            onTap: onTap,
+            title: Row(
+              children: [
+                Text(
+                  position.coinSymbol,
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
                 ),
-                child: Text(
-                  l10n.portfolioShortBadge,
-                  style: const TextStyle(
-                    color: Color(0xFFEF5350),
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
+                if (position.isShort) ...[
+                  const SizedBox(width: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEF5350).withValues(alpha: 0.16),
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(color: const Color(0xFFEF5350)),
+                    ),
+                    child: Text(
+                      l10n.portfolioShortBadge,
+                      style: const TextStyle(
+                        color: Color(0xFFEF5350),
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                   ),
+                ],
+              ],
+            ),
+            subtitle: Row(
+              children: [
+                Text('Qty $displayQuantity  ·  Avg ',
+                    style: const TextStyle(color: Colors.white54, fontSize: 12)),
+                PriceText(position.avgBuyPrice,
+                    style: const TextStyle(color: Colors.white54, fontSize: 12)),
+                const Text('  ·  Now ', style: TextStyle(color: Colors.white54, fontSize: 12)),
+                PriceText(valuation.currentPrice,
+                    style: const TextStyle(color: Colors.white54, fontSize: 12)),
+              ],
+            ),
+            trailing: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                PriceText(
+                  pnl,
+                  prefix: pnl >= 0 ? '+' : '',
+                  style: TextStyle(color: pnlColor, fontWeight: FontWeight.w600),
                 ),
+                Text(
+                  '${valuation.unrealizedPnlPercent >= 0 ? '+' : ''}${valuation.unrealizedPnlPercent.toStringAsFixed(2)}%',
+                  style: TextStyle(color: pnlColor, fontSize: 11),
+                ),
+              ],
+            ),
+          ),
+          if (position.isLong)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 12, 10),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Wrap(
+                      spacing: 8,
+                      runSpacing: 4,
+                      children: [
+                        for (final order in activeOrders)
+                          _ConditionalOrderBadge(order: order, currency: currency, rate: rate),
+                      ],
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () => showStopLossTakeProfitSheet(
+                      context,
+                      holding: position,
+                      currentPrice: valuation.currentPrice,
+                    ),
+                    child: Text(
+                      l10n.portfolioSetStopLossTakeProfit,
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ],
-        ),
-        subtitle: Row(
-          children: [
-            Text('Qty $displayQuantity  ·  Avg ',
-                style: const TextStyle(color: Colors.white54, fontSize: 12)),
-            PriceText(position.avgBuyPrice,
-                style: const TextStyle(color: Colors.white54, fontSize: 12)),
-            const Text('  ·  Now ', style: TextStyle(color: Colors.white54, fontSize: 12)),
-            PriceText(valuation.currentPrice,
-                style: const TextStyle(color: Colors.white54, fontSize: 12)),
-          ],
-        ),
-        trailing: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            PriceText(
-              pnl,
-              prefix: pnl >= 0 ? '+' : '',
-              style: TextStyle(color: pnlColor, fontWeight: FontWeight.w600),
             ),
-            Text(
-              '${valuation.unrealizedPnlPercent >= 0 ? '+' : ''}${valuation.unrealizedPnlPercent.toStringAsFixed(2)}%',
-              style: TextStyle(color: pnlColor, fontSize: 11),
-            ),
-          ],
-        ),
+        ],
       ),
+    );
+  }
+}
+
+class _ConditionalOrderBadge extends StatelessWidget {
+  const _ConditionalOrderBadge({required this.order, required this.currency, required this.rate});
+
+  final ConditionalOrder order;
+  final String currency;
+  final double? rate;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final color = order.isStopLoss ? const Color(0xFFEF5350) : const Color(0xFF26A69A);
+    final priceStr = formatCurrency(order.triggerPrice, currency, rate);
+    final label =
+        order.isStopLoss ? l10n.portfolioActiveStopLoss(priceStr) : l10n.portfolioActiveTakeProfit(priceStr);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.16),
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: color),
+      ),
+      child: Text(label, style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.w600)),
     );
   }
 }

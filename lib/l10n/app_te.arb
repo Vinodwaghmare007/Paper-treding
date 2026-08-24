@@ -249,5 +249,27 @@
   "orgDashboardAggregateTitle": "సమూహ స్నాప్‌షాట్ (అనామక)",
   "orgDashboardAggregateAvgDiscipline": "సగటు క్రమశిక్షణ స్కోరు: {score}",
   "orgDashboardAggregateNotYetComputed": "సమూహ గణాంకాలు ప్రతిరోజూ నవీకరించబడతాయి — విద్యార్థులు చేరిన తర్వాత మళ్లీ చూడండి.",
-  "orgDashboardPrivacyNote": "ఏ విద్యార్థి వ్యక్తిగత ట్రేడ్ చరిత్ర ఇక్కడ ఎప్పుడూ కనిపించదు — వినియోగదారు పేరు, చేరిన తేదీ, మరియు ఒక అనామక సమూహ సగటు మాత్రమే."
+  "orgDashboardPrivacyNote": "ఏ విద్యార్థి వ్యక్తిగత ట్రేడ్ చరిత్ర ఇక్కడ ఎప్పుడూ కనిపించదు — వినియోగదారు పేరు, చేరిన తేదీ, మరియు ఒక అనామక సమూహ సగటు మాత్రమే.",
+
+  "conditionalOrderSheetTitle": "స్టాప్-లాస్ / టార్గెట్ — {coinSymbol}",
+  "conditionalOrderStopLossLabel": "స్టాప్-లాస్",
+  "conditionalOrderTakeProfitLabel": "టార్గెట్",
+  "conditionalOrderTriggerPriceLabel": "ట్రిగ్గర్ ధర",
+  "conditionalOrderStopLossHelper": "ధర ఈ స్థాయికి పడిపోతే స్వయంచాలకంగా అమ్మబడుతుంది, యాప్ మూసివేయబడినా కూడా.",
+  "conditionalOrderTakeProfitHelper": "ధర ఈ స్థాయికి పెరిగితే స్వయంచాలకంగా అమ్మబడుతుంది, యాప్ మూసివేయబడినా కూడా.",
+  "conditionalOrderHoldingQuantity": "మీ వద్ద {quantity} ఉంది",
+  "conditionalOrderEnterPrice": "సున్నా కంటే ఎక్కువ ట్రిగ్గర్ ధరను నమోదు చేయండి.",
+  "conditionalOrderStopLossBelowMarket": "స్టాప్-లాస్ ప్రస్తుత ధర కంటే తక్కువగా ఉండాలి.",
+  "conditionalOrderTakeProfitAboveMarket": "టార్గెట్ ప్రస్తుత ధర కంటే ఎక్కువగా ఉండాలి.",
+  "conditionalOrderInvalidQuantity": "సున్నా మరియు మీ హోల్డింగ్ మధ్య పరిమాణాన్ని నమోదు చేయండి.",
+  "conditionalOrderStopLossSet": "స్టాప్-లాస్ సెట్ చేయబడింది.",
+  "conditionalOrderTakeProfitSet": "టార్గెట్ సెట్ చేయబడింది.",
+  "conditionalOrderSubmitError": "ఈ ఆర్డర్‌ను సెట్ చేయలేకపోయాము — మీ కనెక్షన్‌ని తనిఖీ చేసి మళ్లీ ప్రయత్నించండి.",
+  "conditionalOrderSetStopLoss": "స్టాప్-లాస్ సెట్ చేయండి",
+  "conditionalOrderSetTakeProfit": "టార్గెట్ సెట్ చేయండి",
+  "conditionalOrderCancel": "రద్దు చేయి",
+  "conditionalOrderDisclaimer": "ప్రతి నిమిషం లైవ్ ధరలకు వ్యతిరేకంగా తనిఖీ చేయబడుతుంది — అమలు ధర మీ ట్రిగ్గర్ ధర కంటే కొద్దిగా భిన్నంగా ఉండవచ్చు. సిమ్యులేటెడ్ మాత్రమే, నిజమైన డబ్బు కాదు.",
+  "portfolioSetStopLossTakeProfit": "స్టాప్-లాస్ / టార్గెట్ సెట్ చేయండి",
+  "portfolioActiveStopLoss": "SL {price}",
+  "portfolioActiveTakeProfit": "టార్గెట్ {price}"
 }

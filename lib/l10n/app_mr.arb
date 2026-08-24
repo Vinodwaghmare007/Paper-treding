@@ -249,5 +249,27 @@
   "orgDashboardAggregateTitle": "समूह स्नॅपशॉट (निनावी)",
   "orgDashboardAggregateAvgDiscipline": "सरासरी शिस्त गुण: {score}",
   "orgDashboardAggregateNotYetComputed": "समूह आकडेवारी रोज अपडेट होते — विद्यार्थी सामील झाल्यावर पुन्हा पहा.",
-  "orgDashboardPrivacyNote": "इथे कोणत्याही विद्यार्थ्याचा वैयक्तिक ट्रेड इतिहास कधीही दाखवला जात नाही — फक्त वापरकर्तानाव, सामील झाल्याची तारीख आणि एक निनावी समूह सरासरी."
+  "orgDashboardPrivacyNote": "इथे कोणत्याही विद्यार्थ्याचा वैयक्तिक ट्रेड इतिहास कधीही दाखवला जात नाही — फक्त वापरकर्तानाव, सामील झाल्याची तारीख आणि एक निनावी समूह सरासरी.",
+
+  "conditionalOrderSheetTitle": "स्टॉप-लॉस / टार्गेट — {coinSymbol}",
+  "conditionalOrderStopLossLabel": "स्टॉप-लॉस",
+  "conditionalOrderTakeProfitLabel": "टार्गेट",
+  "conditionalOrderTriggerPriceLabel": "ट्रिगर किंमत",
+  "conditionalOrderStopLossHelper": "किंमत या पातळीपर्यंत खाली आली की आपोआप विकले जाईल, अ‍ॅप बंद असतानाही.",
+  "conditionalOrderTakeProfitHelper": "किंमत या पातळीपर्यंत वर गेली की आपोआप विकले जाईल, अ‍ॅप बंद असतानाही.",
+  "conditionalOrderHoldingQuantity": "तुमच्याकडे {quantity} आहे",
+  "conditionalOrderEnterPrice": "शून्यापेक्षा जास्त ट्रिगर किंमत टाका.",
+  "conditionalOrderStopLossBelowMarket": "स्टॉप-लॉस सध्याच्या किमतीपेक्षा कमी असावा.",
+  "conditionalOrderTakeProfitAboveMarket": "टार्गेट सध्याच्या किमतीपेक्षा जास्त असावा.",
+  "conditionalOrderInvalidQuantity": "शून्य ते तुमच्या होल्डिंगमधील प्रमाण टाका.",
+  "conditionalOrderStopLossSet": "स्टॉप-लॉस सेट झाला.",
+  "conditionalOrderTakeProfitSet": "टार्गेट सेट झाला.",
+  "conditionalOrderSubmitError": "हा ऑर्डर सेट होऊ शकला नाही — तुमचे कनेक्शन तपासा आणि पुन्हा प्रयत्न करा.",
+  "conditionalOrderSetStopLoss": "स्टॉप-लॉस सेट करा",
+  "conditionalOrderSetTakeProfit": "टार्गेट सेट करा",
+  "conditionalOrderCancel": "रद्द करा",
+  "conditionalOrderDisclaimer": "दर मिनिटाला लाइव्ह किमतींशी तपासले जाते — प्रत्यक्ष execution किंमत तुमच्या ट्रिगर किमतीपेक्षा थोडी वेगळी असू शकते. फक्त सिम्युलेटेड, खरे पैसे नाहीत.",
+  "portfolioSetStopLossTakeProfit": "स्टॉप-लॉस / टार्गेट सेट करा",
+  "portfolioActiveStopLoss": "SL {price}",
+  "portfolioActiveTakeProfit": "टार्गेट {price}"
 }

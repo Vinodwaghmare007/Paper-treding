@@ -259,6 +259,37 @@ service cloud.firestore {
         allow delete: if isOwner(userId);
       }
 
+      // Stop-loss / take-profit conditional orders. Only ever created
+      // against an existing LONG position (v1 scope — see TradeMath's
+      // short-selling doc comment for why: this only ports the long-
+      // closing branch of applySell to TypeScript, not the short side)
+      // and only ever closes/reduces it, so the create rule leans on
+      // isValidPosition-style checks the client already computed rather
+      // than re-deriving them here (rules can't read the position doc's
+      // current quantity cheaply per-write the way it can for its own
+      // account doc). is_active/triggered_at/last_checked_price are only
+      // ever flipped by the checkConditionalOrders scheduled Cloud
+      // Function (Admin SDK, bypasses these rules) — a client can create
+      // a fresh order or cancel (delete) one still pending, but can't
+      // fake a trigger, edit a live order's price/quantity, or resurrect
+      // a fired one back to active. No update path exists at all: a
+      // client that wants a different trigger price deletes and
+      // recreates, which is simpler to reason about than a partial-edit
+      // rule.
+      match /conditional_orders/{orderId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId)
+          && request.resource.data.coin_symbol is string
+          && (request.resource.data.kind == 'STOP_LOSS' || request.resource.data.kind == 'TAKE_PROFIT')
+          && request.resource.data.trigger_price is number && request.resource.data.trigger_price > 0
+          && request.resource.data.quantity is number && request.resource.data.quantity > 0
+          && request.resource.data.is_active == true
+          && request.resource.data.triggered_at == null
+          && request.resource.data.last_checked_price == null
+          && request.resource.data.created_at == request.time;
+        allow delete: if isOwner(userId);
+      }
+
       // One doc per device token — see notifications_service.dart. Doc id
       // is the token itself, so re-registering the same device is a
       // no-op create/overwrite rather than accumulating duplicates. Only

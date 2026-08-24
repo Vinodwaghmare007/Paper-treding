@@ -1403,6 +1403,115 @@
     }
   },
 
+  "conditionalOrderSheetTitle": "Stop-Loss / Target — {coinSymbol}",
+  "@conditionalOrderSheetTitle": {
+    "description": "Title of the sheet for setting a stop-loss or take-profit on a held coin. {coinSymbol} is a ticker pair like BTCUSDT — never translated.",
+    "placeholders": {
+      "coinSymbol": {
+        "type": "String",
+        "example": "BTCUSDT"
+      }
+    }
+  },
+  "conditionalOrderStopLossLabel": "Stop-Loss",
+  "@conditionalOrderStopLossLabel": {
+    "description": "Segmented-button label and active-order-row label for the stop-loss side of the conditional-order sheet."
+  },
+  "conditionalOrderTakeProfitLabel": "Target",
+  "@conditionalOrderTakeProfitLabel": {
+    "description": "Segmented-button label and active-order-row label for the take-profit side of the conditional-order sheet. Called \"Target\" rather than \"Take-Profit\" to match the term Indian trading apps (Zerodha, Groww) already use."
+  },
+  "conditionalOrderTriggerPriceLabel": "Trigger price",
+  "@conditionalOrderTriggerPriceLabel": {
+    "description": "Floating label on the trigger-price text field in the conditional-order sheet."
+  },
+  "conditionalOrderStopLossHelper": "Sells automatically if the price falls to this level, even while the app is closed.",
+  "@conditionalOrderStopLossHelper": {
+    "description": "Helper text under the trigger-price field when Stop-Loss is selected."
+  },
+  "conditionalOrderTakeProfitHelper": "Sells automatically if the price rises to this level, even while the app is closed.",
+  "@conditionalOrderTakeProfitHelper": {
+    "description": "Helper text under the trigger-price field when Target (take-profit) is selected."
+  },
+  "conditionalOrderHoldingQuantity": "You hold {quantity}",
+  "@conditionalOrderHoldingQuantity": {
+    "description": "Helper text under the quantity field in the conditional-order sheet, showing the full held amount available to close. {quantity} is a plain number (already locale-formatted by the caller).",
+    "placeholders": {
+      "quantity": {
+        "type": "String",
+        "example": "0.0231"
+      }
+    }
+  },
+  "conditionalOrderEnterPrice": "Enter a trigger price greater than zero.",
+  "@conditionalOrderEnterPrice": {
+    "description": "Validation error when the trigger-price field is empty or zero."
+  },
+  "conditionalOrderStopLossBelowMarket": "A stop-loss must be below the current price.",
+  "@conditionalOrderStopLossBelowMarket": {
+    "description": "Validation error when a stop-loss trigger price is at or above the current market price."
+  },
+  "conditionalOrderTakeProfitAboveMarket": "A target must be above the current price.",
+  "@conditionalOrderTakeProfitAboveMarket": {
+    "description": "Validation error when a take-profit trigger price is at or below the current market price."
+  },
+  "conditionalOrderInvalidQuantity": "Enter a quantity between zero and your held amount.",
+  "@conditionalOrderInvalidQuantity": {
+    "description": "Validation error when the quantity is zero, negative, or exceeds the held amount."
+  },
+  "conditionalOrderStopLossSet": "Stop-loss set.",
+  "@conditionalOrderStopLossSet": {
+    "description": "Snackbar confirmation shown right after a stop-loss is successfully created."
+  },
+  "conditionalOrderTakeProfitSet": "Target set.",
+  "@conditionalOrderTakeProfitSet": {
+    "description": "Snackbar confirmation shown right after a take-profit (target) is successfully created."
+  },
+  "conditionalOrderSubmitError": "Couldn't set this order — check your connection and try again.",
+  "@conditionalOrderSubmitError": {
+    "description": "Generic error shown when creating/cancelling a conditional order fails (offline, permission, etc)."
+  },
+  "conditionalOrderSetStopLoss": "Set Stop-Loss",
+  "@conditionalOrderSetStopLoss": {
+    "description": "Submit-button label when Stop-Loss is the selected segment in the conditional-order sheet."
+  },
+  "conditionalOrderSetTakeProfit": "Set Target",
+  "@conditionalOrderSetTakeProfit": {
+    "description": "Submit-button label when Target (take-profit) is the selected segment in the conditional-order sheet."
+  },
+  "conditionalOrderCancel": "Cancel",
+  "@conditionalOrderCancel": {
+    "description": "Button to cancel an already-active stop-loss or take-profit shown at the top of the conditional-order sheet."
+  },
+  "conditionalOrderDisclaimer": "Checked every minute against live prices — execution price may differ slightly from your trigger price. Simulated only, no real funds.",
+  "@conditionalOrderDisclaimer": {
+    "description": "Small print at the bottom of the conditional-order sheet explaining the once-a-minute check cadence and reiterating the simulated-only disclaimer."
+  },
+  "portfolioSetStopLossTakeProfit": "Set Stop-Loss / Target",
+  "@portfolioSetStopLossTakeProfit": {
+    "description": "Menu/button label on a Portfolio holding tile that opens the conditional-order sheet."
+  },
+  "portfolioActiveStopLoss": "SL {price}",
+  "@portfolioActiveStopLoss": {
+    "description": "Compact badge on a Portfolio holding tile showing an active stop-loss's trigger price. {price} is a pre-formatted currency string.",
+    "placeholders": {
+      "price": {
+        "type": "String",
+        "example": "$58,000.00"
+      }
+    }
+  },
+  "portfolioActiveTakeProfit": "Target {price}",
+  "@portfolioActiveTakeProfit": {
+    "description": "Compact badge on a Portfolio holding tile showing an active take-profit's trigger price. {price} is a pre-formatted currency string.",
+    "placeholders": {
+      "price": {
+        "type": "String",
+        "example": "$72,000.00"
+      }
+    }
+  },
+
   "offlineBannerGeneric": "You're offline — showing your last synced data.",
   "@offlineBannerGeneric": {
     "description": "Persistent banner for screens backed by Firestore (portfolio, orders), which already caches its last-synced snapshot offline but doesn't expose an exact fetch timestamp the way the chart's own local cache does."

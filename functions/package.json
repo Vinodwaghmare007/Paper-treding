@@ -22,6 +22,7 @@
     "test:trade-rationale": "firebase emulators:exec --only firestore --project demo-test \"ts-node test/addTradeRationale.test.ts\"",
     "test:trader-profile": "firebase emulators:exec --only firestore --project demo-test \"ts-node test/traderProfile.test.ts\"",
     "test:price-alerts": "ts-node test/checkPriceAlerts.test.ts",
+    "test:conditional-orders": "ts-node test/executeConditionalOrder.test.ts",
     "test:news": "ts-node test/news.test.ts"
   },
   "dependencies": {
