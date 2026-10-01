@@ -6,9 +6,12 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:home_widget/home_widget.dart';
 
 import 'data/background/market_weather_sync_task.dart';
+import 'features/ads/ad_config.dart';
+import 'features/ads/interstitial_ad_manager.dart';
 import 'features/home/home_deep_link.dart';
 import 'features/home/home_shell.dart';
 import 'features/onboarding/language_onboarding_gate.dart';
@@ -23,7 +26,17 @@ Future<void> main() async {
   await Firebase.initializeApp();
   await _initializeCrashlytics();
   await initializeMarketWeatherSync();
+  _initializeAds();
   runApp(const ProviderScope(child: CryptoPaperTraderApp()));
+}
+
+/// Starts the Google Mobile Ads SDK without blocking first frame, then
+/// preloads the first interstitial so it's ready by the first navigation.
+void _initializeAds() {
+  if (!AdConfig.supported) return;
+  unawaited(MobileAds.instance.initialize().then((_) {
+    InterstitialAdManager.instance.preload();
+  }));
 }
 
 /// Routes both Flutter framework errors and uncaught async errors to
@@ -50,6 +63,7 @@ class CryptoPaperTraderApp extends ConsumerStatefulWidget {
 }
 
 class _CryptoPaperTraderAppState extends ConsumerState<CryptoPaperTraderApp> {
+  final _interstitialAdObserver = InterstitialAdNavigatorObserver();
   StreamSubscription<Uri?>? _widgetClickSubscription;
 
   @override
@@ -76,6 +90,7 @@ class _CryptoPaperTraderAppState extends ConsumerState<CryptoPaperTraderApp> {
     return MaterialApp(
       title: 'Crypto Paper Trader',
       debugShowCheckedModeBanner: false,
+      navigatorObservers: [_interstitialAdObserver],
       theme: ThemeData(
         brightness: Brightness.dark,
         colorScheme: ColorScheme.fromSeed(

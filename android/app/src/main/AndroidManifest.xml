@@ -56,6 +56,13 @@
             android:name="com.google.firebase.messaging.default_notification_icon"
             android:resource="@mipmap/ic_launcher"/>
 
+        <!-- AdMob app ID, filled from ADMOB_APP_ID in android/gradle.properties
+             via manifestPlaceholders (see app/build.gradle.kts). The SDK
+             crashes at startup without this entry. -->
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="${admobAppId}"/>
+
         <receiver
             android:name=".MarketWeatherWidgetProvider"
             android:exported="true"

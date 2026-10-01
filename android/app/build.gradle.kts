@@ -49,6 +49,16 @@ if (hasReleaseSigningConfig) {
     )
 }
 
+// AdMob app ID (ca-app-pub-XXXX~YYYY) from ADMOB_APP_ID in
+// android/gradle.properties. Falls back to Google's sample app ID, which
+// only serves test ads — set the real one before a Play Store release.
+val admobTestAppId = "ca-app-pub-3940256099942544~3347511713"
+val admobAppId = (project.findProperty("ADMOB_APP_ID") as String?)
+    ?.takeIf { it.isNotBlank() } ?: admobTestAppId
+if (admobAppId == admobTestAppId) {
+    logger.warn("ADMOB_APP_ID not set in android/gradle.properties — using AdMob's test app ID.")
+}
+
 android {
     namespace = "com.vinodwaghmare.papertrader.crypto_paper_trader"
     compileSdk = flutter.compileSdkVersion
@@ -86,6 +96,7 @@ android {
         // (e.g. each of Phases 1-5), major only for a breaking rework.
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        manifestPlaceholders["admobAppId"] = admobAppId
     }
 
     signingConfigs {

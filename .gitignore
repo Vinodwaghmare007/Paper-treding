@@ -59,3 +59,6 @@ app.*.map.json
 # not a secret, but a local deployment detail that shouldn't force a commit
 # every time someone redeploys the backend to a different host/URL.
 /forecast_url.txt
+
+# Real AdMob ad unit IDs for buildapk.bat (see its header comment).
+/admob_defines.txt

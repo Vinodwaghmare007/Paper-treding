@@ -56,6 +56,11 @@
 	     capability + an aps-environment entitlement added in Xcode
 	     (Signing & Capabilities tab) — that's a project-file change Xcode
 	     itself generates and can't be hand-written correctly outside it. -->
+	<!-- AdMob app ID. This is Google's sample ID (test ads only) — replace
+	     it with your iOS app's ID from the AdMob console before release.
+	     The SDK crashes at launch if this key is missing. -->
+	<key>GADApplicationIdentifier</key>
+	<string>ca-app-pub-3940256099942544~1458002511</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../l10n/generated/app_localizations.dart';
+import '../ads/interstitial_ad_manager.dart';
+import '../ads/rotating_banner_ad.dart';
 import '../alerts/alerts_providers.dart';
 import '../news/news_feed_screen.dart';
 import '../orders/order_history_screen.dart';
@@ -51,12 +53,17 @@ class _HomeShellState extends ConsumerState<HomeShell> {
       body: Column(
         children: [
           Expanded(child: IndexedStack(index: _index, children: _tabs)),
+          // Shared by all 4 tabs (Chart/trading included), like the footer.
+          const RotatingBannerAd(),
           const SimulatedFooter(),
         ],
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
-        onDestinationSelected: (i) => setState(() => _index = i),
+        onDestinationSelected: (i) {
+          if (i != _index) InterstitialAdManager.instance.showIfReady();
+          setState(() => _index = i);
+        },
         backgroundColor: const Color(0xFF1E222D),
         destinations: [
           NavigationDestination(

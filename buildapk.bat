@@ -17,6 +17,11 @@ REM  deployed, use option 6 below to save its URL to forecast_url.txt
 REM  (gitignored, per-machine) - every build/run option then bakes it in
 REM  automatically via --dart-define. Until you do that, AI Forecast will
 REM  always show "timed out" since it has nowhere real to call.
+REM
+REM  AdMob: without admob_defines.txt every build shows Google's TEST ads.
+REM  For real ads, create admob_defines.txt (gitignored) with ONE line:
+REM    --dart-define=ADMOB_BANNER_ANDROID=ca-app-pub-XXXX/YYYY --dart-define=ADMOB_INTERSTITIAL_ANDROID=ca-app-pub-XXXX/ZZZZ
+REM  and set ADMOB_APP_ID in android\gradle.properties.
 REM ============================================================================
 
 setlocal enabledelayedexpansion
@@ -28,6 +33,12 @@ if exist "forecast_url.txt" (
 )
 set FORECAST_DEFINE=
 if not "%FORECAST_URL%"=="" set FORECAST_DEFINE=--dart-define=FORECAST_API_BASE_URL=%FORECAST_URL%
+
+set ADMOB_DEFINE=
+if exist "admob_defines.txt" (
+    set /p ADMOB_DEFINE=<admob_defines.txt
+)
+set FORECAST_DEFINE=%FORECAST_DEFINE% %ADMOB_DEFINE%
 
 where flutter >nul 2>nul
 if errorlevel 1 (
